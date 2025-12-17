@@ -1,0 +1,52 @@
+{
+  "expo": {
+    "name": "Memora",
+    "slug": "memora-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "memora",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#3b82f6"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.memora.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Memora needs camera access to recognize family members",
+        "NSPhotoLibraryUsageDescription": "Memora needs photo library access to upload memories"
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#3b82f6"
+      },
+      "package": "com.memora.app",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Memora to access your camera for face recognition"
+        }
+      ],
+      "expo-asset"
+    ],
+    "experiments": {
+      "tsconfigPaths": true
+    }
+  }
+}

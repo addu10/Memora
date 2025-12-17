@@ -1,0 +1,120 @@
+// Database schema for Memora Caregiver Portal
+// Migration-ready: Switch provider and url for production
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// PRODUCTION: Supabase (PostgreSQL)
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// DEVELOPMENT: SQLite (Comment out for production)
+// datasource db {
+//   provider = "sqlite"
+//   url      = "file:./dev.db"
+// }
+
+// Caregiver (family member who manages the patient)
+model Caregiver {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  phone     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  patients  Patient[]
+  sessions  TherapySession[]
+}
+
+// Patient (Alzheimer's patient receiving therapy)
+model Patient {
+  id          String   @id @default(cuid())
+  name        String
+  age         Int
+  mmseScore   Int?     // Mini-Mental State Examination score (20-26 for early-stage)
+  diagnosis   String?
+  notes       String?
+  photoUrl    String?
+  pin         String   @default("0000") // 4-digit login PIN
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  caregiverId String
+  caregiver   Caregiver @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
+
+  memories      Memory[]
+  familyMembers FamilyMember[]
+  sessions      TherapySession[]
+}
+
+// Memory (photos with associated metadata for therapy)
+model Memory {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  photoUrls   String[]
+  date        DateTime
+  event       String   // e.g., "Onam", "Wedding", "Birthday"
+  location    String   // e.g., "Home", "Temple", "Beach"
+  people      String   // Comma-separated names
+  importance  Int      @default(3) // 1-5 scale
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  sessionMemories SessionMemory[]
+}
+
+// Family Member (for face recognition)
+model FamilyMember {
+  id           String   @id @default(cuid())
+  name         String
+  relationship String   // e.g., "Wife", "Son", "Daughter"
+  photoUrls    String[] // Array of photo URLs
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+}
+
+// Therapy Session
+model TherapySession {
+  id        String   @id @default(cuid())
+  date      DateTime @default(now())
+  duration  Int      // Duration in minutes
+  mood      String   // "happy", "neutral", "sad", "confused"
+  notes     String?
+  completed Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  patientId   String
+  patient     Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  caregiverId String
+  caregiver   Caregiver @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
+
+  memories SessionMemory[]
+}
+
+// Memory shown in a session (with recall score)
+model SessionMemory {
+  id          String  @id @default(cuid())
+  recallScore Int     // 1-5 scale (how well patient recalled)
+  response    String? // Patient's response
+  promptsUsed String? // JSON array of prompts shown
+
+  sessionId String
+  session   TherapySession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  memoryId  String
+  memory    Memory         @relation(fields: [memoryId], references: [id], onDelete: Cascade)
+}
