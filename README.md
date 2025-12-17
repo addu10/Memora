@@ -204,14 +204,6 @@ npm run type-check
 
 ---
 
-## 👥 Team
-
-- **Developer**: Adnan
-- **Project Type**: Final Year Project
-- **Institution**: [Your University]
-
----
-
 ## 📝 License
 
 This project is for academic purposes only.
