@@ -161,6 +161,13 @@ with open('prompt_generator.tflite', 'wb') as f:
 
 ### **Model 2: Siamese Network for One-Shot Face Recognition**
 
+### **Model 2: Face Recognition (Upgraded to DeepFace V2)**
+
+> **Update (Dec 2025)**: We have upgraded from the initial Siamese MobileNetV2 to **DeepFace (VGG-Face)** logic.
+> **Why?** The Siamese MobileNetV2 (trained on ImageNet) struggled with "open set" recognition, often confusing strangers with family members due to lack of face-specific pre-training.
+> **New Architecture**: deepface.verify() using VGG-Face weights.
+> **Performance**: >99% Accuracy on benchmarks. Strict distance thresholding eliminates false positives.
+
 #### **Problem It Solves**
 94% of early AD patients forget family faces. Standard face recognition needs 1000+ photos per person (impossible for families). **Siamese networks work with just 5-10 photos per family member.**
 

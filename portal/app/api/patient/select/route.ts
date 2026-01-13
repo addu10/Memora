@@ -25,7 +25,9 @@ export async function POST(request: Request) {
         // Set cookie
         const cookieStore = await cookies()
         cookieStore.set('selectedPatientId', patientId, {
-            httpOnly: true,
+            // Note: httpOnly is false to allow client-side access via js-cookie
+            // This is safe as this cookie only contains a non-sensitive patient ID
+            httpOnly: false,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'lax',
             maxAge: 60 * 60 * 24 * 30 // 30 days

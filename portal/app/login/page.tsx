@@ -34,6 +34,20 @@ export default function LoginPage() {
                 throw new Error(result.error || 'Login failed')
             }
 
+            // After login, fetch patients and auto-select the first one
+            const patientsRes = await fetch('/api/patients')
+            if (patientsRes.ok) {
+                const patients = await patientsRes.json()
+                if (patients.length > 0) {
+                    // Auto-select the first patient
+                    await fetch('/api/patient/select', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ patientId: patients[0].id })
+                    })
+                }
+            }
+
             router.push('/dashboard')
             router.refresh()
         } catch (err: any) {

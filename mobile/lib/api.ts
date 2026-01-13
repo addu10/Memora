@@ -69,6 +69,28 @@ class MemoraApiClient {
         }
     }
 
+    async getMemoriesByPerson(name: string): Promise<ApiResponse<Memory[]>> {
+        const auth = this.checkAuth();
+        if (auth.error) return { error: auth.error, status: auth.status };
+
+        try {
+            // "people" is a text column, e.g. "Adnan, Amma". 
+            // We use ilike for case-insensitive partial match.
+            const { data, error } = await supabase
+                .from('Memory')
+                .select('*')
+                .ilike('people', `%${name}%`)
+                .eq('patientId', this.patientId)
+                .order('date', { ascending: false });
+
+            if (error) throw error;
+            return { data: data as Memory[], status: 200 };
+        } catch (e: any) {
+            console.error('Fetch person memories error:', e);
+            return { error: e.message, status: 500 };
+        }
+    }
+
     // ============ FAMILY ============
 
     async getFamilyMembers(): Promise<ApiResponse<FamilyMember[]>> {
@@ -83,6 +105,24 @@ class MemoraApiClient {
 
             if (error) throw error;
             return { data: data as FamilyMember[], status: 200 };
+        } catch (e: any) {
+            return { error: e.message, status: 500 };
+        }
+    }
+
+    async getFamilyMemberById(id: string): Promise<ApiResponse<FamilyMember>> {
+        const auth = this.checkAuth();
+        if (auth.error) return { error: auth.error, status: auth.status };
+
+        try {
+            const { data, error } = await supabase
+                .from('FamilyMember')
+                .select('*')
+                .eq('id', id)
+                .single();
+
+            if (error) throw error;
+            return { data: data as FamilyMember, status: 200 };
         } catch (e: any) {
             return { error: e.message, status: 500 };
         }
@@ -206,9 +246,10 @@ class MemoraApiClient {
 
             return {
                 data: {
-                    totalMemories: memoryCount || 0,
+                    sessionCount: 0, // Mock for now
+                    memoryCount: memoryCount || 0,
                     familyCount: familyCount || 0,
-                    streakDays: 1 // TODO: Calculate real streak
+                    averageRecall: 0
                 },
                 status: 200
             };
