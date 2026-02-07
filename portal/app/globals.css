@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* Memora Portal - Global Styles */
 /* Modern, premium design for Alzheimer's caregiver dashboard */
 

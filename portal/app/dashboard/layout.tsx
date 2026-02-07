@@ -4,10 +4,7 @@ import { redirect } from 'next/navigation'
 import { cookies } from 'next/headers'
 import { getSession } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
-import PatientSelector from './PatientSelector'
-import LogoutButton from './LogoutButton'
 import DashboardClientWrapper from './DashboardClientWrapper'
-import UserDropdown from './UserDropdown'
 
 async function getPatients(userId: string) {
   const { data } = await supabaseAdmin
@@ -36,72 +33,64 @@ export default async function DashboardLayout({
 
   const patients = await getPatients(session.userId)
   const selectedPatientId = await getSelectedPatientId()
-  const selectedPatient = patients.find(p => p.id === selectedPatientId) || patients[0]
 
-  const hasPatients = patients.length > 0
+  // Basic first name extraction for the sidebar
+  const firstName = session.name.split(' ')[0]
 
   return (
     <DashboardClientWrapper
       patients={patients.map(p => ({ id: p.id, name: p.name, age: p.age, photoUrl: p.photoUrl || undefined }))}
       selectedPatientId={selectedPatientId}
     >
-      <div className="dashboard-layout">
-        {/* Top Navbar */}
-        <header className="navbar">
-          <div className="navbar-left">
-            <Link href="/dashboard" className="navbar-logo">
-              <img src="/icons/logo.png" alt="" className="premium-icon logo-icon-sm" />
-              <span className="logo-text">Memora</span>
+      <div className="min-h-screen bg-primary-50 flex font-sans text-gray-800">
+        {/* Sidebar Navigation */}
+        <aside className="w-20 lg:w-64 bg-white hidden md:flex flex-col border-r border-lavender-200 sticky top-0 h-screen z-10">
+          <div className="h-20 flex items-center justify-center lg:justify-start lg:px-8 border-b border-lavender-100">
+            <div className="w-10 h-10 bg-primary-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-primary-200">
+              M
+            </div>
+            <span className="ml-3 text-xl font-bold text-gray-900 hidden lg:block tracking-tight">Memora</span>
+          </div>
+
+          <nav className="flex-1 py-8 px-4 space-y-2">
+            <Link href="/dashboard" className="flex items-center gap-4 px-4 py-3 bg-primary-50 text-primary-700 rounded-2xl transition-all font-semibold hover:bg-primary-100">
+              <span className="text-xl">🏠</span>
+              <span className="hidden lg:block">Overview</span>
             </Link>
+            <Link href="/dashboard/patients" className="flex items-center gap-4 px-4 py-3 text-gray-500 hover:bg-white hover:text-primary-600 hover:shadow-soft rounded-2xl transition-all font-medium">
+              <span className="text-xl">👥</span>
+              <span className="hidden lg:block">Patients</span>
+            </Link>
+            <Link href="/dashboard/sessions" className="flex items-center gap-4 px-4 py-3 text-gray-500 hover:bg-white hover:text-primary-600 hover:shadow-soft rounded-2xl transition-all font-medium">
+              <span className="text-xl">🧠</span>
+              <span className="hidden lg:block">Sessions</span>
+            </Link>
+            <Link href="/dashboard/memories" className="flex items-center gap-4 px-4 py-3 text-gray-500 hover:bg-white hover:text-primary-600 hover:shadow-soft rounded-2xl transition-all font-medium">
+              <span className="text-xl">📸</span>
+              <span className="hidden lg:block">Memories</span>
+            </Link>
+            <Link href="/dashboard/settings" className="flex items-center gap-4 px-4 py-3 text-gray-500 hover:bg-white hover:text-primary-600 hover:shadow-soft rounded-2xl transition-all font-medium mt-auto">
+              <span className="text-xl">⚙️</span>
+              <span className="hidden lg:block">Settings</span>
+            </Link>
+          </nav>
 
-            <nav className="navbar-nav">
-              <Link href="/dashboard" className="nav-link">
-                <img src="/icons/overview.png" alt="" className="premium-icon" />
-                <span className="nav-text">Overview</span>
-              </Link>
-              {hasPatients && (
-                <>
-                  <Link href="/dashboard/memories" className="nav-link">
-                    <img src="/icons/memories.png" alt="" className="premium-icon" />
-                    <span className="nav-text">Memories</span>
-                  </Link>
-                  <Link href="/dashboard/family" className="nav-link">
-                    <img src="/icons/family.png" alt="" className="premium-icon" />
-                    <span className="nav-text">Family</span>
-                  </Link>
-                  <Link href="/dashboard/sessions" className="nav-link">
-                    <img src="/icons/sessions.png" alt="" className="premium-icon" />
-                    <span className="nav-text">Sessions</span>
-                  </Link>
-                  <Link href="/dashboard/progress" className="nav-link">
-                    <img src="/icons/analytics.png" alt="" className="premium-icon" />
-                    <span className="nav-text">Analytics</span>
-                  </Link>
-                </>
-              )}
-              <Link href="/dashboard/patients" className="nav-link">
-                <img src="/icons/patients.png" alt="" className="premium-icon" />
-                <span className="nav-text">Patients</span>
-              </Link>
-            </nav>
+          <div className="p-4 border-t border-lavender-100">
+            <div className="flex items-center gap-3 bg-lavender-50 p-3 rounded-2xl">
+              <div className="w-10 h-10 rounded-full bg-primary-200 flex items-center justify-center text-primary-700 font-bold">
+                {firstName[0]}
+              </div>
+              <div className="hidden lg:block overflow-hidden">
+                <p className="text-sm font-bold text-gray-900 truncate">{session.name}</p>
+                <p className="text-xs text-gray-500 truncate">Caregiver</p>
+              </div>
+            </div>
           </div>
+        </aside>
 
-          <div className="navbar-right">
-            {hasPatients && (
-              <PatientSelector
-                patients={patients.map(p => ({ id: p.id, name: p.name, age: p.age, photoUrl: p.photoUrl }))}
-                selectedPatientId={selectedPatient?.id}
-              />
-            )}
-            <UserDropdown userName={session.name} />
-          </div>
-        </header>
-
-        {/* Main Content */}
-        <main className="main-content">
-          <div className="content-body">
-            {children}
-          </div>
+        {/* Main Content Area */}
+        <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
+          {children}
         </main>
       </div>
     </DashboardClientWrapper>
