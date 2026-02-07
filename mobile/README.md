@@ -7,10 +7,10 @@ A React Native (Expo) mobile application for Alzheimer's patients to engage in m
 The Memora Mobile App is designed for elderly patients with early-stage Alzheimer's disease. It features:
 
 - **Large, accessible UI** with clear fonts and simple navigation
-- **Face recognition** for identifying family members
-- **Photo galleries** for memory therapy
-- **Memory games** for cognitive exercises
-- **Personalized profiles** with caregiver information
+- **Face recognition (V2)** for instant family identification
+- **AI-Powered Therapy** using Gemini interactive prompts
+- **Memory performance badges** (Mastered, In Progress, Needs Practice)
+- **Personalized profiles** with caregiver emergency contact
 
 ## Tech Stack
 
@@ -71,8 +71,9 @@ The `MemoraApiClient` class provides methods for:
 | `getFamilyMembers()` | Fetch family directory |
 | `createSession(data)` | Log a therapy session |
 | `getSessions()` | Fetch session history |
-| `getPatient()` | Fetch patient profile with caregiver name |
-| `getPatientStats()` | Fetch aggregate statistics |
+| `getLatestSessionMemories()` | Fetch most recent recall performance |
+| `getPatient()` | Fetch profile with caregiver context |
+| `getPatientStats()` | Aggregate dashboard numbers |
 
 ## Environment Variables
 
@@ -120,14 +121,14 @@ npx expo start --web
 - Filter by event type
 - Detailed view with descriptions
 
-### 5. Face Recognition (Placeholder)
-- Camera integration ready
-- Will connect to ML model for recognition
+### 5. Face Recognition V2
+- **DeepFace Integration**: High-accuracy recognition via Supabase Edge Function
+- **Real-time**: Leverages parallel processing for sub-second recognition
 
-### 6. Memory Games
-- Session-based therapy exercises
-- Mood tracking
-- Progress recording
+### 6. AI Session Therapy
+- **Interactive Prompts**: Gemini-1.5-Pro generated clinically-backed questions
+- **Recall Tracking**: Marks photos from 1-5 to update clinical progress
+- **Mood Logging**: Tracks emotional response to reminiscence
 
 ## Design Principles
 

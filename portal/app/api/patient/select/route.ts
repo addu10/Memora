@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { getSession } from '@/lib/auth'
-import prisma from '@/lib/db'
+import { supabaseAdmin } from '@/lib/supabase'
 
 export async function POST(request: Request) {
     try {
@@ -14,19 +14,20 @@ export async function POST(request: Request) {
         const { patientId } = await request.json()
 
         // Verify patient belongs to caregiver
-        const patient = await prisma.patient.findFirst({
-            where: { id: patientId, caregiverId: session.userId }
-        })
+        const { data: patient, error } = await supabaseAdmin
+            .from('Patient')
+            .select('id')
+            .eq('id', patientId)
+            .eq('caregiverId', session.userId)
+            .single()
 
-        if (!patient) {
+        if (error || !patient) {
             return NextResponse.json({ error: 'Patient not found' }, { status: 404 })
         }
 
         // Set cookie
         const cookieStore = await cookies()
         cookieStore.set('selectedPatientId', patientId, {
-            // Note: httpOnly is false to allow client-side access via js-cookie
-            // This is safe as this cookie only contains a non-sensitive patient ID
             httpOnly: false,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'lax',

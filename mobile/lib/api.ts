@@ -3,7 +3,7 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from './supabase';
-import type { Memory, FamilyMember, TherapySession, Patient, PatientStats, ApiResponse } from './types';
+import type { Memory, FamilyMember, TherapySession, Patient, PatientStats, ApiResponse, SessionMemory } from './types';
 
 class MemoraApiClient {
     private patientId: string | null = null;
@@ -228,8 +228,6 @@ class MemoraApiClient {
     }
 
     async getPatientStats(): Promise<ApiResponse<PatientStats>> {
-        // This is a computed/aggregate query. For specific stats, we might need a dedicated RPC or multiple queries.
-        // For now, implementing basic mock stats or simple counts.
         const auth = this.checkAuth();
         if (auth.error) return { error: auth.error, status: auth.status };
 
@@ -246,13 +244,30 @@ class MemoraApiClient {
 
             return {
                 data: {
-                    sessionCount: 0, // Mock for now
+                    sessionCount: 0,
                     memoryCount: memoryCount || 0,
                     familyCount: familyCount || 0,
                     averageRecall: 0
                 },
                 status: 200
             };
+        } catch (e: any) {
+            return { error: e.message, status: 500 };
+        }
+    }
+
+    async getLatestSessionMemories(): Promise<ApiResponse<SessionMemory[]>> {
+        const auth = this.checkAuth();
+        if (auth.error) return { error: auth.error, status: auth.status };
+
+        try {
+            const { data, error } = await supabase
+                .from('SessionMemory')
+                .select('*, memoryId')
+                .order('reviewedAt', { ascending: false });
+
+            if (error) throw error;
+            return { data: data as SessionMemory[], status: 200 };
         } catch (e: any) {
             return { error: e.message, status: 500 };
         }

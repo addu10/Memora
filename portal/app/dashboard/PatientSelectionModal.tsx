@@ -120,7 +120,9 @@ export default function PatientSelectionModal({ patients, isOpen, onClose }: Pat
                 }
 
                 .patient-modal {
-                    background: white;
+                    background: var(--glass-bg);
+                    backdrop-filter: blur(20px);
+                    border: 1px solid var(--glass-border);
                     border-radius: 1.5rem;
                     padding: 2.5rem;
                     max-width: 600px;
@@ -158,14 +160,15 @@ export default function PatientSelectionModal({ patients, isOpen, onClose }: Pat
                 .patient-modal-header h2 {
                     font-size: 1.75rem;
                     font-weight: 700;
-                    color: #1f2937;
+                    color: var(--gray-900);
                     margin-bottom: 0.5rem;
                 }
 
                 .patient-modal-header p {
-                    color: #6b7280;
+                    color: var(--gray-500);
                     font-size: 1rem;
                 }
+ Riverside.
 
                 .patient-cards-grid {
                     display: grid;
@@ -178,9 +181,10 @@ export default function PatientSelectionModal({ patients, isOpen, onClose }: Pat
                     flex-direction: column;
                     align-items: center;
                     padding: 1.5rem;
-                    border: 2px solid #e5e7eb;
+                    border: 2px solid var(--gray-200);
                     border-radius: 1rem;
-                    background: #fafafa;
+                    background: var(--gray-50);
+                    color: var(--gray-800);
                     cursor: pointer;
                     transition: all 0.3s ease;
                     animation: fadeInUp 0.5s ease forwards;
@@ -196,17 +200,21 @@ export default function PatientSelectionModal({ patients, isOpen, onClose }: Pat
                 }
 
                 .patient-card:hover {
-                    border-color: #6366f1;
-                    background: #f5f3ff;
+                    border-color: var(--primary-500);
+                    background: var(--primary-50);
                     transform: translateY(-4px);
-                    box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.2);
+                    box-shadow: 0 10px 25px -5px rgba(124, 58, 237, 0.2);
                 }
 
                 .patient-card.selected {
-                    border-color: #6366f1;
-                    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+                    border-color: var(--primary-500);
+                    background: var(--purple-gradient);
                     color: white;
                 }
+ Riverside.
+ Riverside.
+ Riverside.
+ Riverside.
 
                 .patient-card.selected .patient-card-info p {
                     color: rgba(255, 255, 255, 0.8);
@@ -216,7 +224,8 @@ export default function PatientSelectionModal({ patients, isOpen, onClose }: Pat
                     width: 80px;
                     height: 80px;
                     border-radius: 50%;
-                    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+                    background: var(--purple-gradient);
+ Riverside.
                     display: flex;
                     align-items: center;
                     justify-content: center;
@@ -277,9 +286,12 @@ export default function PatientSelectionModal({ patients, isOpen, onClose }: Pat
 
                 .patient-card-info p {
                     font-size: 0.875rem;
-                    color: #6b7280;
+                    color: var(--gray-500);
                 }
-
+ Riverside.
+ Riverside.
+ Riverside.
+ Riverside.
                 .selecting-indicator {
                     display: flex;
                     align-items: center;
@@ -287,18 +299,25 @@ export default function PatientSelectionModal({ patients, isOpen, onClose }: Pat
                     gap: 0.75rem;
                     margin-top: 1.5rem;
                     padding: 1rem;
-                    background: #f3f4f6;
+                    background: var(--gray-100);
                     border-radius: 0.75rem;
-                    color: #6b7280;
+                    color: var(--gray-500);
                 }
-
+ Riverside.
+ Riverside.
+ Riverside.
+ Riverside.
                 .spinner {
                     width: 20px;
                     height: 20px;
-                    border: 2px solid #e5e7eb;
-                    border-top-color: #6366f1;
+                    border: 2px solid var(--gray-200);
+                    border-top-color: var(--primary-500);
                     border-radius: 50%;
-                    animation: spin 0.8s linear infinite;
+ Riverside.
+ Riverside.
+ Riverside.
+ Riverside.
+                   animation: spin 0.8s linear infinite;
                 }
 
                 @keyframes spin {

@@ -2,20 +2,8 @@
 import Link from 'next/link'
 import { cookies } from 'next/headers'
 import { getSession } from '@/lib/auth'
-import prisma from '@/lib/db'
+import { supabaseAdmin } from '@/lib/supabase'
 import { redirect } from 'next/navigation'
-
-async function getSessions(patientId: string) {
-    return prisma.therapySession.findMany({
-        where: { patientId },
-        include: {
-            memories: {
-                include: { memory: true }
-            }
-        },
-        orderBy: { date: 'desc' }
-    })
-}
 
 function getMoodEmoji(mood: string) {
     switch (mood) {
@@ -42,15 +30,23 @@ export default async function SessionsPage() {
 
     let patient = null
     if (patientId) {
-        patient = await prisma.patient.findFirst({
-            where: { id: patientId, caregiverId: session.userId }
-        })
+        const { data } = await supabaseAdmin
+            .from('Patient')
+            .select('*')
+            .eq('id', patientId)
+            .eq('caregiverId', session.userId)
+            .single()
+        patient = data
     }
 
     if (!patient) {
-        const firstPatient = await prisma.patient.findFirst({
-            where: { caregiverId: session.userId }
-        })
+        const { data: firstPatient } = await supabaseAdmin
+            .from('Patient')
+            .select('*')
+            .eq('caregiverId', session.userId)
+            .limit(1)
+            .single()
+
         if (!firstPatient) {
             return (
                 <div className="empty-state">
@@ -63,7 +59,23 @@ export default async function SessionsPage() {
         patient = firstPatient
     }
 
-    const sessions = await getSessions(patient.id)
+    // Get sessions for patient
+    const { data: sessionsRaw } = await supabaseAdmin
+        .from('TherapySession')
+        .select('*')
+        .eq('patientId', patient.id)
+        .order('date', { ascending: false })
+
+    // Get session memories for each session
+    const sessions = await Promise.all(
+        (sessionsRaw || []).map(async (s) => {
+            const { data: sessionMemories } = await supabaseAdmin
+                .from('SessionMemory')
+                .select('*')
+                .eq('sessionId', s.id)
+            return { ...s, memories: sessionMemories || [] }
+        })
+    )
 
     return (
         <div className="sessions-page">
@@ -88,12 +100,12 @@ export default async function SessionsPage() {
                             </div>
                             <div className="session-details">
                                 <div className="session-header-row">
-                                    <span className="session-mood">{getMoodEmoji(s.mood)}</span>
+                                    <span className="session-mood-badge">{s.mood}</span>
                                     <span className="session-duration">{s.duration} min</span>
                                 </div>
                                 <div className="session-stats-row">
-                                    <span>📸 {s.memories.length} memories</span>
-                                    <span>⭐ Avg recall: {getAvgRecallScore(s.memories)}/5</span>
+                                    <span className="stat-pill"><strong>{s.memories.length}</strong> Memories</span>
+                                    <span className="stat-pill"><strong>{getAvgRecallScore(s.memories)}</strong> Recall</span>
                                 </div>
                                 {s.notes && (
                                     <p className="session-notes">{s.notes}</p>
@@ -105,7 +117,9 @@ export default async function SessionsPage() {
                 </div>
             ) : (
                 <div className="empty-state">
-                    <div className="empty-icon">📅</div>
+                    <div className="empty-icon-3d">
+                        <img src="/icons/sessions.png" alt="" className="empty-img" />
+                    </div>
                     <h2 className="empty-title">No Sessions Yet</h2>
                     <p className="empty-text">
                         Sessions will appear here after completing therapy on the mobile app.

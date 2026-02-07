@@ -6,18 +6,17 @@ A Next.js web application for caregivers to manage patients, upload memories, an
 
 The Caregiver Portal is designed for family members and healthcare professionals to:
 
-- **Manage patient profiles** and settings
-- **Upload and organize photos** for memory therapy
-- **Add family member information** for face recognition
-- **Track therapy session history** and progress
-- **View analytics** on patient engagement
+- **Manage patient profiles** with clinical diagnosis data (MMSE)
+- **Per-photo labeling** for context-aware memory therapy
+- **Reference phototography** for Face Recognition V2
+- **Rich analytics** tracking mood distribution and recall success
 
 ## Tech Stack
 
 - **Framework**: Next.js 15 (App Router)
 - **Styling**: Tailwind CSS
-- **Database ORM**: Prisma
-- **Backend**: Supabase (PostgreSQL)
+- **Database ORM**: Prisma (Schema) & Supabase Admin (Runtime)
+- **Cloud Backend**: Supabase (PostgreSQL 17)
 - **Authentication**: Custom (bcrypt password hashing)
 - **File Storage**: Supabase Storage
 
@@ -30,8 +29,9 @@ portal/
 │   │   ├── auth/             # Authentication endpoints
 │   │   ├── patients/         # Patient CRUD
 │   │   ├── memories/         # Memory CRUD
-│   │   ├── family/           # Family member CRUD
-│   │   └── sessions/         # Therapy sessions
+│   │   ├── family/           # Family member management
+│   │   ├── sessions/         # Therapy session logging
+│   │   └── patient/          # Contextual patient selection
 │   ├── dashboard/            # Protected dashboard pages
 │   │   ├── page.tsx          # Dashboard home
 │   │   ├── patients/         # Patient management
@@ -61,9 +61,10 @@ portal/
 | `Caregiver` | User accounts for family members/professionals |
 | `Patient` | Alzheimer's patients receiving therapy |
 | `Memory` | Photos and memories for therapy sessions |
-| `FamilyMember` | Contacts for face recognition |
-| `TherapySession` | Logged therapy sessions |
-| `SessionMemory` | Memory responses within sessions |
+| `FamilyMember` | Reference people for face recognition |
+| `MemoryPhoto` | Granular labels (who, where, what) for each photo |
+| `TherapySession` | Clinical logs (duration, mood, overall score) |
+| `SessionMemory` | Detailed per-photo recall tracking |
 
 ### Key Relationships
 
@@ -148,9 +149,9 @@ npm run dev
 - Add diagnosis and notes
 
 ### 3. Memory Gallery
-- Upload multiple photos per memory
-- Tag with events, locations, people
-- Set importance levels
+- **Multi-Photo Upload**: Attach several photos to one event
+- **Per-Photo Labels**: Tag people, describe activity, and set the emotional "setting" for AI prompts
+- **Importance Levels**: Prioritize high-value memories (1-5)
 
 ### 4. Family Directory
 - Add family members with photos

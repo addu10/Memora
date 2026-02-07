@@ -1,6 +1,6 @@
 // Sessions API Routes
 import { NextResponse } from 'next/server'
-import prisma from '@/lib/db'
+import { supabaseAdmin, generateId, now } from '@/lib/supabase'
 import { getSession } from '@/lib/auth'
 
 // GET - List all therapy sessions for a patient
@@ -19,27 +19,42 @@ export async function GET(request: Request) {
         }
 
         // Verify patient belongs to caregiver
-        const patient = await prisma.patient.findFirst({
-            where: { id: patientId, caregiverId: session.userId }
-        })
+        const { data: patient, error: patientError } = await supabaseAdmin
+            .from('Patient')
+            .select('id')
+            .eq('id', patientId)
+            .eq('caregiverId', session.userId)
+            .single()
 
-        if (!patient) {
+        if (patientError || !patient) {
             return NextResponse.json({ error: 'Patient not found' }, { status: 404 })
         }
 
-        const sessions = await prisma.therapySession.findMany({
-            where: { patientId },
-            include: {
-                memories: {
-                    include: {
-                        memory: true
-                    }
-                }
-            },
-            orderBy: { date: 'desc' }
-        })
+        // Get sessions
+        const { data: sessions, error: sessionsError } = await supabaseAdmin
+            .from('TherapySession')
+            .select('*')
+            .eq('patientId', patientId)
+            .order('date', { ascending: false })
 
-        return NextResponse.json(sessions)
+        if (sessionsError) throw sessionsError
+
+        // Get session memories for each session
+        const sessionsWithMemories = await Promise.all(
+            (sessions || []).map(async (therapySession) => {
+                const { data: sessionMemories } = await supabaseAdmin
+                    .from('SessionMemory')
+                    .select('*, memory:Memory(*)')
+                    .eq('sessionId', therapySession.id)
+
+                return {
+                    ...therapySession,
+                    memories: sessionMemories || []
+                }
+            })
+        )
+
+        return NextResponse.json(sessionsWithMemories)
     } catch (error) {
         console.error('Get sessions error:', error)
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -61,39 +76,60 @@ export async function POST(request: Request) {
         }
 
         // Verify patient belongs to caregiver
-        const patient = await prisma.patient.findFirst({
-            where: { id: patientId, caregiverId: session.userId }
-        })
+        const { data: patient, error: patientError } = await supabaseAdmin
+            .from('Patient')
+            .select('id')
+            .eq('id', patientId)
+            .eq('caregiverId', session.userId)
+            .single()
 
-        if (!patient) {
+        if (patientError || !patient) {
             return NextResponse.json({ error: 'Patient not found' }, { status: 404 })
         }
 
-        const therapySession = await prisma.therapySession.create({
-            data: {
+        // Create therapy session
+        const sessionId = generateId()
+        const { data: therapySession, error: createError } = await supabaseAdmin
+            .from('TherapySession')
+            .insert({
+                id: sessionId,
                 duration,
                 mood,
-                notes,
+                notes: notes || null,
                 completed: true,
                 patientId,
                 caregiverId: session.userId,
-                memories: memories ? {
-                    create: memories.map((m: any) => ({
-                        memoryId: m.memoryId,
-                        recallScore: m.recallScore,
-                        response: m.response,
-                        promptsUsed: JSON.stringify(m.promptsUsed || [])
-                    }))
-                } : undefined
-            },
-            include: {
-                memories: {
-                    include: { memory: true }
-                }
-            }
-        })
+                updatedAt: now()
+            })
+            .select()
+            .single()
 
-        return NextResponse.json(therapySession, { status: 201 })
+        if (createError) throw createError
+
+        // Create session memories if provided
+        if (memories && memories.length > 0) {
+            const sessionMemoriesData = memories.map((m: any) => ({
+                id: generateId(),
+                sessionId,
+                memoryId: m.memoryId,
+                recallScore: m.recallScore,
+                response: m.response || null,
+                promptsUsed: JSON.stringify(m.promptsUsed || [])
+            }))
+
+            await supabaseAdmin.from('SessionMemory').insert(sessionMemoriesData)
+        }
+
+        // Fetch with memories for response
+        const { data: sessionMemories } = await supabaseAdmin
+            .from('SessionMemory')
+            .select('*, memory:Memory(*)')
+            .eq('sessionId', sessionId)
+
+        return NextResponse.json({
+            ...therapySession,
+            memories: sessionMemories || []
+        }, { status: 201 })
     } catch (error) {
         console.error('Create session error:', error)
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

@@ -20,8 +20,9 @@ The database schema is managed via Prisma and synchronized with Supabase.
 | `Patient` | Patient profiles |
 | `Memory` | Photos and memories |
 | `FamilyMember` | Family contacts for recognition |
+| `MemoryPhoto` | Per-photo AI labels & cached questions |
 | `TherapySession` | Therapy session logs |
-| `SessionMemory` | Memory responses in sessions |
+| `SessionMemory` | Memory responses with per-photo scores |
 
 ### Schema Diagram
 
@@ -45,16 +46,7 @@ RLS is enabled on all tables to ensure data isolation.
 
 ### Patient Table
 ```sql
--- Enable RLS
-ALTER TABLE "Patient" ENABLE ROW LEVEL SECURITY;
-
--- Allow mobile app (anon) to read patient data
-CREATE POLICY "Allow anon select Patient" ON "Patient"
-FOR SELECT TO anon USING (true);
-
--- Allow authenticated users full access
-CREATE POLICY "Allow authenticated full access" ON "Patient"
-FOR ALL TO authenticated USING (true);
+-- RLS Policy is now granular. Use docs/security/rls_policies.sql for full implementation.
 ```
 
 ### Memory Table
@@ -125,8 +117,7 @@ BEGIN
     
     RETURN json_build_object(
         'patientId', found_patient.id,
-        'name', found_patient.name,
-        'photoUrl', found_patient."photoUrl"
+        'name', found_patient.name
     );
 END;
 $$;

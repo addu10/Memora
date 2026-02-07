@@ -11,12 +11,13 @@ This document outlines the remaining work for the Memora platform, focusing on m
 - [x] Mobile App (React Native/Expo) - UI, navigation, profile
 - [x] Database Schema (Prisma + Supabase)
 - [x] Authentication (Caregiver login, Patient PIN)
-- [x] RLS Policies for data security
+- [x] RLS Policies for production data security
+- [x] Face Recognition V2 (DeepFace with VGG-Face) 
+- [x] AI Therapy Flow (Gemini Prompt Engine)
 
 ### 🔄 In Progress
-- [ ] Face Recognition Model
-- [ ] Data Collection Pipeline
-- [ ] Model Training Infrastructure
+- [ ] Contacting Biotech for clinical dataset (optional)
+- [ ] On-device optimization (Phase 7)
 
 ### ⏳ Pending
 - [ ] Production Deployment

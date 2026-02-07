@@ -54,7 +54,9 @@ export default function ReportsPage() {
             <div className="reports-grid">
                 {/* Sessions Report */}
                 <div className="report-card">
-                    <div className="report-icon">📅</div>
+                    <div className="stat-icon-3d">
+                        <img src="/icons/sessions.png" alt="" className="stat-icon-img" />
+                    </div>
                     <h3 className="report-title">Session History</h3>
                     <p className="report-desc">
                         Export all therapy sessions with duration, mood, and recall scores
@@ -65,21 +67,23 @@ export default function ReportsPage() {
                             onClick={() => handleExport('sessions', 'csv')}
                             disabled={loading === 'sessions-csv'}
                         >
-                            {loading === 'sessions-csv' ? 'Exporting...' : '📊 CSV'}
+                            {loading === 'sessions-csv' ? 'Exporting...' : 'Export CSV'}
                         </button>
                         <button
                             className="btn btn-secondary"
                             onClick={() => handleExport('sessions', 'json')}
                             disabled={loading === 'sessions-json'}
                         >
-                            {loading === 'sessions-json' ? 'Exporting...' : '{ } JSON'}
+                            {loading === 'sessions-json' ? 'Exporting...' : 'Export JSON'}
                         </button>
                     </div>
                 </div>
 
                 {/* Memories Report */}
                 <div className="report-card">
-                    <div className="report-icon">🖼️</div>
+                    <div className="stat-icon-3d">
+                        <img src="/icons/memories.png" alt="" className="stat-icon-img" />
+                    </div>
                     <h3 className="report-title">Memory Catalog</h3>
                     <p className="report-desc">
                         Export all memories with dates, events, locations, and people
@@ -90,21 +94,23 @@ export default function ReportsPage() {
                             onClick={() => handleExport('memories', 'csv')}
                             disabled={loading === 'memories-csv'}
                         >
-                            {loading === 'memories-csv' ? 'Exporting...' : '📊 CSV'}
+                            {loading === 'memories-csv' ? 'Exporting...' : 'Export CSV'}
                         </button>
                         <button
                             className="btn btn-secondary"
                             onClick={() => handleExport('memories', 'json')}
                             disabled={loading === 'memories-json'}
                         >
-                            {loading === 'memories-json' ? 'Exporting...' : '{ } JSON'}
+                            {loading === 'memories-json' ? 'Exporting...' : 'Export JSON'}
                         </button>
                     </div>
                 </div>
 
                 {/* Progress Report */}
                 <div className="report-card">
-                    <div className="report-icon">📈</div>
+                    <div className="stat-icon-3d">
+                        <img src="/icons/analytics.png" alt="" className="stat-icon-img" />
+                    </div>
                     <h3 className="report-title">Progress Summary</h3>
                     <p className="report-desc">
                         Comprehensive progress report with trends and statistics
@@ -115,14 +121,14 @@ export default function ReportsPage() {
                             onClick={() => handleExport('progress', 'csv')}
                             disabled={loading === 'progress-csv'}
                         >
-                            {loading === 'progress-csv' ? 'Exporting...' : '📊 CSV'}
+                            {loading === 'progress-csv' ? 'Exporting...' : 'Export CSV'}
                         </button>
                         <button
                             className="btn btn-secondary"
                             onClick={() => handleExport('progress', 'json')}
                             disabled={loading === 'progress-json'}
                         >
-                            {loading === 'progress-json' ? 'Exporting...' : '{ } JSON'}
+                            {loading === 'progress-json' ? 'Exporting...' : 'Export JSON'}
                         </button>
                     </div>
                 </div>
@@ -130,12 +136,15 @@ export default function ReportsPage() {
 
             {/* Info Card */}
             <div className="info-card">
-                <div className="info-icon">💡</div>
+                <div className="info-icon" style={{ background: '#fefce8', padding: '10px', borderRadius: '50%' }}>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#854d0e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                    </svg>
+                </div>
                 <div className="info-content">
-                    <h4 className="info-title">About Reports</h4>
+                    <h4 className="info-title">Secure Export</h4>
                     <p className="info-text">
-                        CSV files can be opened in Excel or Google Sheets for analysis.
-                        JSON files are useful for data import into other applications.
+                        Data is exported securely. CSV files are optimized for Excel, and JSON files for deep analysis.
                     </p>
                 </div>
             </div>

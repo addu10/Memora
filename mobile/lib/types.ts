@@ -27,6 +27,31 @@ export interface Memory {
     patientId: string;
     createdAt: string;
     updatedAt: string;
+    photos?: MemoryPhoto[];  // Per-photo details
+}
+
+// NEW: Per-photo labeling for AI question generation
+export interface MemoryPhoto {
+    id: string;
+    memoryId: string;
+    photoUrl: string;
+    photoIndex: number;
+    people: string[];  // People visible in THIS photo
+    description?: string;  // What's happening in photo
+    facialExpressions?: string;  // happy, sad, neutral
+    setting?: string;  // indoor, outdoor, temple, beach
+    activities?: string;  // cooking, praying, playing
+    generatedQuestions?: GeneratedQuestion[];  // AI cache
+    questionsGeneratedAt?: string;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+export interface GeneratedQuestion {
+    question: string;
+    hint: string;
+    difficulty: 'easy' | 'medium' | 'hard';
+    type: 'contextual' | 'relational' | 'emotional';
 }
 
 export interface FamilyMember {
@@ -56,12 +81,23 @@ export interface TherapySession {
 
 export interface SessionMemory {
     id: string;
-    recallScore: number;  // 1-5
+    recallScore: number;  // 1-5 overall score
     response?: string;
     promptsUsed?: string;  // JSON array
+    photoScores?: PhotoScore[];  // Per-photo scores
+    notes?: string;  // Caregiver observations
+    reviewedAt?: string;
     sessionId: string;
     memoryId: string;
     memory?: Memory;
+}
+
+// NEW: Per-photo score tracking
+export interface PhotoScore {
+    photoId: string;
+    score: number;  // 1-5
+    skipped: boolean;
+    questionAsked?: string;
 }
 
 // API Response types
@@ -78,3 +114,4 @@ export interface PatientStats {
     familyCount: number;
     averageRecall?: number;
 }
+

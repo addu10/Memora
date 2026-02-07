@@ -9,19 +9,32 @@ export default function MemoriesScreen() {
     const [memories, setMemories] = useState<Memory[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedEvent, setSelectedEvent] = useState('All');
+    const [sessionResults, setSessionResults] = useState<any[]>([]);
     const router = useRouter();
 
     const events = ['All', 'Happy', 'Family', 'Travel', 'Festival'];
 
     const loadMemories = async () => {
         setLoading(true);
-        const { data, error } = await api.getMemories();
-        if (data) {
-            setMemories(data);
-        } else {
-            console.error("Error loading memories:", error);
-        }
+        const { data: mems } = await api.getMemories();
+        const { data: results } = await api.getLatestSessionMemories();
+
+        if (mems) setMemories(mems);
+        if (results) setSessionResults(results);
+
         setLoading(false);
+    };
+
+    const getRecallStatus = (memoryId: string) => {
+        const result = sessionResults.find(r => r.memoryId === memoryId);
+        if (!result) return null;
+
+        const score = result.recallScore;
+        const date = new Date(result.reviewedAt).toLocaleDateString();
+
+        if (score >= 4) return { label: 'Mastered', color: '#10B981', date };
+        if (score >= 2) return { label: 'In Progress', color: '#F59E0B', date };
+        return { label: 'Need Practice', color: '#EF4444', date };
     };
 
     useFocusEffect(
@@ -106,14 +119,22 @@ export default function MemoriesScreen() {
                                         <Text style={styles.memoryIcon}>📷</Text>
                                     </View>
                                 )}
+                                {getRecallStatus(memory.id) && (
+                                    <View style={[styles.badge, { backgroundColor: getRecallStatus(memory.id)?.color }]}>
+                                        <Text style={styles.badgeText}>{getRecallStatus(memory.id)?.label}</Text>
+                                    </View>
+                                )}
                             </View>
                             <View style={styles.cardFooter}>
                                 <Text style={styles.memoryTitle} numberOfLines={1}>{memory.title}</Text>
-                                {memory.date && (
+                                <View style={styles.footerRow}>
                                     <Text style={styles.memoryDate}>
-                                        {new Date(memory.date).toLocaleDateString()}
+                                        {memory.date ? new Date(memory.date).toLocaleDateString() : 'No date'}
                                     </Text>
-                                )}
+                                    {getRecallStatus(memory.id) && (
+                                        <Text style={styles.lastReviewText}>Reviewed {getRecallStatus(memory.id)?.date}</Text>
+                                    )}
+                                </View>
                             </View>
                         </TouchableOpacity>
                     );
@@ -243,8 +264,37 @@ const styles = StyleSheet.create({
         marginBottom: 4,
     },
     memoryDate: {
-        fontSize: 14,
+        fontSize: 12,
         color: '#94A3B8',
+    },
+    footerRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginTop: 4,
+    },
+    lastReviewText: {
+        fontSize: 10,
+        color: '#94A3B8',
+        fontStyle: 'italic',
+    },
+    badge: {
+        position: 'absolute',
+        top: 10,
+        right: 10,
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 8,
+        shadowColor: '#000',
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 2,
+    },
+    badgeText: {
+        color: 'white',
+        fontSize: 10,
+        fontWeight: '800',
+        textTransform: 'uppercase',
     },
     infoCard: {
         backgroundColor: '#DBEAFE', // Blue-100

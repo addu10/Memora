@@ -1,6 +1,6 @@
 // Login API Route
 import { NextResponse } from 'next/server'
-import prisma from '@/lib/db'
+import { supabaseAdmin } from '@/lib/supabase'
 import { verifyPassword, setSession } from '@/lib/auth'
 
 export async function POST(request: Request) {
@@ -15,13 +15,15 @@ export async function POST(request: Request) {
         }
 
         // Find caregiver
-        const caregiver = await prisma.caregiver.findUnique({
-            where: { email: email.toLowerCase() }
-        })
+        const { data: caregiver, error } = await supabaseAdmin
+            .from('Caregiver')
+            .select('*')
+            .eq('email', email.toLowerCase())
+            .single()
 
-        if (!caregiver) {
+        if (error || !caregiver) {
             return NextResponse.json(
-                { error: 'Invalid email or password' },
+                { error: 'Email address not registered' },
                 { status: 401 }
             )
         }
@@ -31,7 +33,7 @@ export async function POST(request: Request) {
 
         if (!isValid) {
             return NextResponse.json(
-                { error: 'Invalid email or password' },
+                { error: 'Incorrect password' },
                 { status: 401 }
             )
         }

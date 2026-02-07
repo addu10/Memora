@@ -1,30 +1,43 @@
 // Patient Detail Page
 import Link from 'next/link'
 import { getSession } from '@/lib/auth'
-import prisma from '@/lib/db'
+import { supabaseAdmin } from '@/lib/supabase'
 import { redirect, notFound } from 'next/navigation'
 
 async function getPatient(patientId: string, userId: string) {
-    return prisma.patient.findFirst({
-        where: { id: patientId, caregiverId: userId },
-        include: {
-            memories: {
-                orderBy: { date: 'desc' },
-                take: 5
-            },
-            familyMembers: true,
-            sessions: {
-                orderBy: { date: 'desc' },
-                take: 5,
-                include: {
-                    memories: true
-                }
-            },
-            _count: {
-                select: { sessions: true, memories: true, familyMembers: true }
-            }
+    // Get patient
+    const { data: patient, error } = await supabaseAdmin
+        .from('Patient')
+        .select('*')
+        .eq('id', patientId)
+        .eq('caregiverId', userId)
+        .single()
+
+    if (error || !patient) return null
+
+    // Get related data in parallel
+    const [memoriesResult, familyResult, sessionsResult, countsResult] = await Promise.all([
+        supabaseAdmin.from('Memory').select('*').eq('patientId', patientId).order('date', { ascending: false }).limit(5),
+        supabaseAdmin.from('FamilyMember').select('*').eq('patientId', patientId),
+        supabaseAdmin.from('TherapySession').select('*').eq('patientId', patientId).order('date', { ascending: false }).limit(5),
+        Promise.all([
+            supabaseAdmin.from('TherapySession').select('id', { count: 'exact', head: true }).eq('patientId', patientId),
+            supabaseAdmin.from('Memory').select('id', { count: 'exact', head: true }).eq('patientId', patientId),
+            supabaseAdmin.from('FamilyMember').select('id', { count: 'exact', head: true }).eq('patientId', patientId)
+        ])
+    ])
+
+    return {
+        ...patient,
+        memories: memoriesResult.data || [],
+        familyMembers: familyResult.data || [],
+        sessions: sessionsResult.data || [],
+        _count: {
+            sessions: countsResult[0].count || 0,
+            memories: countsResult[1].count || 0,
+            familyMembers: countsResult[2].count || 0
         }
-    })
+    }
 }
 
 export default async function PatientDetailPage({
@@ -87,20 +100,28 @@ export default async function PatientDetailPage({
 
             {/* Quick Actions */}
             <div className="quick-actions">
-                <Link href="/dashboard/memories/new" className="action-card">
-                    <span className="action-icon">🖼️</span>
+                <Link href="/dashboard/memories/new" className="action-btn">
+                    <div className="action-icon-wrapper" style={{ background: '#f0fdf4' }}>
+                        <img src="/icons/memories.png" alt="" className="premium-icon" />
+                    </div>
                     <span className="action-text">Add Memory</span>
                 </Link>
-                <Link href="/dashboard/family/new" className="action-card">
-                    <span className="action-icon">👨‍👩‍👧</span>
+                <Link href="/dashboard/family/new" className="action-btn">
+                    <div className="action-icon-wrapper" style={{ background: 'var(--primary-50)' }}>
+                        <img src="/icons/family.png" alt="" className="premium-icon" />
+                    </div>
                     <span className="action-text">Add Family</span>
                 </Link>
-                <Link href="/dashboard/sessions" className="action-card">
-                    <span className="action-icon">📅</span>
+                <Link href="/dashboard/sessions" className="action-btn">
+                    <div className="action-icon-wrapper" style={{ background: 'var(--accent-50)' }}>
+                        <img src="/icons/sessions.png" alt="" className="premium-icon" />
+                    </div>
                     <span className="action-text">View Sessions</span>
                 </Link>
-                <Link href="/dashboard/progress" className="action-card">
-                    <span className="action-icon">📊</span>
+                <Link href="/dashboard/progress" className="action-btn">
+                    <div className="action-icon-wrapper" style={{ background: '#fefce8' }}>
+                        <img src="/icons/analytics.png" alt="" className="premium-icon" />
+                    </div>
                     <span className="action-text">View Progress</span>
                 </Link>
             </div>
@@ -114,10 +135,10 @@ export default async function PatientDetailPage({
                 <div className="section-body">
                     {patient.sessions.length > 0 ? (
                         <div className="mini-list">
-                            {patient.sessions.map(s => (
+                            {patient.sessions.map((s: any) => (
                                 <div key={s.id} className="mini-list-item">
                                     <span>{new Date(s.date).toLocaleDateString('en-IN')}</span>
-                                    <span>{s.mood === 'happy' ? '😊' : s.mood === 'sad' ? '😢' : '😐'}</span>
+                                    <span>{s.mood}</span>
                                     <span>{s.duration} min</span>
                                 </div>
                             ))}
@@ -137,7 +158,7 @@ export default async function PatientDetailPage({
                 <div className="section-body">
                     {patient.familyMembers.length > 0 ? (
                         <div className="family-chips">
-                            {patient.familyMembers.map(f => (
+                            {patient.familyMembers.map((f: any) => (
                                 <div key={f.id} className="family-chip">
                                     <span className="chip-avatar">{f.name.charAt(0)}</span>
                                     <span className="chip-name">{f.name}</span>

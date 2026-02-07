@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import prisma from '@/lib/db'
+import { supabaseAdmin } from '@/lib/supabase'
 
 export async function POST(request: Request) {
     try {
@@ -14,22 +14,15 @@ export async function POST(request: Request) {
         }
 
         // Case-insensitive name search, exact PIN match
-        const patient = await prisma.patient.findFirst({
-            where: {
-                name: {
-                    equals: name,
-                    mode: 'insensitive'
-                },
-                pin: pin
-            },
-            select: {
-                id: true,
-                name: true,
-                photoUrl: true
-            }
-        })
+        const { data: patient, error } = await supabaseAdmin
+            .from('Patient')
+            .select('id, name, photoUrl')
+            .ilike('name', name)
+            .eq('pin', pin)
+            .limit(1)
+            .single()
 
-        if (!patient) {
+        if (error || !patient) {
             return NextResponse.json(
                 { error: 'Invalid name or PIN' },
                 { status: 401 }

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/auth'
-import prisma from '@/lib/db'
+import { supabaseAdmin, now } from '@/lib/supabase'
 import { hash, compare } from 'bcryptjs'
 
 export async function PUT(request: Request) {
@@ -24,11 +24,13 @@ export async function PUT(request: Request) {
             )
         }
 
-        const caregiver = await prisma.caregiver.findUnique({
-            where: { id: session.userId }
-        })
+        const { data: caregiver, error: findError } = await supabaseAdmin
+            .from('Caregiver')
+            .select('password')
+            .eq('id', session.userId)
+            .single()
 
-        if (!caregiver) {
+        if (findError || !caregiver) {
             return NextResponse.json({ error: 'Caregiver not found' }, { status: 404 })
         }
 
@@ -39,10 +41,12 @@ export async function PUT(request: Request) {
 
         const hashedPassword = await hash(newPassword, 12)
 
-        await prisma.caregiver.update({
-            where: { id: session.userId },
-            data: { password: hashedPassword }
-        })
+        const { error: updateError } = await supabaseAdmin
+            .from('Caregiver')
+            .update({ password: hashedPassword, updatedAt: now() })
+            .eq('id', session.userId)
+
+        if (updateError) throw updateError
 
         return NextResponse.json({ success: true })
     } catch (error) {

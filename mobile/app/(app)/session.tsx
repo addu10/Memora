@@ -1,207 +1,333 @@
-// Therapy Session Screen
-import { useState } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { useState, useEffect } from 'react';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Alert, Image, ActivityIndicator } from 'react-native';
+import { supabase } from '../../lib/supabase';
+import { generateTherapyQuestions, GeneratedQuestion } from '../../lib/gemini';
+
+type FlowStep = 'START' | 'SELECT_MEMORY' | 'THERAPY' | 'FEEDBACK' | 'SUMMARY';
 
 export default function SessionScreen() {
-    const [sessionStarted, setSessionStarted] = useState(false);
-    const [currentStep, setCurrentStep] = useState(0);
-    const [feedback, setFeedback] = useState<{ recallScore: number; mood: string } | null>(null);
+    // Flow State
+    const [step, setStep] = useState<FlowStep>('START');
+    const [loading, setLoading] = useState(false);
 
-    // Demo memory for session
-    const sessionMemory = {
-        id: 1,
-        title: 'Onam 2023',
-        date: '2023-08-29',
-        event: 'Onam',
-        location: 'Home',
-        people: ['Amma', 'Achan', 'Priya'],
-    };
+    // Data State
+    const [memories, setMemories] = useState<any[]>([]);
+    const [selectedMemory, setSelectedMemory] = useState<any>(null);
+    const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+    const [questions, setQuestions] = useState<GeneratedQuestion | null>(null);
+    const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
 
-    // AI-generated prompts (demo)
-    const prompts = [
-        "Who prepared the sadhya for this Onam celebration?",
-        "What was your favorite dish at the feast?",
-        "Who made the pookalam that year?",
-        "Which family members visited for Onam?",
-    ];
+    // Results State
+    const [photoResults, setPhotoResults] = useState<any[]>([]);
+    const [sessionMood, setSessionMood] = useState('happy');
 
-    const startSession = () => {
-        setSessionStarted(true);
-        setCurrentStep(0);
-    };
+    // Load available memories for the patient
+    useEffect(() => {
+        if (step === 'SELECT_MEMORY') {
+            loadMemories();
+        }
+    }, [step]);
 
-    const nextPrompt = () => {
-        if (currentStep < prompts.length - 1) {
-            setCurrentStep(currentStep + 1);
-        } else {
-            setSessionStarted(false);
-            setFeedback({ recallScore: 0, mood: '' });
+    const loadMemories = async () => {
+        setLoading(true);
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
+
+            // Get the first patient for this caregiver (demo limitation)
+            const { data: patient } = await supabase
+                .from('Patient')
+                .select('id')
+                .eq('caregiverId', user.id)
+                .limit(1)
+                .single();
+
+            if (patient) {
+                const { data: memoriesData, error } = await supabase
+                    .from('Memory')
+                    .select(`
+                        *,
+                        MemoryPhoto (*)
+                    `)
+                    .eq('patientId', patient.id)
+                    .order('date', { ascending: false });
+
+                if (!error) setMemories(memoriesData || []);
+            }
+        } catch (err) {
+            console.error('Failed to load memories:', err);
+        } finally {
+            setLoading(false);
         }
     };
 
-    const submitFeedback = (recallScore: number, mood: string) => {
-        if (recallScore === 0 || !mood) {
-            Alert.alert("Please complete feedback", "Select a rating and a mood.");
+    const handleSelectMemory = async (memory: any) => {
+        if (!memory.MemoryPhoto || memory.MemoryPhoto.length === 0) {
+            Alert.alert("No Photos", "This memory has no photos for therapy.");
             return;
         }
-        setFeedback(null);
-        Alert.alert("Session Saved", "Great job! Your progress has been recorded.");
-        // In production, this would save to the database
+        setSelectedMemory(memory);
+        startTherapyForPhoto(memory, 0);
     };
 
-    if (feedback !== null) {
-        return (
-            <ScrollView style={styles.container} contentContainerStyle={styles.centerContent}>
-                <View style={styles.feedbackCard}>
-                    <Text style={styles.feedbackIcon}>🎉</Text>
-                    <Text style={styles.feedbackTitle}>Session Complete!</Text>
-                    <Text style={styles.feedbackSubtitle}>How well did they remember?</Text>
+    const startTherapyForPhoto = async (memory: any, photoIdx: number) => {
+        setLoading(true);
+        setStep('THERAPY');
+        setCurrentPhotoIndex(photoIdx);
+        setCurrentQuestionIndex(0);
 
-                    <Text style={styles.inputLabel}>Memory Recall</Text>
-                    <View style={styles.scoreButtons}>
-                        {[1, 2, 3, 4, 5].map(score => (
-                            <TouchableOpacity
-                                key={score}
-                                style={[styles.scoreButton, feedback.recallScore === score && styles.scoreButtonActive]}
-                                onPress={() => setFeedback({ ...feedback, recallScore: score })}
-                            >
-                                <Text style={[styles.scoreText, feedback.recallScore === score && styles.scoreTextActive]}>
-                                    {score}
-                                </Text>
+        const photo = memory.MemoryPhoto[photoIdx];
+
+        const photoData = {
+            title: memory.title,
+            event: memory.event,
+            location: memory.location,
+            people: photo.people || [],
+            description: photo.description || '',
+            setting: photo.setting || '',
+            activities: photo.activities || '',
+            facialExpressions: photo.facialExpressions || ''
+        };
+
+        const result = await generateTherapyQuestions(photoData);
+        if (result) {
+            setQuestions(result);
+        } else {
+            setQuestions({
+                questions: ["What can you tell me about this photo?", "Who is in this picture with you?"],
+                hints: ["Look at the background", "They seem to be smiling"],
+                difficulty: ["easy", "medium"]
+            });
+        }
+        setLoading(false);
+    };
+
+    const handleNextQuestion = () => {
+        if (!questions) return;
+        if (currentQuestionIndex < questions.questions.length - 1) {
+            setCurrentQuestionIndex(currentQuestionIndex + 1);
+        } else {
+            setStep('FEEDBACK');
+        }
+    };
+
+    const handlePhotoScore = (score: number) => {
+        const result = {
+            photoId: selectedMemory.MemoryPhoto[currentPhotoIndex].id,
+            score
+        };
+        const newResults = [...photoResults, result];
+        setPhotoResults(newResults);
+
+        if (currentPhotoIndex < selectedMemory.MemoryPhoto.length - 1) {
+            startTherapyForPhoto(selectedMemory, currentPhotoIndex + 1);
+        } else {
+            setStep('SUMMARY');
+        }
+    };
+
+    const saveSession = async () => {
+        setLoading(true);
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+
+            const { data: sessionData, error: sessionErr } = await supabase
+                .from('TherapySession')
+                .insert({
+                    patientId: selectedMemory.patientId,
+                    caregiverId: user?.id,
+                    date: new Date().toISOString(),
+                    duration: 5,
+                    mood: sessionMood,
+                    notes: `Completed therapy for memory: ${selectedMemory.title}`
+                })
+                .select()
+                .single();
+
+            if (sessionErr) throw sessionErr;
+
+            const avgScore = photoResults.reduce((acc, r) => acc + r.score, 0) / photoResults.length;
+
+            const { error: memErr } = await supabase
+                .from('SessionMemory')
+                .insert({
+                    sessionId: sessionData.id,
+                    memoryId: selectedMemory.id,
+                    recallScore: Math.round(avgScore),
+                    photoScores: photoResults
+                });
+
+            if (memErr) throw memErr;
+
+            Alert.alert("Success", "Clinic therapy data saved!");
+            resetSession();
+        } catch (err) {
+            console.error('Save failed:', err);
+            Alert.alert("Error", "Failed to save session results.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const resetSession = () => {
+        setStep('START');
+        setSelectedMemory(null);
+        setPhotoResults([]);
+        setCurrentPhotoIndex(0);
+        setQuestions(null);
+    };
+
+    // UI Renders
+    if (step === 'START') {
+        return (
+            <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+                <View style={styles.header}>
+                    <Text style={styles.title}>Session Therapy</Text>
+                    <Text style={styles.subtitle}>Digital Reminiscence Aid</Text>
+                </View>
+                <View style={styles.startCard}>
+                    <View style={styles.iconCircle}><Text style={styles.startIcon}>🧠</Text></View>
+                    <Text style={styles.startTitle}>Ready for a session?</Text>
+                    <Text style={styles.startSubtitle}>Pick a memory and let AI guide the conversation.</Text>
+                    <TouchableOpacity style={styles.startButton} onPress={() => setStep('SELECT_MEMORY')}>
+                        <Text style={styles.startButtonText}>Select Memory</Text>
+                    </TouchableOpacity>
+                </View>
+            </ScrollView>
+        );
+    }
+
+    if (step === 'SELECT_MEMORY') {
+        return (
+            <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+                <Text style={styles.sectionTitle}>Choose a Memory</Text>
+                {loading ? <ActivityIndicator size="large" color="#3B82F6" /> : (
+                    <View style={styles.memoryGrid}>
+                        {memories.map(m => (
+                            <TouchableOpacity key={m.id} style={styles.memoryCardSmall} onPress={() => handleSelectMemory(m)}>
+                                <Image source={{ uri: m.photoUrls?.[0] }} style={styles.memoryThumb} />
+                                <View style={styles.memoryInfo}>
+                                    <Text style={styles.memoryCardTitle}>{m.title}</Text>
+                                    <Text style={styles.memoryCardSub}>{m.MemoryPhoto?.length || 0} Photos</Text>
+                                </View>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                )}
+                <TouchableOpacity style={styles.backBtn} onPress={() => setStep('START')}><Text style={styles.backBtnText}>← Back</Text></TouchableOpacity>
+            </ScrollView>
+        );
+    }
+
+    if (step === 'THERAPY') {
+        const currentPhoto = selectedMemory.MemoryPhoto[currentPhotoIndex];
+        return (
+            <View style={styles.container}>
+                <ScrollView contentContainerStyle={styles.content}>
+                    <View style={styles.progressContainer}>
+                        <View style={styles.progressBar}>
+                            <View style={[styles.progressFill, { width: `${((currentPhotoIndex + 1) / selectedMemory.MemoryPhoto.length) * 100}%` }]} />
+                        </View>
+                        <Text style={styles.progressText}>Photo {currentPhotoIndex + 1} of {selectedMemory.MemoryPhoto.length}</Text>
+                    </View>
+
+                    <View style={styles.mainPhotoCard}>
+                        {currentPhoto.photoUrl ? (
+                            <Image source={{ uri: currentPhoto.photoUrl }} style={styles.mainPhoto} />
+                        ) : (
+                            <View style={styles.mainPhotoPlaceholder}><Text>🖼️</Text></View>
+                        )}
+                        <View style={styles.photoLabelsRow}>
+                            {currentPhoto.people && currentPhoto.people.length > 0 && (
+                                <View style={styles.tag}><Text style={styles.tagText}>👥 {currentPhoto.people.join(', ')}</Text></View>
+                            )}
+                            {currentPhoto.setting && (
+                                <View style={styles.tag}><Text style={styles.tagText}>📍 {currentPhoto.setting}</Text></View>
+                            )}
+                        </View>
+                    </View>
+
+                    {loading ? (
+                        <View style={styles.loadingBubble}>
+                            <ActivityIndicator color="white" />
+                            <Text style={styles.loadingText}>Gemini is thinking...</Text>
+                        </View>
+                    ) : (
+                        <View style={styles.promptBubble}>
+                            <Text style={styles.promptLabel}>AI QUESTION</Text>
+                            <Text style={styles.promptText}>{questions?.questions[currentQuestionIndex]}</Text>
+                            {questions?.hints[currentQuestionIndex] && (
+                                <View style={styles.hintBox}>
+                                    <Text style={styles.hintText}>💡 {questions.hints[currentQuestionIndex]}</Text>
+                                </View>
+                            )}
+                        </View>
+                    )}
+                </ScrollView>
+                <View style={styles.stickyActions}>
+                    <TouchableOpacity style={styles.nextButton} onPress={handleNextQuestion}>
+                        <Text style={styles.nextButtonText}>
+                            {currentQuestionIndex < (questions?.questions.length || 0) - 1 ? 'Next Question' : 'Done with Photo'}
+                        </Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+        );
+    }
+
+    if (step === 'FEEDBACK') {
+        return (
+            <View style={[styles.container, styles.center]}>
+                <View style={styles.feedbackCard}>
+                    <Text style={styles.feedbackIcon}>⭐</Text>
+                    <Text style={styles.feedbackTitle}>Photo Recall</Text>
+                    <Text style={styles.feedbackSubtitle}>How well did they remember this specific photo?</Text>
+                    <View style={styles.scoreRow}>
+                        {[1, 2, 3, 4, 5].map(s => (
+                            <TouchableOpacity key={s} style={styles.scoreCircle} onPress={() => handlePhotoScore(s)}>
+                                <Text style={styles.scoreVal}>{s}</Text>
                             </TouchableOpacity>
                         ))}
                     </View>
                     <View style={styles.scoreLabels}>
                         <Text style={styles.scoreLabelText}>Forgot</Text>
-                        <Text style={styles.scoreLabelText}>Remembered Well</Text>
+                        <Text style={styles.scoreLabelText}>Full Recall</Text>
                     </View>
+                </View>
+            </View>
+        );
+    }
 
-                    <Text style={styles.inputLabel}>Their Mood</Text>
+    if (step === 'SUMMARY') {
+        return (
+            <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+                <View style={styles.feedbackCard}>
+                    <Text style={styles.feedbackIcon}>🎉</Text>
+                    <Text style={styles.feedbackTitle}>Session Complete!</Text>
+                    <Text style={styles.feedbackSubtitle}>Final thoughts on their emotional state during the session.</Text>
+
+                    <Text style={styles.inputLabel}>Overall Mood</Text>
                     <View style={styles.moodButtons}>
-                        {[
-                            { emoji: '😊', value: 'happy', label: 'Happy' },
-                            { emoji: '😐', value: 'neutral', label: 'Neutral' },
-                            { emoji: '😢', value: 'sad', label: 'Sad' },
-                            { emoji: '😕', value: 'confused', label: 'Confused' },
-                        ].map(mood => (
+                        {['happy', 'neutral', 'sad', 'confused'].map(m => (
                             <TouchableOpacity
-                                key={mood.value}
-                                style={[styles.moodButton, feedback.mood === mood.value && styles.moodButtonActive]}
-                                onPress={() => setFeedback({ ...feedback, mood: mood.value })}
+                                key={m}
+                                style={[styles.moodButton, sessionMood === m && styles.moodButtonActive]}
+                                onPress={() => setSessionMood(m)}
                             >
-                                <Text style={styles.moodEmoji}>{mood.emoji}</Text>
-                                <Text style={styles.moodLabel}>{mood.label}</Text>
+                                <Text style={styles.moodEmoji}>{m === 'happy' ? '😊' : m === 'neutral' ? '😐' : m === 'sad' ? '😢' : '😕'}</Text>
+                                <Text style={styles.moodLabelText}>{m}</Text>
                             </TouchableOpacity>
                         ))}
                     </View>
 
-                    <TouchableOpacity
-                        style={styles.submitButton}
-                        onPress={() => submitFeedback(feedback.recallScore, feedback.mood)}
-                    >
-                        <Text style={styles.submitButtonText}>Save Progress</Text>
+                    <TouchableOpacity style={styles.submitButton} onPress={saveSession} disabled={loading}>
+                        {loading ? <ActivityIndicator color="white" /> : <Text style={styles.submitButtonText}>Save Session Results</Text>}
                     </TouchableOpacity>
+                    <TouchableOpacity style={styles.cancelLink} onPress={resetSession}><Text style={styles.cancelLinkText}>Cancel</Text></TouchableOpacity>
                 </View>
             </ScrollView>
         );
     }
-
-    if (!sessionStarted) {
-        return (
-            <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-                <View style={styles.header}>
-                    <Text style={styles.title}>Therapy Session</Text>
-                    <Text style={styles.subtitle}>Daily memory exercises</Text>
-                </View>
-
-                <View style={styles.startCard}>
-                    <View style={styles.iconCircle}>
-                        <Text style={styles.startIcon}>💬</Text>
-                    </View>
-                    <Text style={styles.startTitle}>Start New Session</Text>
-                    <Text style={styles.startSubtitle}>
-                        We have selected 4 photos for today.
-                        Let's review them together.
-                    </Text>
-
-                    <View style={styles.divider} />
-
-                    <View style={styles.infoRow}>
-                        <Text style={styles.infoIcon}>⏱️</Text>
-                        <Text style={styles.infoText}>~5 Minutes</Text>
-                    </View>
-                    <View style={styles.infoRow}>
-                        <Text style={styles.infoIcon}>🧠</Text>
-                        <Text style={styles.infoText}>Improves Recall</Text>
-                    </View>
-
-                    <TouchableOpacity style={styles.startButton} onPress={startSession}>
-                        <Text style={styles.startButtonText}>Begin Session</Text>
-                    </TouchableOpacity>
-                </View>
-
-                <View style={styles.tipCard}>
-                    <Text style={styles.tipIcon}>💡</Text>
-                    <View>
-                        <Text style={styles.tipTitle}>Caregiver Tip</Text>
-                        <Text style={styles.tipText}>
-                            Be patient. If they struggle, offer a small hint rather than the answer.
-                        </Text>
-                    </View>
-                </View>
-            </ScrollView>
-        );
-    }
-
-    return (
-        <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-            {/* Progress */}
-            <View style={styles.progressContainer}>
-                <View style={styles.progressBar}>
-                    <View style={[styles.progressFill, { width: `${((currentStep + 1) / prompts.length) * 100}%` }]} />
-                </View>
-                <Text style={styles.progressText}>
-                    Question {currentStep + 1} of {prompts.length}
-                </Text>
-            </View>
-
-            {/* Memory Card */}
-            <View style={styles.memoryCard}>
-                <View style={styles.memoryImagePlaceholder}>
-                    <Text style={styles.memoryPlaceholderIcon}>🖼️</Text>
-                </View>
-                <View style={styles.memoryDetails}>
-                    <Text style={styles.memoryTitle}>{sessionMemory.title}</Text>
-                    <Text style={styles.memoryMeta}>
-                        {sessionMemory.event} • {sessionMemory.location}
-                    </Text>
-                    <View style={styles.peopleTag}>
-                        <Text style={styles.peopleText}>👥 {sessionMemory.people.join(', ')}</Text>
-                    </View>
-                </View>
-            </View>
-
-            {/* AI Prompt */}
-            <View style={styles.promptContainer}>
-                <View style={styles.promptBubble}>
-                    <Text style={styles.promptLabel}>🤖 AI Question</Text>
-                    <Text style={styles.promptText}>{prompts[currentStep]}</Text>
-                </View>
-            </View>
-
-            {/* Actions */}
-            <View style={styles.actions}>
-                <TouchableOpacity style={styles.skipButton} onPress={nextPrompt}>
-                    <Text style={styles.skipButtonText}>Skip</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.nextButton} onPress={nextPrompt}>
-                    <Text style={styles.nextButtonText}>
-                        {currentStep < prompts.length - 1 ? 'Next Question' : 'Finish Session'}
-                    </Text>
-                </TouchableOpacity>
-            </View>
-        </ScrollView>
-    );
 }
 
 const styles = StyleSheet.create({
@@ -213,13 +339,12 @@ const styles = StyleSheet.create({
         padding: 24,
         paddingBottom: 48,
     },
-    centerContent: {
-        flexGrow: 1,
+    center: {
         justifyContent: 'center',
-        padding: 24,
+        alignItems: 'center',
     },
     header: {
-        marginTop: 20,
+        marginTop: 40,
         marginBottom: 24,
     },
     title: {
@@ -227,11 +352,17 @@ const styles = StyleSheet.create({
         fontWeight: '800',
         color: '#1E293B',
         marginBottom: 4,
-        letterSpacing: -0.5,
     },
     subtitle: {
         fontSize: 18,
         color: '#64748B',
+    },
+    sectionTitle: {
+        fontSize: 22,
+        fontWeight: '700',
+        color: '#1E293B',
+        marginTop: 40,
+        marginBottom: 20,
     },
     startCard: {
         backgroundColor: '#FFFFFF',
@@ -243,13 +374,13 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.05,
         shadowRadius: 12,
         elevation: 4,
-        marginBottom: 24,
+        marginTop: 20,
     },
     iconCircle: {
         width: 80,
         height: 80,
         borderRadius: 40,
-        backgroundColor: '#eff6ff', // Blue-50
+        backgroundColor: '#EFF6FF',
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 20,
@@ -260,9 +391,8 @@ const styles = StyleSheet.create({
     startTitle: {
         fontSize: 24,
         fontWeight: '800',
-        color: '#1E3a8a',
+        color: '#1E3A8A',
         marginBottom: 12,
-        textAlign: 'center',
     },
     startSubtitle: {
         fontSize: 16,
@@ -271,75 +401,60 @@ const styles = StyleSheet.create({
         lineHeight: 24,
         marginBottom: 24,
     },
-    divider: {
-        height: 1,
-        backgroundColor: '#E2E8F0',
-        width: '100%',
-        marginBottom: 24,
-    },
-    infoRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
-        marginBottom: 12,
-        width: '100%',
-        paddingHorizontal: 12,
-    },
-    infoIcon: {
-        fontSize: 20,
-    },
-    infoText: {
-        fontSize: 16,
-        color: '#475569',
-        fontWeight: '500',
-    },
     startButton: {
         backgroundColor: '#3B82F6',
         paddingVertical: 18,
         paddingHorizontal: 32,
         borderRadius: 16,
         width: '100%',
-        marginTop: 12,
         alignItems: 'center',
-        shadowColor: '#3B82F6',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
     },
     startButtonText: {
         color: '#FFFFFF',
         fontSize: 18,
         fontWeight: '700',
     },
-    tipCard: {
+    memoryGrid: {
         flexDirection: 'row',
+        flexWrap: 'wrap',
         gap: 16,
-        backgroundColor: '#FFFBEB', // Amber-50
-        padding: 24,
-        borderRadius: 20,
+    },
+    memoryCardSmall: {
+        width: '47%',
+        backgroundColor: 'white',
+        borderRadius: 16,
+        overflow: 'hidden',
         borderWidth: 1,
-        borderColor: '#FEF3C7',
+        borderColor: '#E2E8F0',
     },
-    tipIcon: {
-        fontSize: 24,
+    memoryThumb: {
+        width: '100%',
+        height: 120,
+        backgroundColor: '#F1F5F9',
     },
-    tipTitle: {
-        fontSize: 16,
+    memoryInfo: {
+        padding: 12,
+    },
+    memoryCardTitle: {
+        fontSize: 14,
         fontWeight: '700',
-        color: '#92400E',
-        marginBottom: 4,
+        color: '#1E293B',
     },
-    tipText: {
-        fontSize: 15,
-        color: '#B45309',
-        lineHeight: 22,
-        flex: 1,
+    memoryCardSub: {
+        fontSize: 12,
+        color: '#64748B',
+        marginTop: 4,
     },
-
-    // In-Session Styles
+    backBtn: {
+        marginTop: 30,
+        padding: 12,
+    },
+    backBtnText: {
+        color: '#64748B',
+        fontWeight: '600',
+    },
     progressContainer: {
-        marginBottom: 24,
-        marginTop: 12,
+        marginBottom: 20,
     },
     progressBar: {
         height: 8,
@@ -351,207 +466,184 @@ const styles = StyleSheet.create({
     progressFill: {
         height: '100%',
         backgroundColor: '#3B82F6',
-        borderRadius: 4,
     },
     progressText: {
-        fontSize: 14,
+        fontSize: 12,
         color: '#64748B',
         fontWeight: '600',
         textAlign: 'right',
     },
-    memoryCard: {
-        backgroundColor: '#FFFFFF',
+    mainPhotoCard: {
+        backgroundColor: 'white',
         borderRadius: 24,
-        padding: 16,
+        padding: 12,
         marginBottom: 24,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 8,
-        elevation: 2,
+        shadowOpacity: 0.1,
+        shadowRadius: 10,
+        elevation: 5,
     },
-    memoryImagePlaceholder: {
+    mainPhoto: {
         width: '100%',
-        height: 200,
+        height: 300,
+        borderRadius: 16,
+    },
+    mainPhotoPlaceholder: {
+        width: '100%',
+        height: 300,
         backgroundColor: '#F1F5F9',
         borderRadius: 16,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 16,
     },
-    memoryPlaceholderIcon: {
-        fontSize: 64,
-        opacity: 0.5,
+    photoLabelsRow: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 8,
+        marginTop: 12,
     },
-    memoryDetails: {
-        paddingHorizontal: 8,
-    },
-    memoryTitle: {
-        fontSize: 24,
-        fontWeight: '800',
-        color: '#1E293B',
-        marginBottom: 8,
-    },
-    memoryMeta: {
-        fontSize: 16,
-        color: '#64748B',
-        marginBottom: 12,
-        fontWeight: '500',
-    },
-    peopleTag: {
+    tag: {
         backgroundColor: '#EFF6FF',
-        alignSelf: 'flex-start',
-        paddingVertical: 6,
-        paddingHorizontal: 12,
+        paddingHorizontal: 10,
+        paddingVertical: 4,
         borderRadius: 8,
     },
-    peopleText: {
-        fontSize: 14,
+    tagText: {
+        fontSize: 12,
         color: '#1E40AF',
         fontWeight: '600',
     },
-    promptContainer: {
-        marginBottom: 32,
+    loadingBubble: {
+        backgroundColor: '#1E3A8A',
+        borderRadius: 20,
+        padding: 24,
+        alignItems: 'center',
+        flexDirection: 'row',
+        gap: 12,
+    },
+    loadingText: {
+        color: 'white',
+        fontWeight: '600',
     },
     promptBubble: {
-        backgroundColor: '#1E3A8A', // Dark Blue
+        backgroundColor: '#1E3A8A',
         borderRadius: 24,
         padding: 24,
         borderBottomLeftRadius: 4,
     },
     promptLabel: {
-        fontSize: 12,
+        fontSize: 10,
         color: '#93C5FD',
-        textTransform: 'uppercase',
-        fontWeight: '700',
-        marginBottom: 8,
+        fontWeight: '800',
         letterSpacing: 1,
+        marginBottom: 8,
     },
     promptText: {
         fontSize: 22,
+        color: 'white',
         fontWeight: '600',
-        color: '#FFFFFF',
         lineHeight: 30,
     },
-    actions: {
-        flexDirection: 'row',
-        gap: 16,
+    hintBox: {
+        marginTop: 16,
+        paddingTop: 16,
+        borderTopWidth: 1,
+        borderTopColor: 'rgba(255,255,255,0.1)',
     },
-    skipButton: {
-        flex: 1,
-        backgroundColor: '#FFFFFF',
-        paddingVertical: 18,
-        borderRadius: 16,
-        alignItems: 'center',
-        borderWidth: 2,
-        borderColor: '#E2E8F0',
+    hintText: {
+        color: '#93C5FD',
+        fontSize: 15,
+        fontStyle: 'italic',
     },
-    skipButtonText: {
-        color: '#64748B',
-        fontWeight: '700',
-        fontSize: 16,
+    stickyActions: {
+        padding: 24,
+        backgroundColor: '#F8FAFC',
+        borderTopWidth: 1,
+        borderTopColor: '#E2E8F0',
     },
     nextButton: {
-        flex: 2,
         backgroundColor: '#3B82F6',
         paddingVertical: 18,
         borderRadius: 16,
         alignItems: 'center',
-        shadowColor: '#3B82F6',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
     },
     nextButtonText: {
-        color: '#FFFFFF',
+        color: 'white',
+        fontSize: 18,
         fontWeight: '700',
-        fontSize: 16,
     },
-
-    // Feedback Styles
     feedbackCard: {
-        backgroundColor: '#FFFFFF',
+        backgroundColor: 'white',
         borderRadius: 32,
         padding: 32,
+        width: '90%',
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 10 },
         shadowOpacity: 0.1,
         shadowRadius: 20,
         elevation: 10,
     },
     feedbackIcon: {
-        fontSize: 64,
+        fontSize: 48,
         textAlign: 'center',
-        marginBottom: 20,
+        marginBottom: 16,
     },
     feedbackTitle: {
-        fontSize: 28,
+        fontSize: 24,
         fontWeight: '800',
-        color: '#1E293B',
         textAlign: 'center',
-        marginBottom: 8,
+        color: '#1E293B',
     },
     feedbackSubtitle: {
-        fontSize: 16,
+        fontSize: 15,
         color: '#64748B',
         textAlign: 'center',
+        marginTop: 8,
         marginBottom: 32,
+    },
+    scoreRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: 12,
+    },
+    scoreCircle: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        backgroundColor: '#F1F5F9',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+    },
+    scoreVal: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: '#1E293B',
+    },
+    scoreLabels: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+    },
+    scoreLabelText: {
+        fontSize: 12,
+        color: '#94A3B8',
     },
     inputLabel: {
         fontSize: 16,
         fontWeight: '700',
         color: '#1E293B',
-        marginBottom: 12,
-        marginTop: 8,
-    },
-    scoreButtons: {
-        flexDirection: 'row',
-        gap: 12,
-        marginBottom: 8,
-    },
-    scoreButton: {
-        flex: 1,
-        aspectRatio: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderRadius: 12,
-        backgroundColor: '#F1F5F9',
-        borderWidth: 2,
-        borderColor: 'transparent',
-    },
-    scoreButtonActive: {
-        backgroundColor: '#EFF6FF',
-        borderColor: '#3B82F6',
-    },
-    scoreText: {
-        fontSize: 20,
-        fontWeight: '700',
-        color: '#64748B',
-    },
-    scoreTextActive: {
-        color: '#3B82F6',
-    },
-    scoreLabels: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: 32,
-        paddingHorizontal: 4,
-    },
-    scoreLabelText: {
-        fontSize: 12,
-        color: '#94A3B8',
-        fontWeight: '500',
+        marginBottom: 16,
     },
     moodButtons: {
         flexDirection: 'row',
-        gap: 8,
+        gap: 12,
         marginBottom: 32,
     },
     moodButton: {
         flex: 1,
-        paddingVertical: 12,
-        borderRadius: 16,
         backgroundColor: '#F1F5F9',
+        paddingVertical: 16,
+        borderRadius: 16,
         alignItems: 'center',
         borderWidth: 2,
         borderColor: 'transparent',
@@ -561,27 +653,32 @@ const styles = StyleSheet.create({
         borderColor: '#3B82F6',
     },
     moodEmoji: {
-        fontSize: 28,
+        fontSize: 24,
         marginBottom: 4,
     },
-    moodLabel: {
-        fontSize: 11,
+    moodLabelText: {
+        fontSize: 10,
         color: '#64748B',
-        fontWeight: '600',
+        fontWeight: '700',
+        textTransform: 'uppercase',
     },
     submitButton: {
         backgroundColor: '#10B981',
-        paddingVertical: 20,
+        paddingVertical: 18,
         borderRadius: 16,
         alignItems: 'center',
-        shadowColor: '#10B981',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
     },
     submitButtonText: {
-        color: '#FFFFFF',
+        color: 'white',
         fontSize: 18,
         fontWeight: '700',
     },
+    cancelLink: {
+        marginTop: 20,
+        alignItems: 'center',
+    },
+    cancelLinkText: {
+        color: '#64748B',
+        fontWeight: '600',
+    }
 });

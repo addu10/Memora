@@ -2,15 +2,8 @@
 import Link from 'next/link'
 import { cookies } from 'next/headers'
 import { getSession } from '@/lib/auth'
-import prisma from '@/lib/db'
+import { supabaseAdmin } from '@/lib/supabase'
 import { redirect } from 'next/navigation'
-
-async function getFamilyMembers(patientId: string) {
-    return prisma.familyMember.findMany({
-        where: { patientId },
-        orderBy: { name: 'asc' }
-    })
-}
 
 export default async function FamilyPage() {
     const session = await getSession()
@@ -21,19 +14,29 @@ export default async function FamilyPage() {
 
     let patient = null
     if (patientId) {
-        patient = await prisma.patient.findFirst({
-            where: { id: patientId, caregiverId: session.userId }
-        })
+        const { data } = await supabaseAdmin
+            .from('Patient')
+            .select('*')
+            .eq('id', patientId)
+            .eq('caregiverId', session.userId)
+            .single()
+        patient = data
     }
 
     if (!patient) {
-        const firstPatient = await prisma.patient.findFirst({
-            where: { caregiverId: session.userId }
-        })
+        const { data: firstPatient } = await supabaseAdmin
+            .from('Patient')
+            .select('*')
+            .eq('caregiverId', session.userId)
+            .limit(1)
+            .single()
+
         if (!firstPatient) {
             return (
                 <div className="empty-state">
-                    <div className="empty-icon">👥</div>
+                    <div className="empty-icon-3d">
+                        <img src="/icons/patients.png" alt="" className="empty-img" />
+                    </div>
                     <h2 className="empty-title">No Patient Added Yet</h2>
                     <p className="empty-text">Add a patient first to manage family members.</p>
                     <Link href="/dashboard/patients/new" className="btn btn-primary">Add Patient</Link>
@@ -43,7 +46,14 @@ export default async function FamilyPage() {
         patient = firstPatient
     }
 
-    const familyMembers = await getFamilyMembers(patient.id)
+    // Get family members
+    const { data: familyMembers } = await supabaseAdmin
+        .from('FamilyMember')
+        .select('*')
+        .eq('patientId', patient.id)
+        .order('name', { ascending: true })
+
+    const members = familyMembers || []
 
     return (
         <div className="family-page">
@@ -57,9 +67,9 @@ export default async function FamilyPage() {
                 </Link>
             </div>
 
-            {familyMembers.length > 0 ? (
+            {members.length > 0 ? (
                 <div className="family-grid">
-                    {familyMembers.map(member => {
+                    {members.map(member => {
                         const photoUrls = member.photoUrls || []
                         return (
                             <div key={member.id} className="family-card">
@@ -74,7 +84,7 @@ export default async function FamilyPage() {
                                     <h3 className="family-name">{member.name}</h3>
                                     <p className="family-relation">{member.relationship}</p>
                                     <p className="family-photos">
-                                        📷 {photoUrls.length} reference photo{photoUrls.length !== 1 ? 's' : ''}
+                                        <span className="photo-label">Reference Photos:</span> <strong>{photoUrls.length}</strong>
                                     </p>
                                     {member.notes && (
                                         <p className="family-notes">{member.notes}</p>
@@ -91,7 +101,9 @@ export default async function FamilyPage() {
                 </div>
             ) : (
                 <div className="empty-state">
-                    <div className="empty-icon">👨‍👩‍👧‍👦</div>
+                    <div className="empty-icon-3d">
+                        <img src="/icons/family.png" alt="" className="empty-img" />
+                    </div>
                     <h2 className="empty-title">No Family Members Yet</h2>
                     <p className="empty-text">
                         Add family members with their photos for face recognition during therapy.

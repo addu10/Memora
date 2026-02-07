@@ -1,13 +1,33 @@
-// Memora Portal - Landing Page
+'use client'
+
 import Link from 'next/link'
+import { useTheme } from './components/ThemeContext'
 
 export default function HomePage() {
+  const { theme, toggleTheme } = useTheme()
+
   return (
     <div className="landing-page">
       {/* Header */}
       <header className="header">
         <div className="logo">🧠 Memora</div>
         <nav className="nav-links">
+          <button
+            className="theme-toggle-btn-landing"
+            onClick={toggleTheme}
+            aria-label="Toggle Theme"
+          >
+            {theme === 'light' ? (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+              </svg>
+            ) : (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="4" />
+                <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+              </svg>
+            )}
+          </button>
           <Link href="/login" className="btn btn-secondary">Login</Link>
           <Link href="/register" className="btn btn-primary">Get Started</Link>
         </nav>
@@ -94,7 +114,7 @@ export default function HomePage() {
 
       {/* Footer */}
       <footer className="footer">
-        <p>© 2024 Memora - Digital Reminiscence Therapy for Alzheimer&apos;s Patients</p>
+        <p>© 2025 Memora - Digital Reminiscence Therapy for Alzheimer&apos;s Patients</p>
         <p>Built with ❤️ for Kerala&apos;s elderly community</p>
       </footer>
     </div>

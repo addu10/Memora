@@ -8,10 +8,10 @@ An AI-assisted platform for Alzheimer's therapy, featuring face recognition and 
 
 Memora is a **Final Year Project** designed to help early-stage Alzheimer's patients recognize family members and engage in memory therapy. The platform consists of:
 
-1. **📱 Mobile App** - React Native app for patients
-2. **💻 Caregiver Portal** - Next.js web app for family/caregivers
-3. **🗄️ Backend** - Supabase (PostgreSQL + Auth + Storage)
-4. **🤖 ML Models** - Face recognition (Coming Soon)
+1. **📱 Mobile App** - React Native app with AI therapy flow & accessibility
+2. **💻 Caregiver Portal** - Next.js analytics & patient management dashboard
+3. **🗄️ Backend** - Supabase (PostgreSQL + RLS + Edge Functions)
+4. **🤖 AI/ML Suite** - Face recognition (V2) & Gemini therapeutic prompts
 
 ---
 
@@ -23,18 +23,21 @@ Memora is a **Final Year Project** designed to help early-stage Alzheimer's pati
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
 │  ┌─────────────┐          ┌─────────────┐          ┌─────────┐ │
-│  │   Mobile    │          │   Portal    │          │   ML    │ │
-│  │    App      │          │    Web      │          │ Models  │ │
-│  │ (Expo/RN)   │          │ (Next.js)   │          │ (TBD)   │ │
+│  │   Mobile    │          │   Portal    │          │  AI/ML  │ │
+│  │    App      │          │    Web      │          │ Engine  │ │
+│  │ (Expo/RN)   │          │ (Next.js)   │          │ (Gemini)│ │
 │  └──────┬──────┘          └──────┬──────┘          └────┬────┘ │
 │         │                        │                      │      │
 │         └────────────┬───────────┘                      │      │
 │                      │                                  │      │
 │              ┌───────▼───────┐                          │      │
-│              │   Supabase    │◄─────────────────────────┘      │
-│              │  (PostgreSQL) │                                 │
-│              │  + Storage    │                                 │
-│              │  + Auth       │                                 │
+│              │ Supabase Edge │◄─────────────────────────┘      │
+│              │ Functions     │                                 │
+│              └───────┬───────┘                                 │
+│                      │                                         │
+│              ┌───────▼───────┐                                 │
+│              │   PostgreSQL  │                                 │
+│              │  + Auth + RLS │                                 │
 │              └───────────────┘                                 │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
@@ -57,10 +60,9 @@ Final Year/
 │   ├── lib/                # Supabase client, auth
 │   └── README.md           # Portal documentation
 │
-├── training/               # ML model training (TBD)
-│   ├── data/               # Training datasets
-│   ├── models/             # Model definitions
-│   └── scripts/            # Training scripts
+├── inference_v2/           # Face Recognition V2 (DeepFace)
+├── docs/audit/             # Final reports and clinical walkthroughs
+├── supabase/               # Edge functions (Gemini proxy)
 │
 ├── SUPABASE_SETUP.md       # Database configuration guide
 ├── ML_PIPELINE.md          # ML development roadmap
@@ -142,27 +144,24 @@ npx expo start -c
 
 ### Mobile App (Patient)
 - ✅ PIN-based authentication
-- ✅ Personalized home screen with greeting
-- ✅ Photo gallery with memories
-- ✅ Family directory with photos
-- ✅ Profile with caregiver info
-- ⏳ Face recognition camera
-- ⏳ Memory games
+- ✅ Personalized home screen with dynamic greetings
+- ✅ AI-Powered Session Therapy (interactive question flow)
+- ✅ Family directory with face recognition (V2)
+- ✅ Memory gallery with performance status badges
+- ✅ Profile with caregiver emergency info
 
 ### Caregiver Portal
-- ✅ Caregiver authentication
-- ✅ Patient management (CRUD)
-- ✅ Photo/memory upload
-- ✅ Family member management
-- ✅ Session history tracking
-- ⏳ Analytics dashboard
+- ✅ Caregiver authentication (secure session management)
+- ✅ Patient management (MMSE score & diagnosis tracking)
+- ✅ Per-photo granular labeling & description
+- ✅ Family member management with reference photos
+- ✅ Enhanced progress analytics gallery (mood & recall trends)
 
 ### Backend (Supabase)
-- ✅ PostgreSQL database
-- ✅ Row Level Security (RLS)
-- ✅ Custom RPC functions
-- ✅ File storage
-- ⏳ Edge functions for ML
+- ✅ PostgreSQL 17 database
+- ✅ Production-grade Row Level Security (RLS)
+- ✅ Gemini Edge Functions for therapy sessions
+- ✅ Secure file storage with bucket policies
 
 ---
 
@@ -170,10 +169,11 @@ npx expo start -c
 
 | Document | Description |
 |----------|-------------|
-| [Mobile README](./mobile/README.md) | Mobile app setup & architecture |
-| [Portal README](./portal/README.md) | Web portal setup & API docs |
-| [Supabase Setup](./SUPABASE_SETUP.md) | Database configuration & RLS policies |
-| [ML Pipeline](./ML_PIPELINE.md) | Machine learning roadmap & next steps |
+| [Mobile README](./mobile/README.md) | Mobile app setup & interactive therapy flow |
+| [Portal README](./portal/README.md) | Web portal setup & analytics guide |
+| [Supabase Setup](./SUPABASE_SETUP.md) | SQL/Schema & RLS production policies |
+| [Clinic Walkthrough](./docs/audit/walkthrough.md) | Technical guide to AI therapy refactor |
+| [Closing Report](./docs/audit/project_closing_report.md) | Final project maturity analysis |
 
 ---
 
@@ -194,13 +194,13 @@ npm run type-check
 
 | Component | Status |
 |-----------|--------|
-| Mobile UI | ✅ Complete |
-| Portal UI | ✅ Complete |
-| Database | ✅ Complete |
-| Authentication | ✅ Complete |
-| Face Recognition | 🔄 In Progress |
-| Model Training | ⏳ Pending |
-| Production Deploy | ⏳ Pending |
+| AI Therapy | ✅ COMPLETE |
+| Mobile App | ✅ COMPLETE |
+| Portal Web | ✅ COMPLETE |
+| Backend/DB | ✅ COMPLETE |
+| Face Rec V2| ✅ COMPLETE |
+| Security   | ✅ COMPLETE (RLS Enforced) |
+| Voice Int. | ⏳ Planned Phase 7 |
 
 ---
 

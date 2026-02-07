@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/auth'
-import prisma from '@/lib/db'
+import { supabaseAdmin, now } from '@/lib/supabase'
 
 // GET /api/family/[id] - Get family member details
 export async function GET(
@@ -13,21 +13,30 @@ export async function GET(
     }
 
     try {
-        const member = await prisma.familyMember.findUnique({
-            where: { id: params.id },
-            include: { patient: true }
-        })
+        const { id } = await params
 
-        if (!member) {
+        const { data: member, error } = await supabaseAdmin
+            .from('FamilyMember')
+            .select('*')
+            .eq('id', id)
+            .single()
+
+        if (error || !member) {
             return NextResponse.json({ error: 'Family member not found' }, { status: 404 })
         }
 
-        // Verify ownership (the patient belongs to this caregiver)
-        if (member.patient.caregiverId !== session.userId) {
+        // Verify ownership via patient
+        const { data: patient } = await supabaseAdmin
+            .from('Patient')
+            .select('caregiverId')
+            .eq('id', member.patientId)
+            .single()
+
+        if (!patient || patient.caregiverId !== session.userId) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
         }
 
-        return NextResponse.json(member)
+        return NextResponse.json({ ...member, patient })
     } catch (error) {
         return NextResponse.json(
             { error: 'Failed to fetch family member' },
@@ -47,6 +56,7 @@ export async function PUT(
     }
 
     try {
+        const { id } = await params
         const body = await request.json()
         const { name, relationship, photoUrls, notes } = body
 
@@ -57,29 +67,42 @@ export async function PUT(
             )
         }
 
-        // Verify ownership before update
-        const existingMember = await prisma.familyMember.findUnique({
-            where: { id: params.id },
-            include: { patient: true }
-        })
+        // Get existing member
+        const { data: existingMember, error: findError } = await supabaseAdmin
+            .from('FamilyMember')
+            .select('*')
+            .eq('id', id)
+            .single()
 
-        if (!existingMember) {
+        if (findError || !existingMember) {
             return NextResponse.json({ error: 'Family member not found' }, { status: 404 })
         }
 
-        if (existingMember.patient.caregiverId !== session.userId) {
+        // Verify ownership via patient
+        const { data: patient } = await supabaseAdmin
+            .from('Patient')
+            .select('caregiverId')
+            .eq('id', existingMember.patientId)
+            .single()
+
+        if (!patient || patient.caregiverId !== session.userId) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
         }
 
-        const updatedMember = await prisma.familyMember.update({
-            where: { id: params.id },
-            data: {
+        const { data: updatedMember, error: updateError } = await supabaseAdmin
+            .from('FamilyMember')
+            .update({
                 name,
                 relationship,
-                photoUrls: photoUrls,
-                notes
-            }
-        })
+                photoUrls: photoUrls ?? existingMember.photoUrls,
+                notes: notes ?? existingMember.notes,
+                updatedAt: now()
+            })
+            .eq('id', id)
+            .select()
+            .single()
+
+        if (updateError) throw updateError
 
         return NextResponse.json(updatedMember)
     } catch (error) {
@@ -102,22 +125,36 @@ export async function DELETE(
     }
 
     try {
-        const existingMember = await prisma.familyMember.findUnique({
-            where: { id: params.id },
-            include: { patient: true }
-        })
+        const { id } = await params
 
-        if (!existingMember) {
+        // Get existing member
+        const { data: existingMember, error: findError } = await supabaseAdmin
+            .from('FamilyMember')
+            .select('patientId')
+            .eq('id', id)
+            .single()
+
+        if (findError || !existingMember) {
             return NextResponse.json({ error: 'Family member not found' }, { status: 404 })
         }
 
-        if (existingMember.patient.caregiverId !== session.userId) {
+        // Verify ownership via patient
+        const { data: patient } = await supabaseAdmin
+            .from('Patient')
+            .select('caregiverId')
+            .eq('id', existingMember.patientId)
+            .single()
+
+        if (!patient || patient.caregiverId !== session.userId) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
         }
 
-        await prisma.familyMember.delete({
-            where: { id: params.id }
-        })
+        const { error: deleteError } = await supabaseAdmin
+            .from('FamilyMember')
+            .delete()
+            .eq('id', id)
+
+        if (deleteError) throw deleteError
 
         return NextResponse.json({ success: true })
     } catch (error) {

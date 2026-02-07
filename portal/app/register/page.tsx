@@ -87,23 +87,31 @@ export default function RegisterPage() {
                             type="password"
                             name="password"
                             className="form-input"
-                            placeholder="••••••••"
-                            minLength={6}
+                            placeholder="Minimum 8 characters, 1 number"
+                            minLength={8}
+                            pattern="^(?=.*[0-9]).{8,}$"
+                            title="Password must be at least 8 characters long and contain at least one number."
                             required
                         />
+                        <p className="form-hint" style={{ fontSize: '0.75rem', color: 'var(--gray-500)', marginTop: '4px' }}>
+                            Must be at least 8 characters and contain a number.
+                        </p>
                     </div>
 
                     <div className="form-group">
-                        <label className="form-label">Phone (Optional)</label>
+                        <label className="form-label">Phone</label>
                         <input
                             type="tel"
                             name="phone"
                             className="form-input"
                             placeholder="+91 9876543210"
+                            pattern="^\+?[\d\s-]{10,}$"
+                            title="Please enter a valid phone number (at least 10 digits)."
+                            required
                         />
                     </div>
 
-                    <button type="submit" className="btn btn-primary btn-lg" style={{ width: '100%' }} disabled={loading}>
+                    <button type="submit" className="btn btn-primary btn-lg" style={{ width: '100%', marginTop: 'var(--space-md)' }} disabled={loading}>
                         {loading ? 'Creating account...' : 'Create Account'}
                     </button>
                 </form>

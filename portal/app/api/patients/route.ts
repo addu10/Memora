@@ -1,6 +1,6 @@
 // Patients API Routes
 import { NextResponse } from 'next/server'
-import prisma from '@/lib/db'
+import { supabaseAdmin, generateId, now } from '@/lib/supabase'
 import { getSession } from '@/lib/auth'
 
 // GET /api/patients - List all patients
@@ -12,17 +12,36 @@ export async function GET() {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
-        const patients = await prisma.patient.findMany({
-            where: { caregiverId: session.userId },
-            include: {
-                _count: {
-                    select: { sessions: true, memories: true, familyMembers: true }
-                }
-            },
-            orderBy: { updatedAt: 'desc' }
-        })
+        // Fetch patients for this caregiver
+        const { data: patients, error } = await supabaseAdmin
+            .from('Patient')
+            .select('*')
+            .eq('caregiverId', session.userId)
+            .order('updatedAt', { ascending: false })
 
-        return NextResponse.json({ patients })
+        if (error) throw error
+
+        // Get counts for each patient
+        const patientsWithCounts = await Promise.all(
+            (patients || []).map(async (patient) => {
+                const [sessionsCount, memoriesCount, familyCount] = await Promise.all([
+                    supabaseAdmin.from('TherapySession').select('id', { count: 'exact', head: true }).eq('patientId', patient.id),
+                    supabaseAdmin.from('Memory').select('id', { count: 'exact', head: true }).eq('patientId', patient.id),
+                    supabaseAdmin.from('FamilyMember').select('id', { count: 'exact', head: true }).eq('patientId', patient.id)
+                ])
+
+                return {
+                    ...patient,
+                    _count: {
+                        sessions: sessionsCount.count || 0,
+                        memories: memoriesCount.count || 0,
+                        familyMembers: familyCount.count || 0
+                    }
+                }
+            })
+        )
+
+        return NextResponse.json({ patients: patientsWithCounts })
 
     } catch (error) {
         console.error('Get patients error:', error)
@@ -49,19 +68,24 @@ export async function POST(request: Request) {
             )
         }
 
-        const patient = await prisma.patient.create({
-            data: {
+        const { data: patient, error } = await supabaseAdmin
+            .from('Patient')
+            .insert({
+                id: generateId(),
                 name,
                 age: parseInt(age),
                 mmseScore: mmseScore ? parseInt(mmseScore) : null,
-                diagnosis,
-                notes,
-                photoUrl,
-                // @ts-ignore
+                diagnosis: diagnosis || null,
+                notes: notes || null,
+                photoUrl: photoUrl || null,
                 pin: pin || "0000",
-                caregiverId: session.userId
-            }
-        })
+                caregiverId: session.userId,
+                updatedAt: now()
+            })
+            .select()
+            .single()
+
+        if (error) throw error
 
         return NextResponse.json({ patient }, { status: 201 })
 

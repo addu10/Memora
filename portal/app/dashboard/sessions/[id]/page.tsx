@@ -1,20 +1,8 @@
 // Session Detail Page
 import Link from 'next/link'
 import { getSession } from '@/lib/auth'
-import prisma from '@/lib/db'
+import { supabaseAdmin } from '@/lib/supabase'
 import { redirect, notFound } from 'next/navigation'
-
-async function getTherapySession(sessionId: string, userId: string) {
-    return prisma.therapySession.findFirst({
-        where: { id: sessionId },
-        include: {
-            patient: true,
-            memories: {
-                include: { memory: true }
-            }
-        }
-    })
-}
 
 export default async function SessionDetailPage({
     params
@@ -25,28 +13,64 @@ export default async function SessionDetailPage({
     if (!session) redirect('/login')
 
     const { id } = await params
-    const therapySession = await getTherapySession(id, session.userId)
 
-    if (!therapySession || therapySession.patient.caregiverId !== session.userId) {
+    // Get therapy session
+    const { data: therapySession, error } = await supabaseAdmin
+        .from('TherapySession')
+        .select('*')
+        .eq('id', id)
+        .single()
+
+    if (error || !therapySession) {
         notFound()
     }
 
-    const moodEmoji = {
-        happy: '😊',
-        neutral: '😐',
-        sad: '😢',
-        confused: '😕'
-    }[therapySession.mood] || '😐'
+    // Get patient to verify ownership
+    const { data: patient } = await supabaseAdmin
+        .from('Patient')
+        .select('*')
+        .eq('id', therapySession.patientId)
+        .single()
 
-    const avgRecall = therapySession.memories.length > 0
-        ? (therapySession.memories.reduce((sum, m) => sum + m.recallScore, 0) / therapySession.memories.length).toFixed(1)
+    if (!patient || patient.caregiverId !== session.userId) {
+        notFound()
+    }
+
+    // Get session memories with their full memory details
+    const { data: sessionMemoriesRaw } = await supabaseAdmin
+        .from('SessionMemory')
+        .select('*')
+        .eq('sessionId', id)
+
+    const sessionMemories = await Promise.all(
+        (sessionMemoriesRaw || []).map(async (sm) => {
+            const { data: memory } = await supabaseAdmin
+                .from('Memory')
+                .select('*')
+                .eq('id', sm.memoryId)
+                .single()
+            return { ...sm, memory: memory || {} }
+        })
+    )
+
+    const moodColor = {
+        happy: '#10b981',
+        neutral: '#6b7280',
+        sad: '#3b82f6',
+        confused: '#f59e0b'
+    }[therapySession.mood] || '#6b7280'
+
+    const avgRecall = sessionMemories.length > 0
+        ? (sessionMemories.reduce((sum, m) => sum + m.recallScore, 0) / sessionMemories.length).toFixed(1)
         : '--'
 
     return (
         <div className="session-detail-page">
             <div className="page-header">
                 <Link href="/dashboard/sessions" className="back-link">
-                    ← Back to Sessions
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" />
+                    </svg> Back to Sessions
                 </Link>
             </div>
 
@@ -58,12 +82,25 @@ export default async function SessionDetailPage({
                 </div>
                 <div className="session-overview-details">
                     <h1 className="session-overview-title">
-                        Therapy Session with {therapySession.patient.name}
+                        Therapy Session with {patient.name}
                     </h1>
                     <div className="session-overview-meta">
-                        <span className="meta-item">{moodEmoji} {therapySession.mood}</span>
-                        <span className="meta-item">⏱️ {therapySession.duration} minutes</span>
-                        <span className="meta-item">📊 Avg Recall: {avgRecall}/5</span>
+                        <span className="meta-item" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-xs)' }}>
+                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: moodColor }} />
+                            {therapySession.mood}
+                        </span>
+                        <span className="meta-item" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-xs)' }}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+                            </svg>
+                            {therapySession.duration}m
+                        </span>
+                        <span className="meta-item" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-xs)' }}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                            </svg>
+                            Recall: {avgRecall}/5
+                        </span>
                     </div>
                 </div>
             </div>
@@ -71,24 +108,30 @@ export default async function SessionDetailPage({
             {/* Session Stats */}
             <div className="stats-row">
                 <div className="stat-card-detail">
-                    <div className="stat-icon">🖼️</div>
+                    <div className="stat-icon-3d-sm">
+                        <img src="/icons/memories.png" alt="" className="stat-icon-img-sm" />
+                    </div>
                     <div className="stat-info">
-                        <div className="stat-value">{therapySession.memories.length}</div>
-                        <div className="stat-label">Memories Reviewed</div>
+                        <div className="stat-value">{sessionMemories.length}</div>
+                        <div className="stat-label">Reviewed</div>
                     </div>
                 </div>
                 <div className="stat-card-detail">
-                    <div className="stat-icon">⭐</div>
+                    <div className="stat-icon-3d-sm">
+                        <img src="/icons/analytics.png" alt="" className="stat-icon-img-sm" />
+                    </div>
                     <div className="stat-info">
                         <div className="stat-value">{avgRecall}</div>
-                        <div className="stat-label">Avg Recall Score</div>
+                        <div className="stat-label">Avg Recall</div>
                     </div>
                 </div>
                 <div className="stat-card-detail">
-                    <div className="stat-icon">{moodEmoji}</div>
+                    <div className="stat-icon-3d-sm" style={{ background: '#f0fdf4' }}>
+                        <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: moodColor, border: '2px solid white' }} />
+                    </div>
                     <div className="stat-info">
                         <div className="stat-value capitalize">{therapySession.mood}</div>
-                        <div className="stat-label">Session Mood</div>
+                        <div className="stat-label">Mood</div>
                     </div>
                 </div>
             </div>
@@ -96,15 +139,17 @@ export default async function SessionDetailPage({
             {/* Memories Reviewed */}
             <div className="section-card">
                 <h2 className="section-title">Memories Reviewed</h2>
-                {therapySession.memories.length > 0 ? (
+                {sessionMemories.length > 0 ? (
                     <div className="memory-review-list">
-                        {therapySession.memories.map((sm) => (
+                        {sessionMemories.map((sm: any) => (
                             <div key={sm.id} className="memory-review-item">
                                 <div className="memory-review-image">
                                     {sm.memory.photoUrl ? (
                                         <img src={sm.memory.photoUrl} alt={sm.memory.title} />
                                     ) : (
-                                        <span className="memory-placeholder-icon">🖼️</span>
+                                        <div className="memory-placeholder-3d">
+                                            <img src="/icons/memories.png" alt="" className="logo-icon-sm" />
+                                        </div>
                                     )}
                                 </div>
                                 <div className="memory-review-info">

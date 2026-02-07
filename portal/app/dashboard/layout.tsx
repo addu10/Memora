@@ -3,16 +3,19 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { cookies } from 'next/headers'
 import { getSession } from '@/lib/auth'
-import prisma from '@/lib/db'
+import { supabaseAdmin } from '@/lib/supabase'
 import PatientSelector from './PatientSelector'
 import LogoutButton from './LogoutButton'
 import DashboardClientWrapper from './DashboardClientWrapper'
+import UserDropdown from './UserDropdown'
 
 async function getPatients(userId: string) {
-  return prisma.patient.findMany({
-    where: { caregiverId: userId },
-    orderBy: { updatedAt: 'desc' }
-  })
+  const { data } = await supabaseAdmin
+    .from('Patient')
+    .select('*')
+    .eq('caregiverId', userId)
+    .order('updatedAt', { ascending: false })
+  return data || []
 }
 
 async function getSelectedPatientId() {
@@ -35,7 +38,6 @@ export default async function DashboardLayout({
   const selectedPatientId = await getSelectedPatientId()
   const selectedPatient = patients.find(p => p.id === selectedPatientId) || patients[0]
 
-  // If no patients, redirect to add patient
   const hasPatients = patients.length > 0
 
   return (
@@ -44,90 +46,56 @@ export default async function DashboardLayout({
       selectedPatientId={selectedPatientId}
     >
       <div className="dashboard-layout">
-        {/* Sidebar */}
-        <aside className="sidebar">
-          <div className="sidebar-logo">
-            <span>🧠</span>
-            <span>Memora</span>
+        {/* Top Navbar */}
+        <header className="navbar">
+          <div className="navbar-left">
+            <Link href="/dashboard" className="navbar-logo">
+              <img src="/icons/logo.png" alt="" className="premium-icon logo-icon-sm" />
+              <span className="logo-text">Memora</span>
+            </Link>
+
+            <nav className="navbar-nav">
+              <Link href="/dashboard" className="nav-link">
+                <img src="/icons/overview.png" alt="" className="premium-icon" />
+                <span className="nav-text">Overview</span>
+              </Link>
+              {hasPatients && (
+                <>
+                  <Link href="/dashboard/memories" className="nav-link">
+                    <img src="/icons/memories.png" alt="" className="premium-icon" />
+                    <span className="nav-text">Memories</span>
+                  </Link>
+                  <Link href="/dashboard/family" className="nav-link">
+                    <img src="/icons/family.png" alt="" className="premium-icon" />
+                    <span className="nav-text">Family</span>
+                  </Link>
+                  <Link href="/dashboard/sessions" className="nav-link">
+                    <img src="/icons/sessions.png" alt="" className="premium-icon" />
+                    <span className="nav-text">Sessions</span>
+                  </Link>
+                  <Link href="/dashboard/progress" className="nav-link">
+                    <img src="/icons/analytics.png" alt="" className="premium-icon" />
+                    <span className="nav-text">Analytics</span>
+                  </Link>
+                </>
+              )}
+              <Link href="/dashboard/patients" className="nav-link">
+                <img src="/icons/patients.png" alt="" className="premium-icon" />
+                <span className="nav-text">Patients</span>
+              </Link>
+            </nav>
           </div>
 
-          {/* Patient Selector */}
-          {hasPatients && (
-            <div className="patient-selector-wrapper">
+          <div className="navbar-right">
+            {hasPatients && (
               <PatientSelector
                 patients={patients.map(p => ({ id: p.id, name: p.name, age: p.age, photoUrl: p.photoUrl }))}
                 selectedPatientId={selectedPatient?.id}
               />
-            </div>
-          )}
-
-          <nav className="sidebar-nav">
-            <div className="nav-section">
-              <div className="nav-section-title">Overview</div>
-              <Link href="/dashboard" className="nav-item">
-                <span className="nav-icon">📊</span>
-                <span className="nav-text">Dashboard</span>
-              </Link>
-            </div>
-
-            {hasPatients && (
-              <>
-                <div className="nav-section">
-                  <div className="nav-section-title">Therapy</div>
-                  <Link href="/dashboard/memories" className="nav-item">
-                    <span className="nav-icon">🖼️</span>
-                    <span className="nav-text">Memories</span>
-                  </Link>
-                  <Link href="/dashboard/family" className="nav-item">
-                    <span className="nav-icon">👨‍👩‍👧‍👦</span>
-                    <span className="nav-text">Family Members</span>
-                  </Link>
-                  <Link href="/dashboard/sessions" className="nav-item">
-                    <span className="nav-icon">📅</span>
-                    <span className="nav-text">Sessions</span>
-                  </Link>
-                </div>
-
-                <div className="nav-section">
-                  <div className="nav-section-title">Analytics</div>
-                  <Link href="/dashboard/progress" className="nav-item">
-                    <span className="nav-icon">📈</span>
-                    <span className="nav-text">Progress</span>
-                  </Link>
-                  <Link href="/dashboard/reports" className="nav-item">
-                    <span className="nav-icon">📋</span>
-                    <span className="nav-text">Reports</span>
-                  </Link>
-                </div>
-              </>
             )}
-
-            <div className="nav-section">
-              <div className="nav-section-title">Settings</div>
-              <Link href="/dashboard/patients" className="nav-item">
-                <span className="nav-icon">👥</span>
-                <span className="nav-text">Manage Patients</span>
-              </Link>
-              <Link href="/dashboard/settings" className="nav-item">
-                <span className="nav-icon">⚙️</span>
-                <span className="nav-text">Settings</span>
-              </Link>
-            </div>
-          </nav>
-
-          <div className="sidebar-footer">
-            <div className="user-info">
-              <div className="user-avatar">
-                {session.name.charAt(0).toUpperCase()}
-              </div>
-              <div>
-                <div className="user-name">{session.name}</div>
-                <div className="user-email">{session.email}</div>
-              </div>
-            </div>
-            <LogoutButton />
+            <UserDropdown userName={session.name} />
           </div>
-        </aside>
+        </header>
 
         {/* Main Content */}
         <main className="main-content">
@@ -139,4 +107,3 @@ export default async function DashboardLayout({
     </DashboardClientWrapper>
   )
 }
-

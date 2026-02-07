@@ -24,6 +24,13 @@ export default function ImageUpload({ onUpload, bucket, label = 'Upload Image', 
             }
 
             const file = event.target.files[0]
+
+            // File size validation (5MB limit)
+            const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
+            if (file.size > MAX_FILE_SIZE) {
+                throw new Error('Image must be less than 5MB')
+            }
+
             const fileExt = file.name.split('.').pop()
             const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`
             const filePath = `${fileName}`

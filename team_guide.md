@@ -8,7 +8,7 @@
 
 ---
 
-## 2. Progress Tracker (Status: 85% MVP Complete)
+## 2. Progress Tracker (Status: 95% MVP Complete)
 
 | Feature | Status | Technology Used |
 | :--- | :--- | :--- |
@@ -16,10 +16,11 @@
 | **Caregiver Portal** | ✅ Done | Next.js (Web) |
 | **Authentication** | ✅ Done | Supabase Auth |
 | **Family Setup** | ✅ Done | Supabase DB (Table: `FamilyMember`) |
-| **Memories Timeline** | ✅ Done | Supabase DB (Table: `Memory`) |
+| **Memories Timeline** | ✅ Done | Supabase DB (Table: `Memory`, `MemoryPhoto`) |
 | **Face Recognition** | ✅ Done | **V2 Engine** (DeepFace/VGG-Face) |
-| **"Comfort" UI** | ✅ Done | Auto-Scrolling Carousels (New) |
-| **Voice Interaction** | ⏳ Next | OpenAI Realtime / Whisper |
+| **AI Session Therapy**| ✅ Done | **Gemini-1.5-Pro (Prompt Engine)** |
+| **"Comfort" UI**     | ✅ Done | Auto-Scrolling Carousels |
+| **Voice Interaction** | ⏳ Phase 7 | Future Placeholder |
 
 ---
 
@@ -29,8 +30,9 @@
 *   **Frontend (Mobile):** React Native + Expo
 *   **Frontend (Web):** Next.js 14
 *   **Database:** Supabase (PostgreSQL)
-*   **AI Engine:** Python (HuggingFace Spaces)
-*   **Middle Layer:** Supabase Edge Functions (Secure Proxy)
+*   **AI Engine (Prompting):** Gemini-1.5-Pro
+*   **AI Engine (Recognition):** Python (HuggingFace Spaces)
+*   **Middle Layer:** Supabase Edge Functions (Gemini & Recognition Proxy)
 
 ### 📸 The Face Recognition Pipeline (This is unique!)
 Unlike generic apps, we use a custom **Parallel Inference Engine**:
@@ -79,5 +81,5 @@ Unlike generic apps, we use a custom **Parallel Inference Engine**:
 ---
 
 ## 6. Next Steps (Phase 6)
-*   **Voice Capability**: "Who is this?" -> App speaks: "This is Adnan, your son."
-*   **Interactive Chat**: Using the Memory timeline to regenerate conversation topics.
+*   **Voice Capability**: Phase 7 Goal
+*   **Advanced Analytics**: Done (Memory-level trends)

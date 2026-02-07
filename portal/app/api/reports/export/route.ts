@@ -1,6 +1,6 @@
 // Reports Export API - Generate CSV/JSON reports
 import { NextResponse } from 'next/server'
-import prisma from '@/lib/db'
+import { supabaseAdmin } from '@/lib/supabase'
 import { getSession } from '@/lib/auth'
 import { cookies } from 'next/headers'
 
@@ -20,9 +20,12 @@ export async function GET(request: Request) {
         let patientId = searchParams.get('patientId') || cookieStore.get('selectedPatientId')?.value
 
         if (!patientId) {
-            const firstPatient = await prisma.patient.findFirst({
-                where: { caregiverId: session.userId }
-            })
+            const { data: firstPatient } = await supabaseAdmin
+                .from('Patient')
+                .select('id')
+                .eq('caregiverId', session.userId)
+                .limit(1)
+                .single()
             patientId = firstPatient?.id
         }
 
@@ -31,11 +34,14 @@ export async function GET(request: Request) {
         }
 
         // Verify patient belongs to caregiver
-        const patient = await prisma.patient.findFirst({
-            where: { id: patientId, caregiverId: session.userId }
-        })
+        const { data: patient, error: patientError } = await supabaseAdmin
+            .from('Patient')
+            .select('*')
+            .eq('id', patientId)
+            .eq('caregiverId', session.userId)
+            .single()
 
-        if (!patient) {
+        if (patientError || !patient) {
             return NextResponse.json({ error: 'Patient not found' }, { status: 404 })
         }
 
@@ -43,30 +49,50 @@ export async function GET(request: Request) {
 
         switch (type) {
             case 'sessions':
-                data = await prisma.therapySession.findMany({
-                    where: { patientId },
-                    include: {
-                        memories: {
-                            include: { memory: true }
-                        }
-                    },
-                    orderBy: { date: 'desc' }
-                })
+                const { data: sessionsData } = await supabaseAdmin
+                    .from('TherapySession')
+                    .select('*')
+                    .eq('patientId', patientId)
+                    .order('date', { ascending: false })
+
+                // Get session memories for each session
+                const sessionsWithMemories = await Promise.all(
+                    (sessionsData || []).map(async (s) => {
+                        const { data: sessionMemories } = await supabaseAdmin
+                            .from('SessionMemory')
+                            .select('*, memory:Memory(*)')
+                            .eq('sessionId', s.id)
+                        return { ...s, memories: sessionMemories || [] }
+                    })
+                )
+                data = sessionsWithMemories
                 break
 
             case 'memories':
-                data = await prisma.memory.findMany({
-                    where: { patientId },
-                    orderBy: { date: 'desc' }
-                })
+                const { data: memoriesData } = await supabaseAdmin
+                    .from('Memory')
+                    .select('*')
+                    .eq('patientId', patientId)
+                    .order('date', { ascending: false })
+                data = memoriesData || []
                 break
 
             case 'progress':
-                const sessions = await prisma.therapySession.findMany({
-                    where: { patientId },
-                    include: { memories: true },
-                    orderBy: { date: 'asc' }
-                })
+                const { data: progressSessions } = await supabaseAdmin
+                    .from('TherapySession')
+                    .select('*')
+                    .eq('patientId', patientId)
+                    .order('date', { ascending: true })
+
+                const sessionsWithSessionMemories = await Promise.all(
+                    (progressSessions || []).map(async (s) => {
+                        const { data: sessionMemories } = await supabaseAdmin
+                            .from('SessionMemory')
+                            .select('recallScore')
+                            .eq('sessionId', s.id)
+                        return { ...s, memories: sessionMemories || [] }
+                    })
+                )
 
                 data = {
                     patient: {
@@ -76,22 +102,22 @@ export async function GET(request: Request) {
                         diagnosis: patient.diagnosis
                     },
                     summary: {
-                        totalSessions: sessions.length,
-                        totalDuration: sessions.reduce((sum, s) => sum + s.duration, 0),
+                        totalSessions: sessionsWithSessionMemories.length,
+                        totalDuration: sessionsWithSessionMemories.reduce((sum, s) => sum + s.duration, 0),
                         moodDistribution: {
-                            happy: sessions.filter(s => s.mood === 'happy').length,
-                            neutral: sessions.filter(s => s.mood === 'neutral').length,
-                            sad: sessions.filter(s => s.mood === 'sad').length,
-                            confused: sessions.filter(s => s.mood === 'confused').length,
+                            happy: sessionsWithSessionMemories.filter(s => s.mood === 'happy').length,
+                            neutral: sessionsWithSessionMemories.filter(s => s.mood === 'neutral').length,
+                            sad: sessionsWithSessionMemories.filter(s => s.mood === 'sad').length,
+                            confused: sessionsWithSessionMemories.filter(s => s.mood === 'confused').length,
                         }
                     },
-                    sessionHistory: sessions.map(s => ({
+                    sessionHistory: sessionsWithSessionMemories.map(s => ({
                         date: s.date,
                         duration: s.duration,
                         mood: s.mood,
                         memoriesReviewed: s.memories.length,
                         avgRecallScore: s.memories.length > 0
-                            ? s.memories.reduce((sum, m) => sum + m.recallScore, 0) / s.memories.length
+                            ? s.memories.reduce((sum: number, m: any) => sum + m.recallScore, 0) / s.memories.length
                             : null
                     }))
                 }
@@ -102,7 +128,6 @@ export async function GET(request: Request) {
         }
 
         if (format === 'csv') {
-            // Convert to CSV
             const csvData = convertToCSV(data, type)
             return new NextResponse(csvData, {
                 headers: {
@@ -119,15 +144,30 @@ export async function GET(request: Request) {
     }
 }
 
+// Sanitize CSV values to prevent formula injection
+function sanitizeCSVValue(value: any): string {
+    if (value === null || value === undefined) return ''
+    const str = String(value)
+    // Escape values that could be interpreted as formulas in Excel
+    if (/^[=+\-@\t\r]/.test(str)) {
+        return `'${str}`
+    }
+    // Escape quotes and wrap in quotes if contains comma
+    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+        return `"${str.replace(/"/g, '""')}"`
+    }
+    return str
+}
+
 function convertToCSV(data: any, type: string): string {
     if (type === 'sessions') {
         const headers = ['Date', 'Duration (min)', 'Mood', 'Memories Reviewed', 'Notes']
         const rows = data.map((s: any) => [
-            new Date(s.date).toLocaleDateString(),
+            sanitizeCSVValue(new Date(s.date).toLocaleDateString()),
             s.duration,
-            s.mood,
+            sanitizeCSVValue(s.mood),
             s.memories.length,
-            s.notes || ''
+            sanitizeCSVValue(s.notes || '')
         ])
         return [headers.join(','), ...rows.map((r: any) => r.join(','))].join('\n')
     }
@@ -135,11 +175,11 @@ function convertToCSV(data: any, type: string): string {
     if (type === 'memories') {
         const headers = ['Title', 'Date', 'Event', 'Location', 'People', 'Importance']
         const rows = data.map((m: any) => [
-            `"${m.title}"`,
-            new Date(m.date).toLocaleDateString(),
-            m.event,
-            m.location,
-            `"${m.people}"`,
+            sanitizeCSVValue(m.title),
+            sanitizeCSVValue(new Date(m.date).toLocaleDateString()),
+            sanitizeCSVValue(m.event),
+            sanitizeCSVValue(m.location),
+            sanitizeCSVValue(m.people),
             m.importance
         ])
         return [headers.join(','), ...rows.map((r: any) => r.join(','))].join('\n')
@@ -148,9 +188,9 @@ function convertToCSV(data: any, type: string): string {
     if (type === 'progress') {
         const headers = ['Date', 'Duration (min)', 'Mood', 'Memories Reviewed', 'Avg Recall']
         const rows = data.sessionHistory.map((s: any) => [
-            new Date(s.date).toLocaleDateString(),
+            sanitizeCSVValue(new Date(s.date).toLocaleDateString()),
             s.duration,
-            s.mood,
+            sanitizeCSVValue(s.mood),
             s.memoriesReviewed,
             s.avgRecallScore?.toFixed(1) || 'N/A'
         ])

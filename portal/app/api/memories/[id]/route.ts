@@ -1,6 +1,6 @@
-// PUT endpoint for updating memories
+// Memory by ID API Route
 import { NextResponse } from 'next/server'
-import prisma from '@/lib/db'
+import { supabaseAdmin, now } from '@/lib/supabase'
 import { getSession } from '@/lib/auth'
 
 export async function GET(
@@ -15,16 +15,29 @@ export async function GET(
 
         const { id } = await params
 
-        const memory = await prisma.memory.findFirst({
-            where: { id },
-            include: { patient: true }
-        })
+        // Get memory with patient info for authorization check
+        const { data: memory, error } = await supabaseAdmin
+            .from('Memory')
+            .select('*')
+            .eq('id', id)
+            .single()
 
-        if (!memory || memory.patient.caregiverId !== session.userId) {
+        if (error || !memory) {
             return NextResponse.json({ error: 'Memory not found' }, { status: 404 })
         }
 
-        return NextResponse.json(memory)
+        // Verify ownership via patient
+        const { data: patient } = await supabaseAdmin
+            .from('Patient')
+            .select('caregiverId')
+            .eq('id', memory.patientId)
+            .single()
+
+        if (!patient || patient.caregiverId !== session.userId) {
+            return NextResponse.json({ error: 'Memory not found' }, { status: 404 })
+        }
+
+        return NextResponse.json({ ...memory, patient })
     } catch (error) {
         console.error('Get memory error:', error)
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -44,29 +57,46 @@ export async function PUT(
         const { id } = await params
         const body = await request.json()
 
-        // Verify memory belongs to caregiver's patient
-        const existing = await prisma.memory.findFirst({
-            where: { id },
-            include: { patient: true }
-        })
+        // Get existing memory
+        const { data: existing, error: findError } = await supabaseAdmin
+            .from('Memory')
+            .select('*')
+            .eq('id', id)
+            .single()
 
-        if (!existing || existing.patient.caregiverId !== session.userId) {
+        if (findError || !existing) {
             return NextResponse.json({ error: 'Memory not found' }, { status: 404 })
         }
 
-        const memory = await prisma.memory.update({
-            where: { id },
-            data: {
+        // Verify ownership via patient
+        const { data: patient } = await supabaseAdmin
+            .from('Patient')
+            .select('caregiverId')
+            .eq('id', existing.patientId)
+            .single()
+
+        if (!patient || patient.caregiverId !== session.userId) {
+            return NextResponse.json({ error: 'Memory not found' }, { status: 404 })
+        }
+
+        const { data: memory, error: updateError } = await supabaseAdmin
+            .from('Memory')
+            .update({
                 title: body.title ?? existing.title,
                 description: body.description ?? existing.description,
-                photoUrl: body.photoUrl ?? existing.photoUrl,
-                date: body.date ? new Date(body.date) : existing.date,
+                photoUrls: body.photoUrls ?? existing.photoUrls,
+                date: body.date ? new Date(body.date).toISOString() : existing.date,
                 event: body.event ?? existing.event,
                 location: body.location ?? existing.location,
                 people: body.people ?? existing.people,
                 importance: body.importance ?? existing.importance,
-            }
-        })
+                updatedAt: now()
+            })
+            .eq('id', id)
+            .select()
+            .single()
+
+        if (updateError) throw updateError
 
         return NextResponse.json(memory)
     } catch (error) {
@@ -87,17 +117,34 @@ export async function DELETE(
 
         const { id } = await params
 
-        // Verify memory belongs to caregiver's patient
-        const existing = await prisma.memory.findFirst({
-            where: { id },
-            include: { patient: true }
-        })
+        // Get existing memory
+        const { data: existing, error: findError } = await supabaseAdmin
+            .from('Memory')
+            .select('patientId')
+            .eq('id', id)
+            .single()
 
-        if (!existing || existing.patient.caregiverId !== session.userId) {
+        if (findError || !existing) {
             return NextResponse.json({ error: 'Memory not found' }, { status: 404 })
         }
 
-        await prisma.memory.delete({ where: { id } })
+        // Verify ownership via patient
+        const { data: patient } = await supabaseAdmin
+            .from('Patient')
+            .select('caregiverId')
+            .eq('id', existing.patientId)
+            .single()
+
+        if (!patient || patient.caregiverId !== session.userId) {
+            return NextResponse.json({ error: 'Memory not found' }, { status: 404 })
+        }
+
+        const { error: deleteError } = await supabaseAdmin
+            .from('Memory')
+            .delete()
+            .eq('id', id)
+
+        if (deleteError) throw deleteError
 
         return NextResponse.json({ success: true })
     } catch (error) {

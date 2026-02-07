@@ -1,38 +1,65 @@
 // Dashboard Home Page
 import Link from 'next/link'
 import { getSession } from '@/lib/auth'
-import prisma from '@/lib/db'
+import { supabaseAdmin } from '@/lib/supabase'
 
 async function getDashboardStats(userId: string) {
-  const [patients, sessions, memories] = await Promise.all([
-    prisma.patient.count({ where: { caregiverId: userId } }),
-    prisma.therapySession.count({ where: { caregiverId: userId } }),
-    prisma.memory.count({
-      where: { patient: { caregiverId: userId } }
-    })
+  // Get counts in parallel
+  const [patientsResult, sessionsResult, memoriesResult] = await Promise.all([
+    supabaseAdmin.from('Patient').select('id', { count: 'exact', head: true }).eq('caregiverId', userId),
+    supabaseAdmin.from('TherapySession').select('id', { count: 'exact', head: true }).eq('caregiverId', userId),
+    supabaseAdmin.from('Memory').select('id, patientId', { count: 'exact', head: true })
   ])
 
-  // Recent sessions with details
-  const recentSessions = await prisma.therapySession.findMany({
-    where: { caregiverId: userId },
-    include: { patient: true },
-    orderBy: { date: 'desc' },
-    take: 5
-  })
+  // For memories, we need to filter by caregiver's patients
+  const { data: patientIds } = await supabaseAdmin
+    .from('Patient')
+    .select('id')
+    .eq('caregiverId', userId)
+
+  let memoriesCount = 0
+  if (patientIds && patientIds.length > 0) {
+    const { count } = await supabaseAdmin
+      .from('Memory')
+      .select('id', { count: 'exact', head: true })
+      .in('patientId', patientIds.map(p => p.id))
+    memoriesCount = count || 0
+  }
+
+  // Recent sessions with patient details
+  const { data: recentSessionsRaw } = await supabaseAdmin
+    .from('TherapySession')
+    .select('*')
+    .eq('caregiverId', userId)
+    .order('date', { ascending: false })
+    .limit(5)
+
+  // Get patient info for each session
+  const recentSessions = await Promise.all(
+    (recentSessionsRaw || []).map(async (s) => {
+      const { data: patient } = await supabaseAdmin
+        .from('Patient')
+        .select('name')
+        .eq('id', s.patientId)
+        .single()
+      return { ...s, patient: patient || { name: 'Unknown' } }
+    })
+  )
 
   // Patients list
-  const patientsList = await prisma.patient.findMany({
-    where: { caregiverId: userId },
-    take: 5,
-    orderBy: { updatedAt: 'desc' }
-  })
+  const { data: patientsList } = await supabaseAdmin
+    .from('Patient')
+    .select('*')
+    .eq('caregiverId', userId)
+    .order('updatedAt', { ascending: false })
+    .limit(5)
 
   return {
-    patients,
-    sessions,
-    memories,
+    patients: patientsResult.count || 0,
+    sessions: sessionsResult.count || 0,
+    memories: memoriesCount,
     recentSessions,
-    patientsList
+    patientsList: patientsList || []
   }
 }
 
@@ -44,51 +71,63 @@ export default async function DashboardPage() {
 
   return (
     <div className="dashboard-home">
-      {/* Welcome Section */}
-      <div className="welcome-section">
-        <h1 className="welcome-title">Welcome back, {session.name.split(' ')[0]}! 👋</h1>
-        <p className="welcome-subtitle">Here's what's happening with your patients today.</p>
+      {/* Welcome Section with Vibrant Gradient */}
+      <div className="welcome-banner">
+        <h1 className="welcome-title">Welcome back, {session.name.split(' ')[0]}!</h1>
+        <p className="welcome-subtitle">
+          Your digital reminiscence companion is ready. You have {stats.patients} patients to care for today.
+        </p>
       </div>
 
-      {/* Quick Actions */}
+      {/* Quick Actions Revamp */}
       <div className="quick-actions">
         <Link href="/dashboard/patients/new" className="action-btn">
-          <span className="action-icon">➕</span>
-          <span className="action-text">Add New Patient</span>
-        </Link>
-        <Link href="/dashboard/sessions/new" className="action-btn">
-          <span className="action-icon">🎯</span>
-          <span className="action-text">Start Session</span>
+          <div className="action-icon-wrapper">
+            <img src="/icons/patients.png" alt="" className="premium-icon" />
+          </div>
+          <span className="action-text">Add Patient</span>
         </Link>
         <Link href="/dashboard/memories" className="action-btn">
-          <span className="action-icon">🖼️</span>
-          <span className="action-text">Upload Memories</span>
+          <div className="action-icon-wrapper">
+            <img src="/icons/memories.png" alt="" className="premium-icon" />
+          </div>
+          <span className="action-text">Upload Photos</span>
         </Link>
         <Link href="/dashboard/progress" className="action-btn">
-          <span className="action-icon">📊</span>
-          <span className="action-text">View Analytics</span>
+          <div className="action-icon-wrapper">
+            <img src="/icons/analytics.png" alt="" className="premium-icon" />
+          </div>
+          <span className="action-text">View Stats</span>
         </Link>
       </div>
 
       {/* Stats Grid */}
       <div className="stats-grid">
         <div className="stat-card">
-          <div className="stat-icon">👥</div>
+          <div className="stat-icon-3d">
+            <img src="/icons/patients.png" alt="" className="stat-icon-img" />
+          </div>
           <div className="stat-value">{stats.patients}</div>
           <div className="stat-label">Active Patients</div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon">📅</div>
+          <div className="stat-icon-3d">
+            <img src="/icons/sessions.png" alt="" className="stat-icon-img" />
+          </div>
           <div className="stat-value">{stats.sessions}</div>
           <div className="stat-label">Total Sessions</div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon">🖼️</div>
+          <div className="stat-icon-3d">
+            <img src="/icons/memories.png" alt="" className="stat-icon-img" />
+          </div>
           <div className="stat-value">{stats.memories}</div>
           <div className="stat-label">Memories Stored</div>
         </div>
         <div className="stat-card">
-          <div className="stat-icon">📈</div>
+          <div className="stat-icon-3d">
+            <img src="/icons/analytics.png" alt="" className="stat-icon-img" />
+          </div>
           <div className="stat-value">--</div>
           <div className="stat-label">Avg. Recall Score</div>
         </div>
@@ -136,9 +175,6 @@ export default async function DashboardPage() {
             ) : (
               <div className="empty-state">
                 <p>No sessions yet</p>
-                <Link href="/dashboard/sessions/new" className="btn btn-primary" style={{ marginTop: 'var(--space-md)' }}>
-                  Start First Session
-                </Link>
               </div>
             )}
           </div>
