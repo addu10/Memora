@@ -18,7 +18,7 @@ export async function generateTherapyQuestions(photoData: {
 }): Promise<GeneratedQuestion | null> {
     try {
         const { data, error } = await supabase.functions.invoke('generate-questions', {
-            body: photoData
+            body: { photoContext: photoData }
         });
 
         if (error) {
