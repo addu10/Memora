@@ -5,11 +5,13 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowRight, Mail, Lock, AlertCircle, CheckCircle2 } from 'lucide-react'
+import AuthLoadingOverlay from '@/app/components/AuthLoadingOverlay'
 
 export default function LoginPage() {
     const router = useRouter()
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
+    const [showLoadingScreen, setShowLoadingScreen] = useState(false)
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
@@ -41,6 +43,9 @@ export default function LoginPage() {
                 throw new Error(result.error || 'Login failed')
             }
 
+            // Show beautiful loading screen before redirect
+            setShowLoadingScreen(true)
+
             // After login, fetch patients and auto-select the first one
             const patientsRes = await fetch('/api/patients')
             if (patientsRes.ok) {
@@ -55,13 +60,24 @@ export default function LoginPage() {
                 }
             }
 
-            router.push('/dashboard')
-            router.refresh()
+            // Show beautiful loading screen - redirect will happen when bar fills
+            setShowLoadingScreen(true)
         } catch (err: any) {
             setError(err.message)
+            setShowLoadingScreen(false)
         } finally {
             setLoading(false)
         }
+    }
+
+    const handleLoadingComplete = () => {
+        router.push('/dashboard')
+        router.refresh()
+    }
+
+    // Show loading overlay
+    if (showLoadingScreen) {
+        return <AuthLoadingOverlay message="Loading your dashboard" onComplete={handleLoadingComplete} />
     }
 
     return (
@@ -75,8 +91,7 @@ export default function LoginPage() {
                     <div className="mb-6 animate-in slide-in-from-bottom-4 duration-700 delay-100 flex justify-center">
                         <img src="/images/logo-full.jpg" alt="Memora" className="h-20 w-auto object-contain mix-blend-multiply" />
                     </div>
-                    <h1 className="text-3xl font-extrabold tracking-tight text-neutral-900 mb-2">Welcome Back</h1>
-                    <p className="text-neutral-500 font-medium">Modern reminiscence therapy for your loved ones.</p>
+                    <p className="text-neutral-500 font-medium pt-2">Modern reminiscence therapy for your loved ones.</p>
                 </div>
 
 

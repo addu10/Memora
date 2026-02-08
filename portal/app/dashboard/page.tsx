@@ -164,7 +164,7 @@ export default async function DashboardOverview() {
           <div className="relative z-10">
             <div className="text-6xl font-black text-slate-900 tracking-tighter">{totalSessions}</div>
             <div className="text-purple-600 font-bold flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-              Start Therapy <ArrowRight size={16} />
+              View Sessions <ArrowRight size={16} />
             </div>
           </div>
         </Link>

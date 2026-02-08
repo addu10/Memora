@@ -133,33 +133,48 @@ export default async function SessionsPage() {
                             </div>
 
                             {/* Session Info */}
-                            <div className="flex-1 space-y-3">
-                                <div className="flex flex-wrap items-center gap-3">
-                                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-50 text-indigo-700 text-sm font-bold border border-indigo-100">
-                                        {getMoodEmoji(s.mood)} {s.mood.charAt(0).toUpperCase() + s.mood.slice(1)}
-                                    </span>
-                                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-neutral-50 text-neutral-600 text-sm font-bold border border-neutral-100">
-                                        <Clock size={14} /> {s.duration} min
-                                    </span>
+                            <div className="flex-1 space-y-4">
+                                <div>
+                                    <h3 className="text-xl font-bold text-slate-800 group-hover:text-violet-700 transition-colors">
+                                        {s.notes?.includes(': ') ? s.notes.split(': ')[1] : 'Therapy Session'}
+                                    </h3>
+                                    <div className="flex flex-wrap items-center gap-3 mt-2">
+                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-violet-50 text-violet-700 text-xs font-bold border border-violet-100">
+                                            {getMoodEmoji(s.mood)} {s.mood.charAt(0).toUpperCase() + s.mood.slice(1)} Mood
+                                        </span>
+                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 text-slate-600 text-xs font-bold border border-slate-100">
+                                            <Clock size={12} className="text-slate-400" /> {s.duration} mins
+                                        </span>
+                                    </div>
                                 </div>
 
-                                <div className="flex flex-wrap items-center gap-4 text-sm font-medium text-neutral-500">
-                                    <span className="flex items-center gap-1.5 align-middle">
-                                        <Brain size={16} className="text-primary-500" />
-                                        <strong className="text-neutral-900">{s.memories.length}</strong> Memories Recall
-                                    </span>
-                                    <span className="w-1 h-1 rounded-full bg-neutral-300 hidden md:block"></span>
-                                    <span className="flex items-center gap-1.5 align-middle">
-                                        <Activity size={16} className="text-orange-500" />
-                                        <strong className="text-neutral-900">{getAvgRecallScore(s.memories)}%</strong> Avg Score
-                                    </span>
-                                </div>
+                                <div className="flex flex-wrap items-center gap-6 pt-1">
+                                    <div className="flex items-center gap-2.5">
+                                        <div className="w-8 h-8 rounded-lg bg-violet-50 flex items-center justify-center text-violet-600">
+                                            <Brain size={16} />
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] uppercase tracking-wider font-bold text-slate-400 leading-none mb-1">Recall</p>
+                                            <p className="text-sm font-bold text-slate-700">
+                                                {s.memories.length} <span className="text-slate-400 font-medium">Items</span>
+                                            </p>
+                                        </div>
+                                    </div>
 
-                                {s.notes && (
-                                    <p className="text-neutral-600 text-sm line-clamp-1 italic group-hover:text-neutral-900 transition-colors">
-                                        "{s.notes}"
-                                    </p>
-                                )}
+                                    <div className="h-8 w-px bg-slate-100 hidden sm:block"></div>
+
+                                    <div className="flex items-center gap-2.5">
+                                        <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600">
+                                            <Activity size={16} />
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] uppercase tracking-wider font-bold text-slate-400 leading-none mb-1">Avg Score</p>
+                                            <p className="text-sm font-bold text-slate-700">
+                                                {getAvgRecallScore(s.memories)}%
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
                             {/* Arrow */}

@@ -205,42 +205,51 @@ export default function NewFamilyMemberPage() {
                         </div>
 
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
-                            {photoUrls.map((url, index) => (
-                                <div key={index} className="relative group animate-in fade-in zoom-in duration-300" style={{ animationDelay: `${index * 50}ms` }}>
-                                    <div className="aspect-square rounded-[1.5rem] overflow-hidden bg-white/40 border border-white/60 group-hover:border-violet-300 transition-all shadow-sm hover:shadow-md">
-                                        <ImageUpload
-                                            bucket="family-photos"
-                                            onUpload={(newUrl) => updatePhotoUrl(index, newUrl)}
-                                            label={`Photo ${index + 1}`}
-                                            compact={true}
-                                            currentUrl={url}
-                                        />
-                                    </div>
-                                    {/* Remove Button */}
-                                    {url && photoUrls.length > 1 && (
-                                        <button
-                                            type="button"
-                                            onClick={() => removePhotoField(index)}
-                                            className="absolute -top-3 -right-3 w-9 h-9 bg-white text-red-500 rounded-full shadow-lg border border-red-50 flex items-center justify-center hover:bg-red-50 hover:scale-110 transition-all z-10"
-                                            title="Remove photo"
-                                        >
-                                            <X size={16} strokeWidth={3} />
-                                        </button>
-                                    )}
-                                </div>
-                            ))}
+                            {/* Show only uploaded photos */}
+                            {photoUrls.map((url, index) => {
+                                // Skip empty slots
+                                if (!url || url.trim() === '') return null
 
-                            {photoUrls.length < 10 && (
-                                <button
-                                    type="button"
-                                    onClick={addPhotoField}
-                                    className="aspect-square rounded-[1.5rem] border-2 border-dashed border-slate-200 hover:border-violet-400 hover:bg-violet-50/30 transition-all flex flex-col items-center justify-center gap-3 text-slate-400 hover:text-violet-600 group"
-                                >
-                                    <div className="w-12 h-12 rounded-2xl bg-white/50 group-hover:bg-white group-hover:shadow-md flex items-center justify-center transition-all">
-                                        <Plus size={24} />
+                                const uploadedPhotosCount = photoUrls.filter(u => u && u.trim() !== '').length
+
+                                return (
+                                    <div key={`photo-${index}`} className="relative group animate-in fade-in zoom-in duration-300" style={{ animationDelay: `${index * 50}ms` }}>
+                                        <div className="aspect-square rounded-[1.5rem] overflow-hidden bg-white/40 border border-white/60 group-hover:border-violet-300 transition-all shadow-sm hover:shadow-md">
+                                            <img src={url} alt={`Photo ${index + 1}`} className="w-full h-full object-cover" />
+                                        </div>
+                                        {/* Remove Button */}
+                                        {uploadedPhotosCount > 1 && (
+                                            <button
+                                                type="button"
+                                                onClick={() => removePhotoField(index)}
+                                                className="absolute -top-3 -right-3 w-9 h-9 bg-white text-red-500 rounded-full shadow-lg border border-red-50 flex items-center justify-center hover:bg-red-50 hover:scale-110 transition-all z-10"
+                                                title="Remove photo"
+                                            >
+                                                <X size={16} strokeWidth={3} />
+                                            </button>
+                                        )}
                                     </div>
-                                    <span className="text-sm font-bold">Add Photo Slot</span>
-                                </button>
+                                )
+                            })}
+
+                            {/* Single Add Photo Button - key forces remount to clear internal preview */}
+                            {photoUrls.filter(u => u && u.trim() !== '').length < 10 && (
+                                <div className="aspect-square rounded-[1.5rem] overflow-hidden bg-white/40 border-2 border-dashed border-slate-200 hover:border-violet-400 transition-all shadow-sm hover:shadow-md">
+                                    <ImageUpload
+                                        key={`add-photo-${photoUrls.filter(u => u && u.trim() !== '').length}`}
+                                        bucket="family-photos"
+                                        onUpload={(newUrl) => {
+                                            // Add new photo to the array
+                                            setPhotoUrls(prev => {
+                                                // Remove empty slots first, then add the new URL
+                                                const nonEmpty = prev.filter(u => u && u.trim() !== '')
+                                                return [...nonEmpty, newUrl]
+                                            })
+                                        }}
+                                        label="Add Photo"
+                                        compact={true}
+                                    />
+                                </div>
                             )}
                         </div>
                     </div>

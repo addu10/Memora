@@ -5,11 +5,13 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowRight, Mail, Lock, User, Phone, AlertCircle } from 'lucide-react'
+import AuthLoadingOverlay from '@/app/components/AuthLoadingOverlay'
 
 export default function RegisterPage() {
     const router = useRouter()
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
+    const [showLoadingScreen, setShowLoadingScreen] = useState(false)
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
@@ -37,13 +39,24 @@ export default function RegisterPage() {
                 throw new Error(result.error || 'Registration failed')
             }
 
-            router.push('/dashboard')
-            router.refresh()
+            // Show beautiful loading screen - redirect will happen when bar fills
+            setShowLoadingScreen(true)
         } catch (err: any) {
             setError(err.message)
+            setShowLoadingScreen(false)
         } finally {
             setLoading(false)
         }
+    }
+
+    const handleLoadingComplete = () => {
+        router.push('/dashboard')
+        router.refresh()
+    }
+
+    // Show loading overlay
+    if (showLoadingScreen) {
+        return <AuthLoadingOverlay message="Setting up your workspace" onComplete={handleLoadingComplete} />
     }
 
     return (

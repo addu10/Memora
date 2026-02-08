@@ -330,7 +330,7 @@ export default async function ProgressPage() {
                             ))}
                         </div>
 
-                        <div className="mt-8 p-6 bg-gradient-to-br from-violet-50 to-indigo-50 rounded-3xl border border-violet-100">
+                        {/* <div className="mt-8 p-6 bg-gradient-to-br from-violet-50 to-indigo-50 rounded-3xl border border-violet-100">
                             <h4 className="font-bold text-violet-900 mb-2 flex items-center gap-2">
                                 <Zap size={18} className="fill-violet-600 text-violet-600" />
                                 Insight
@@ -338,7 +338,7 @@ export default async function ProgressPage() {
                             <p className="text-sm text-violet-700/80 leading-relaxed font-medium">
                                 Tracking emotional patterns helps identify triggers and effective memory recall strategies. Consistent positive sessions indicate effective therapy.
                             </p>
-                        </div>
+                        </div> */}
                     </div>
                 </div>
             </div>

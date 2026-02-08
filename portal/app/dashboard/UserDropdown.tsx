@@ -1,18 +1,17 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import Link from 'next/link'
-import LogoutButton from './LogoutButton'
-import { useTheme } from '../components/ThemeContext'
+import { Settings, LogOut } from 'lucide-react'
+import { supabase } from '@/lib/supabase'
 
 interface UserDropdownProps {
   userName: string
+  userEmail?: string
 }
 
-export default function UserDropdown({ userName }: UserDropdownProps) {
+export default function UserDropdown({ userName, userEmail }: UserDropdownProps) {
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
-  const { theme, toggleTheme } = useTheme()
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -25,82 +24,67 @@ export default function UserDropdown({ userName }: UserDropdownProps) {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
+  const handleSettingsClick = () => {
+    setIsOpen(false)
+    window.location.href = '/dashboard/settings'
+  }
+
+  const handleLogout = async () => {
+    setIsOpen(false)
+    console.log('Signing out...')
+    try {
+      await supabase.auth.signOut()
+    } catch (e) {
+      console.error('Sign out error:', e)
+    } finally {
+      window.location.href = '/login'
+    }
+  }
+
+  const firstName = userName.split(' ')[0]
+
   return (
-    <div className="user-dropdown-container" ref={dropdownRef}>
+    <div className="relative" ref={dropdownRef} style={{ pointerEvents: 'auto' }}>
       <button
-        className={`user-profile-trigger ${isOpen ? 'active' : ''}`}
         onClick={() => setIsOpen(!isOpen)}
-        aria-haspopup="true"
-        aria-expanded={isOpen}
+        className="flex items-center gap-2 pl-2 pr-1.5 py-1.5 rounded-2xl hover:bg-slate-50 transition-colors"
+        type="button"
       >
-        <div className="user-avatar">
-          {userName.charAt(0).toUpperCase()}
+        <div className="w-10 h-10 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-bold text-sm shadow-md ring-2 ring-white">
+          {firstName[0]}
         </div>
-        <span className="user-name">{userName}</span>
-        <svg
-          className={`dropdown-chevron ${isOpen ? 'rotated' : ''}`}
-          width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-        >
-          <path d="m6 9 6 6 6-6" />
-        </svg>
       </button>
 
       {isOpen && (
-        <div className="profile-dropdown">
-          <div className="dropdown-header">
-            <span className="dropdown-label">Settings & Theme</span>
+        <div
+          className="absolute top-full right-0 mt-4 w-64 bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200 z-[9999]"
+          style={{ pointerEvents: 'auto' }}
+        >
+          <div className="px-5 py-4 border-b border-slate-50 bg-slate-50/50">
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Signed in as</p>
+            <p className="text-sm font-bold text-slate-900 truncate">{userEmail || userName}</p>
           </div>
-          <div className="dropdown-items">
+          <div className="p-2 space-y-1">
             <button
-              className="dropdown-item theme-toggle-btn"
-              onClick={() => {
-                toggleTheme()
-                setIsOpen(false)
-              }}
+              onClick={handleSettingsClick}
+              className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition-colors text-left cursor-pointer"
+              type="button"
             >
-              <div className="item-icon-wrapper">
-                {theme === 'light' ? (
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
-                  </svg>
-                ) : (
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="4" />
-                    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
-                  </svg>
-                )}
-              </div>
-              <span>{theme === 'light' ? 'Dark Mode' : 'Light Mode'}</span>
-            </button>
-            <div className="dropdown-divider"></div>
-            <Link
-              href="/dashboard/settings"
-              className="dropdown-item"
-              onClick={() => setIsOpen(false)}
-            >
-              <div className="item-icon-wrapper">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
-                  <circle cx="12" cy="12" r="3" />
-                </svg>
-              </div>
+              <Settings size={16} className="text-slate-400" />
               <span>Settings</span>
-            </Link>
-            <div className="dropdown-divider"></div>
-            <LogoutButton className="dropdown-item logout-item">
-              <div className="item-icon-wrapper">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                  <polyline points="16 17 21 12 16 7" />
-                  <line x1="21" y1="12" x2="9" y2="12" />
-                </svg>
-              </div>
-              <span>Logout</span>
-            </LogoutButton>
+            </button>
+            <div className="h-px bg-slate-100 my-1"></div>
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-rose-600 hover:bg-rose-50 rounded-xl transition-colors text-left cursor-pointer"
+              type="button"
+            >
+              <LogOut size={16} />
+              <span>Log out</span>
+            </button>
           </div>
         </div>
       )}
-
     </div>
   )
 }

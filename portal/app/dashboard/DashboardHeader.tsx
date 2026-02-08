@@ -10,13 +10,10 @@ import {
     Folder,
     BarChart2,
     Heart,
-    ChevronDown,
-    LogOut,
-    Settings,
-    Moon,
-    Sun
+    ChevronDown
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import UserDropdown from './UserDropdown'
 
 interface Patient {
     id: string
@@ -35,21 +32,16 @@ export default function DashboardHeader({ user, patients, selectedPatientId }: D
     const router = useRouter()
     const pathname = usePathname()
     const [isCaringForOpen, setIsCaringForOpen] = useState(false)
-    const [isProfileOpen, setIsProfileOpen] = useState(false)
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
     // Close dropdowns when clicking outside
     const caringForRef = useRef<HTMLDivElement>(null)
-    const profileRef = useRef<HTMLDivElement>(null)
     const mobileMenuRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
             if (caringForRef.current && !caringForRef.current.contains(event.target as Node)) {
                 setIsCaringForOpen(false)
-            }
-            if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
-                setIsProfileOpen(false)
             }
             if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target as Node)) {
                 setIsMobileMenuOpen(false)
@@ -75,20 +67,15 @@ export default function DashboardHeader({ user, patients, selectedPatientId }: D
         }
     }
 
-    const handleSignOut = async () => {
-        await supabase.auth.signOut()
-        router.replace('/login')
-    }
+
 
     // Close mobile menu on route change
     useEffect(() => {
         setIsMobileMenuOpen(false)
         setIsCaringForOpen(false)
-        setIsProfileOpen(false)
     }, [pathname])
 
     const selectedPatient = patients.find(p => p.id === selectedPatientId) || patients[0]
-    const firstName = user.name.split(' ')[0]
 
     return (
         <div className="fixed top-6 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none">
@@ -116,7 +103,7 @@ export default function DashboardHeader({ user, patients, selectedPatientId }: D
                     <div className="hidden lg:flex items-center gap-2 pr-1">
 
                         {/* "Caring For" Dropdown (Squircle) */}
-                        <div className="relative" ref={caringForRef}>
+                        <div className="relative pointer-events-auto" ref={caringForRef}>
                             <button
                                 onClick={() => setIsCaringForOpen(!isCaringForOpen)}
                                 className="hidden md:flex items-center gap-3 bg-slate-50/80 px-4 py-2 rounded-2xl border border-slate-100 hover:bg-white hover:border-indigo-100 hover:shadow-md transition-all h-10 group"
@@ -133,7 +120,7 @@ export default function DashboardHeader({ user, patients, selectedPatientId }: D
                             </button>
 
                             {isCaringForOpen && (
-                                <div className="absolute top-full right-0 mt-4 w-64 bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200 z-50">
+                                <div className="absolute top-full right-0 mt-4 w-64 bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200 z-[9999] pointer-events-auto">
                                     <div className="p-2 space-y-1">
                                         {patients.map(patient => (
                                             <button
@@ -159,73 +146,14 @@ export default function DashboardHeader({ user, patients, selectedPatientId }: D
                             )}
                         </div>
 
-                        {/* User Profile Dropdown (Squircle) */}
-                        <div className="relative" ref={profileRef}>
-                            <button
-                                onClick={() => setIsProfileOpen(!isProfileOpen)}
-                                className="flex items-center gap-2 pl-2 pr-1.5 py-1.5 rounded-2xl hover:bg-slate-50 transition-colors"
-                                type="button"
-                            >
-                                <div className="w-10 h-10 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-bold text-sm shadow-md ring-2 ring-white">
-                                    {firstName[0]}
-                                </div>
-                            </button>
-
-                            {isProfileOpen && (
-                                <div className="absolute top-full right-0 mt-4 w-64 bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200 z-50">
-                                    <div className="px-5 py-4 border-b border-slate-50 bg-slate-50/50">
-                                        <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Signed in as</p>
-                                        <p className="text-sm font-bold text-slate-900 truncate">{user.email || user.name}</p>
-                                    </div>
-                                    <div className="p-2 space-y-1">
-                                        <div className="px-2 py-1.5">
-                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 px-2">Settings & Theme</p>
-                                            <Link href="/dashboard/settings" className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition-colors group">
-                                                <Settings size={16} className="text-slate-400 group-hover:text-slate-600" />
-                                                <span>Settings</span>
-                                            </Link>
-                                        </div>
-                                        <div className="h-px bg-slate-100 my-1"></div>
-                                        <button
-                                            onClick={handleSignOut}
-                                            className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-rose-600 hover:bg-rose-50 rounded-xl transition-colors"
-                                            type="button"
-                                        >
-                                            <LogOut size={16} />
-                                            <span>Log out</span>
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
+                        {/* User Profile Dropdown */}
+                        <UserDropdown userName={user.name} userEmail={user.email} />
                     </div>
 
                     {/* 4. Mobile Menu Button */}
                     <div className="flex lg:hidden items-center gap-2">
-                        <div className="relative" ref={profileRef}>
-                            <button
-                                onClick={() => setIsProfileOpen(!isProfileOpen)}
-                                className="flex items-center gap-2 pl-2 pr-1.5 py-1.5 rounded-2xl hover:bg-slate-50 transition-colors"
-                                type="button"
-                            >
-                                <div className="w-10 h-10 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-bold text-sm shadow-md ring-2 ring-white">
-                                    {firstName[0]}
-                                </div>
-                            </button>
-                            {/* Mobile Profile Dropdown - Reusing logic but positioned for mobile if needed, or just let it fall back */}
-                            {isProfileOpen && (
-                                <div className="absolute top-full right-0 mt-4 w-64 bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200 z-50">
-                                    <div className="px-5 py-4 border-b border-slate-50 bg-slate-50/50">
-                                        <p className="text-sm font-bold text-slate-900 truncate">{user.email || user.name}</p>
-                                    </div>
-                                    <div className="p-2 space-y-1">
-                                        <button onClick={handleSignOut} className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-rose-600 hover:bg-rose-50 rounded-xl transition-colors" type="button">
-                                            <LogOut size={16} /> <span>Log out</span>
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
+                        {/* Mobile User Profile Dropdown */}
+                        <UserDropdown userName={user.name} userEmail={user.email} />
 
                         <button
                             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}

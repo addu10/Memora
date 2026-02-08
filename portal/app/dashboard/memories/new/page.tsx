@@ -22,10 +22,11 @@ import {
     ChevronLeft,
     Check,
     Sparkles,
-    Calendar,
     Heart,
     AlignLeft
 } from 'lucide-react'
+import ModernDatePicker from '../../components/ModernDatePicker'
+import ModernSelect from '../../components/ModernSelect'
 
 
 const eventCategories = [
@@ -202,6 +203,27 @@ export default function NewMemoryPage() {
     const getPhotoLabel = (url: string) => photoLabels.find(l => l.photoUrl === url)
     const activePhoto = activePhotoIndex !== null ? photoUrls[activePhotoIndex] : null
 
+    // Check if a photo has all required labels filled
+    const isPhotoLabelComplete = (url: string): boolean => {
+        const label = getPhotoLabel(url)
+        if (!label) return false
+        return !!(
+            label.description?.trim() &&
+            label.setting?.trim() &&
+            label.activities?.trim() &&
+            label.facialExpressions?.trim()
+        )
+    }
+
+    // Check if the last uploaded photo has all labels filled
+    const canUploadMore = (): boolean => {
+        const uploadedPhotos = photoUrls.filter(u => u && u.trim() !== '')
+        if (uploadedPhotos.length === 0) return true // No photos yet, can upload first
+        // Check if last uploaded photo has all fields filled
+        const lastPhoto = uploadedPhotos[uploadedPhotos.length - 1]
+        return isPhotoLabelComplete(lastPhoto)
+    }
+
     // Wizard Navigation
     const nextStep = () => {
         if (step < totalSteps) setStep(step + 1)
@@ -284,7 +306,8 @@ export default function NewMemoryPage() {
                             <h2 className="text-2xl font-bold text-neutral-900">The Basics</h2>
                             <p className="text-neutral-500">When and where did this happen?</p>
                         </div>
-                        <div className="space-y-4">
+                        <div className="space-y-5">
+                            {/* Memory Title - Full Width */}
                             <div className="group">
                                 <label className="block text-sm font-bold text-neutral-700 mb-2">Memory Title</label>
                                 <div className="relative">
@@ -302,60 +325,39 @@ export default function NewMemoryPage() {
                                     />
                                 </div>
                             </div>
-                            <div className="group">
-                                <label className="block text-sm font-bold text-neutral-700 mb-2">Date</label>
-                                <div className="relative">
-                                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                        <Calendar className="h-5 w-5 text-neutral-400 group-focus-within:text-primary-600 transition-colors" />
-                                    </div>
-                                    <input
-                                        type="date"
-                                        name="date"
+
+                            {/* Date and Event Type - Side by Side */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="group relative z-20">
+                                    <label className="block text-sm font-bold text-neutral-700 mb-2">Date</label>
+                                    <ModernDatePicker
                                         value={formData.date}
-                                        onChange={handleInputChange}
-                                        className="w-full pl-11 pr-4 py-4 rounded-xl border border-neutral-200 bg-white focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all font-medium"
+                                        onDateSelectAction={(date: string) => setFormData(prev => ({ ...prev, date }))}
+                                        placeholder="Select date..."
+                                    />
+                                </div>
+                                <div className="group relative z-10">
+                                    <label className="block text-sm font-bold text-neutral-700 mb-2">Event Type</label>
+                                    <ModernSelect
+                                        value={formData.event}
+                                        onSelectAction={(value: string) => setFormData(prev => ({ ...prev, event: value }))}
+                                        options={eventCategories}
+                                        placeholder="Select event..."
+                                        icon={<Sparkles className="h-5 w-5 text-neutral-400" />}
                                     />
                                 </div>
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="group">
-                                    <label className="block text-sm font-bold text-neutral-700 mb-2">Event Type</label>
-                                    <div className="relative">
-                                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                            <Sparkles className="h-5 w-5 text-neutral-400 group-focus-within:text-primary-600 transition-colors" />
-                                        </div>
-                                        <select
-                                            name="event"
-                                            value={formData.event}
-                                            onChange={handleInputChange}
-                                            className="w-full pl-11 pr-4 py-4 rounded-xl border border-neutral-200 bg-white focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all font-medium appearance-none"
-                                        >
-                                            <option value="">Select event...</option>
-                                            {eventCategories.map(event => (
-                                                <option key={event} value={event}>{event}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                </div>
-                                <div className="group">
-                                    <label className="block text-sm font-bold text-neutral-700 mb-2">Location</label>
-                                    <div className="relative">
-                                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                            <MapPin className="h-5 w-5 text-neutral-400 group-focus-within:text-primary-600 transition-colors" />
-                                        </div>
-                                        <select
-                                            name="location"
-                                            value={formData.location}
-                                            onChange={handleInputChange}
-                                            className="w-full pl-11 pr-4 py-4 rounded-xl border border-neutral-200 bg-white focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all font-medium appearance-none"
-                                        >
-                                            <option value="">Select location...</option>
-                                            {locationOptions.map(loc => (
-                                                <option key={loc} value={loc}>{loc}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                </div>
+
+                            {/* Location - Full Width */}
+                            <div className="group relative z-0">
+                                <label className="block text-sm font-bold text-neutral-700 mb-2">Location</label>
+                                <ModernSelect
+                                    value={formData.location}
+                                    onSelectAction={(value: string) => setFormData(prev => ({ ...prev, location: value }))}
+                                    options={locationOptions}
+                                    placeholder="Select location..."
+                                    icon={<MapPin className="h-5 w-5 text-neutral-400" />}
+                                />
                             </div>
                         </div>
                     </div>
@@ -384,23 +386,19 @@ export default function NewMemoryPage() {
                                     />
                                 </div>
                             </div>
-                            <div className="group">
+                            <div className="group relative z-10">
                                 <label className="block text-sm font-bold text-neutral-700 mb-2">Importance</label>
-                                <div className="relative">
-                                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                        <Heart className="h-5 w-5 text-neutral-400 group-focus-within:text-primary-600 transition-colors" />
-                                    </div>
-                                    <select
-                                        name="importance"
-                                        value={formData.importance}
-                                        onChange={handleInputChange}
-                                        className="w-full pl-11 pr-4 py-4 rounded-xl border border-neutral-200 bg-white focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all font-medium appearance-none"
-                                    >
-                                        <option value="3">⭐⭐⭐ Medium</option>
-                                        <option value="5">⭐⭐⭐⭐⭐ High</option>
-                                        <option value="1">⭐ Low</option>
-                                    </select>
-                                </div>
+                                <ModernSelect
+                                    value={formData.importance}
+                                    onSelectAction={(value: string) => setFormData(prev => ({ ...prev, importance: value }))}
+                                    options={[
+                                        { value: '5', label: '⭐⭐⭐⭐⭐ High' },
+                                        { value: '3', label: '⭐⭐⭐ Medium' },
+                                        { value: '1', label: '⭐ Low' }
+                                    ]}
+                                    placeholder="Select importance..."
+                                    icon={<Heart className="h-5 w-5 text-neutral-400" />}
+                                />
                             </div>
                         </div>
                     </div>
@@ -479,57 +477,82 @@ export default function NewMemoryPage() {
 
                         {/* Photo Box */}
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            {photoUrls.map((url, index) => (
-                                <div
-                                    key={index}
-                                    className={`relative aspect-square rounded-2xl overflow-hidden border-2 cursor-pointer transition-all ${activePhotoIndex === index
-                                        ? 'border-primary-500 ring-4 ring-primary-100'
-                                        : 'border-transparent hover:border-neutral-200'
-                                        }`}
-                                    onClick={() => url && setActivePhotoIndex(index)}
-                                >
-                                    <ImageUpload
-                                        bucket="memories"
-                                        onUpload={(newUrl) => {
-                                            updatePhotoUrl(index, newUrl)
-                                            setActivePhotoIndex(index)
+                            {/* Show only photos that have been uploaded - iterate with index to prevent duplicates */}
+                            {photoUrls.map((url, index) => {
+                                // Skip empty slots
+                                if (!url || url.trim() === '') return null
+
+                                const uploadedPhotosCount = photoUrls.filter(u => u && u.trim() !== '').length
+
+                                return (
+                                    <div
+                                        key={`photo-${index}`}
+                                        className={`relative aspect-square rounded-2xl overflow-hidden border-2 cursor-pointer transition-all ${activePhotoIndex === index
+                                            ? 'border-primary-500 ring-4 ring-primary-100'
+                                            : 'border-transparent hover:border-neutral-200'
+                                            }`}
+                                        onClick={() => setActivePhotoIndex(index)}
+                                    >
+                                        <img src={url} alt={`Photo ${index + 1}`} className="w-full h-full object-cover" />
+                                        {getPhotoLabel(url)?.description && (
+                                            <div className="absolute top-2 left-2 bg-emerald-500 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] shadow-md z-10">
+                                                ✓
+                                            </div>
+                                        )}
+                                        {uploadedPhotosCount > 1 && (
+                                            <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                    e.stopPropagation()
+                                                    removePhotoField(index)
+                                                }}
+                                                className="absolute top-2 right-2 bg-white/90 text-neutral-500 w-6 h-6 rounded-full flex items-center justify-center text-xs shadow-sm hover:text-red-500 hover:bg-white transition-colors z-10"
+                                            >
+                                                <X size={14} />
+                                            </button>
+                                        )}
+                                    </div>
+                                )
+                            })}
+
+                            {/* Single Add Photo Button - with validation */}
+                            {photoUrls.filter(url => url && url.trim() !== '').length < 10 && (
+                                canUploadMore() ? (
+                                    <div className="aspect-square rounded-2xl border-2 border-dashed border-neutral-200 hover:border-primary-300 hover:bg-primary-50/50 transition-all overflow-hidden">
+                                        <ImageUpload
+                                            key={`add-photo-${photoUrls.filter(u => u && u.trim() !== '').length}`}
+                                            bucket="memories"
+                                            onUpload={(newUrl) => {
+                                                // Add new photo to the array
+                                                setPhotoUrls(prev => {
+                                                    // Remove empty slots first, then add the new URL
+                                                    const nonEmpty = prev.filter(u => u && u.trim() !== '')
+                                                    return [...nonEmpty, newUrl]
+                                                })
+                                                // Set active to the new photo
+                                                const currentUploaded = photoUrls.filter(u => u && u.trim() !== '').length
+                                                setActivePhotoIndex(currentUploaded)
+                                            }}
+                                            label="Add Photo"
+                                            compact={true}
+                                        />
+                                    </div>
+                                ) : (
+                                    <div
+                                        className="aspect-square rounded-2xl border-2 border-dashed border-amber-300 bg-amber-50/50 flex flex-col items-center justify-center text-amber-600 p-4 cursor-pointer hover:bg-amber-50 transition-all"
+                                        onClick={() => {
+                                            // Select the last photo to fill its details
+                                            const uploadedPhotos = photoUrls.filter(u => u && u.trim() !== '')
+                                            if (uploadedPhotos.length > 0) {
+                                                const lastIndex = photoUrls.findIndex(u => u === uploadedPhotos[uploadedPhotos.length - 1])
+                                                setActivePhotoIndex(lastIndex)
+                                            }
                                         }}
-                                        label={`Img ${index + 1}`}
-                                        compact={true}
-                                        currentUrl={url}
-                                    />
-                                    {url && (
-                                        <>
-                                            {getPhotoLabel(url)?.description && (
-                                                <div className="absolute top-2 left-2 bg-emerald-500 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] shadow-md z-10">
-                                                    ✓
-                                                </div>
-                                            )}
-                                            {photoUrls.filter(u => u).length > 1 && (
-                                                <button
-                                                    type="button"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation()
-                                                        removePhotoField(index)
-                                                    }}
-                                                    className="absolute top-2 right-2 bg-white/90 text-neutral-500 w-6 h-6 rounded-full flex items-center justify-center text-xs shadow-sm hover:text-red-500 hover:bg-white transition-colors z-10"
-                                                >
-                                                    <X size={14} />
-                                                </button>
-                                            )}
-                                        </>
-                                    )}
-                                </div>
-                            ))}
-                            {photoUrls.length < 10 && (
-                                <button
-                                    type="button"
-                                    onClick={addPhotoField}
-                                    className="aspect-square rounded-2xl border-2 border-dashed border-neutral-200 flex flex-col items-center justify-center text-neutral-400 hover:border-primary-300 hover:text-primary-500 hover:bg-primary-50/50 transition-all font-bold gap-1 text-sm"
-                                >
-                                    <Plus size={20} />
-                                    <span>Add</span>
-                                </button>
+                                    >
+                                        <span className="text-2xl mb-1">⚠️</span>
+                                        <span className="text-xs font-bold text-center">Fill previous photo details first</span>
+                                    </div>
+                                )
                             )}
                         </div>
 
@@ -580,20 +603,64 @@ export default function NewMemoryPage() {
                                             </div>
 
                                             <div className="space-y-2">
-                                                <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider block">Context</label>
+                                                <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider block">What's happening?</label>
                                                 <textarea
                                                     value={getPhotoLabel(activePhoto)?.description || ''}
                                                     onChange={(e) => updatePhotoLabel(activePhoto, 'description', e.target.value)}
-                                                    className="w-full rounded-xl border-white/10 bg-white/5 px-3 py-2 focus:ring-2 focus:ring-primary-500 outline-none text-sm text-white min-h-[60px]"
-                                                    placeholder="What's happening here?"
+                                                    className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 focus:ring-2 focus:ring-primary-500 outline-none text-sm text-white min-h-[60px]"
+                                                    placeholder="e.g., Family eating Onam sadhya together"
                                                 />
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider block">Setting</label>
+                                                <ModernSelect
+                                                    value={getPhotoLabel(activePhoto)?.setting || ''}
+                                                    onSelectAction={(val) => updatePhotoLabel(activePhoto, 'setting', val)}
+                                                    options={settingOptions}
+                                                    placeholder="Select setting..."
+                                                    variant="dark"
+                                                />
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider block">Activity</label>
+                                                <ModernSelect
+                                                    value={getPhotoLabel(activePhoto)?.activities || ''}
+                                                    onSelectAction={(val) => updatePhotoLabel(activePhoto, 'activities', val)}
+                                                    options={activityOptions}
+                                                    placeholder="Select activity..."
+                                                    variant="dark"
+                                                />
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider block">Mood / Expression</label>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {moodOptions.map(mood => {
+                                                        const isSelected = getPhotoLabel(activePhoto)?.facialExpressions === mood
+                                                        return (
+                                                            <button
+                                                                key={mood}
+                                                                type="button"
+                                                                onClick={() => updatePhotoLabel(activePhoto, 'facialExpressions', mood)}
+                                                                className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all ${isSelected
+                                                                    ? 'bg-primary-600 border-primary-600 text-white'
+                                                                    : 'bg-transparent border-white/20 text-neutral-400 hover:border-white/50 hover:text-white'
+                                                                    }`}
+                                                            >
+                                                                {mood}
+                                                            </button>
+                                                        )
+                                                    })}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             ) : (
                                 <div className="text-center py-8 text-neutral-500">
-                                    <p className="text-sm">Select a photo above to add AI details.</p>
+                                    <p className="text-sm">Select a photo above to add details.</p>
                                 </div>
                             )}
                         </div>
@@ -629,7 +696,7 @@ export default function NewMemoryPage() {
                 </div>
 
                 {/* Main Card */}
-                <div className="bg-white rounded-[2.5rem] p-8 md:p-12 shadow-xl shadow-indigo-100/50 border border-neutral-100 relative overflow-hidden min-h-[600px] flex flex-col">
+                <div className="bg-white rounded-[2.5rem] p-8 md:p-12 shadow-xl shadow-indigo-100/50 border border-neutral-100 relative min-h-[600px] flex flex-col">
                     {/* Decorative Background Elements */}
                     <div className="absolute top-0 right-0 w-80 h-80 bg-primary-50/50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 -z-10" />
                     <div className="absolute bottom-0 left-0 w-80 h-80 bg-indigo-50/50 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2 -z-10" />
@@ -642,11 +709,11 @@ export default function NewMemoryPage() {
                             </div>
                         )}
 
-                        <div className="flex-grow">
+                        <div className="flex-grow relative z-30">
                             {renderStepContent()}
                         </div>
 
-                        <div className="flex gap-4 mt-8 pt-6 border-t border-neutral-100">
+                        <div className="flex gap-4 mt-8 pt-6 border-t border-neutral-100 relative z-0">
                             {step > 1 && (
                                 <button
                                     type="button"
