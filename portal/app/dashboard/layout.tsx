@@ -1,13 +1,14 @@
-// Dashboard Layout with Patient Selection and Sidebar Navigation
+// Dashboard Layout with Horizontal Header (Reference Match)
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { cookies } from 'next/headers'
 import { getSession } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
-import PatientSelector from './PatientSelector'
-import LogoutButton from './LogoutButton'
 import DashboardClientWrapper from './DashboardClientWrapper'
-import UserDropdown from './UserDropdown'
+import DashboardHeader from './DashboardHeader'
+import { Outfit } from 'next/font/google'
+
+const outfit = Outfit({ subsets: ['latin'] })
 
 async function getPatients(userId: string) {
   const { data } = await supabaseAdmin
@@ -36,73 +37,29 @@ export default async function DashboardLayout({
 
   const patients = await getPatients(session.userId)
   const selectedPatientId = await getSelectedPatientId()
-  const selectedPatient = patients.find(p => p.id === selectedPatientId) || patients[0]
+  const firstName = session.name.split(' ')[0]
 
-  const hasPatients = patients.length > 0
+  // Find selected patient name for the "Caring For" pill
+  const selectedPatient = patients.find(p => p.id === selectedPatientId) || patients[0]
 
   return (
     <DashboardClientWrapper
       patients={patients.map(p => ({ id: p.id, name: p.name, age: p.age, photoUrl: p.photoUrl || undefined }))}
       selectedPatientId={selectedPatientId}
     >
-      <div className="dashboard-layout">
-        {/* Top Navbar */}
-        <header className="navbar">
-          <div className="navbar-left">
-            <Link href="/dashboard" className="navbar-logo">
-              <img src="/icons/logo.png" alt="" className="premium-icon logo-icon-sm" />
-              <span className="logo-text">Memora</span>
-            </Link>
+      <div className={`min-h-screen bg-transparent ${outfit.className}`}>
 
-            <nav className="navbar-nav">
-              <Link href="/dashboard" className="nav-link">
-                <img src="/icons/overview.png" alt="" className="premium-icon" />
-                <span className="nav-text">Overview</span>
-              </Link>
-              {hasPatients && (
-                <>
-                  <Link href="/dashboard/memories" className="nav-link">
-                    <img src="/icons/memories.png" alt="" className="premium-icon" />
-                    <span className="nav-text">Memories</span>
-                  </Link>
-                  <Link href="/dashboard/family" className="nav-link">
-                    <img src="/icons/family.png" alt="" className="premium-icon" />
-                    <span className="nav-text">Family</span>
-                  </Link>
-                  <Link href="/dashboard/sessions" className="nav-link">
-                    <img src="/icons/sessions.png" alt="" className="premium-icon" />
-                    <span className="nav-text">Sessions</span>
-                  </Link>
-                  <Link href="/dashboard/progress" className="nav-link">
-                    <img src="/icons/analytics.png" alt="" className="premium-icon" />
-                    <span className="nav-text">Analytics</span>
-                  </Link>
-                </>
-              )}
-              <Link href="/dashboard/patients" className="nav-link">
-                <img src="/icons/patients.png" alt="" className="premium-icon" />
-                <span className="nav-text">Patients</span>
-              </Link>
-            </nav>
-          </div>
+        <DashboardHeader
+          user={session}
+          patients={patients}
+          selectedPatientId={selectedPatientId}
+        />
 
-          <div className="navbar-right">
-            {hasPatients && (
-              <PatientSelector
-                patients={patients.map(p => ({ id: p.id, name: p.name, age: p.age, photoUrl: p.photoUrl }))}
-                selectedPatientId={selectedPatient?.id}
-              />
-            )}
-            <UserDropdown userName={session.name} />
-          </div>
-        </header>
-
-        {/* Main Content */}
-        <main className="main-content">
-          <div className="content-body">
-            {children}
-          </div>
+        {/* Main Content Area */}
+        <main className="p-6 pt-28 lg:p-12 lg:pt-28 max-w-[1920px] mx-auto min-h-[calc(100vh-80px)]">
+          {children}
         </main>
+
       </div>
     </DashboardClientWrapper>
   )

@@ -1,224 +1,190 @@
-// Dashboard Home Page
+
 import Link from 'next/link'
 import { getSession } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
+import { Users, Brain, Activity, Plus, ArrowRight, Clock, Heart, Zap, Sparkles } from 'lucide-react'
 
-async function getDashboardStats(userId: string) {
-  // Get counts in parallel
-  const [patientsResult, sessionsResult, memoriesResult] = await Promise.all([
-    supabaseAdmin.from('Patient').select('id', { count: 'exact', head: true }).eq('caregiverId', userId),
-    supabaseAdmin.from('TherapySession').select('id', { count: 'exact', head: true }).eq('caregiverId', userId),
-    supabaseAdmin.from('Memory').select('id, patientId', { count: 'exact', head: true })
-  ])
-
-  // For memories, we need to filter by caregiver's patients
-  const { data: patientIds } = await supabaseAdmin
-    .from('Patient')
-    .select('id')
-    .eq('caregiverId', userId)
-
-  let memoriesCount = 0
-  if (patientIds && patientIds.length > 0) {
-    const { count } = await supabaseAdmin
-      .from('Memory')
-      .select('id', { count: 'exact', head: true })
-      .in('patientId', patientIds.map(p => p.id))
-    memoriesCount = count || 0
-  }
-
-  // Recent sessions with patient details
-  const { data: recentSessionsRaw } = await supabaseAdmin
-    .from('TherapySession')
-    .select('*')
-    .eq('caregiverId', userId)
-    .order('date', { ascending: false })
-    .limit(5)
-
-  // Get patient info for each session
-  const recentSessions = await Promise.all(
-    (recentSessionsRaw || []).map(async (s) => {
-      const { data: patient } = await supabaseAdmin
-        .from('Patient')
-        .select('name')
-        .eq('id', s.patientId)
-        .single()
-      return { ...s, patient: patient || { name: 'Unknown' } }
-    })
-  )
-
-  // Patients list
-  const { data: patientsList } = await supabaseAdmin
-    .from('Patient')
-    .select('*')
-    .eq('caregiverId', userId)
-    .order('updatedAt', { ascending: false })
-    .limit(5)
-
-  return {
-    patients: patientsResult.count || 0,
-    sessions: sessionsResult.count || 0,
-    memories: memoriesCount,
-    recentSessions,
-    patientsList: patientsList || []
-  }
-}
-
-export default async function DashboardPage() {
+export default async function DashboardOverview() {
   const session = await getSession()
   if (!session) return null
 
-  const stats = await getDashboardStats(session.userId)
+  // 1. Fetch Key Metrics
+  const { count: patientCount } = await supabaseAdmin
+    .from('Patient')
+    .select('*', { count: 'exact', head: true })
+    .eq('caregiverId', session.userId)
+
+  const { data: allPatients } = await supabaseAdmin
+    .from('Patient')
+    .select('id')
+    .eq('caregiverId', session.userId)
+
+  const patientIds = allPatients?.map(p => p.id) || []
+
+  let totalMemories = 0
+  let totalSessions = 0
+
+  if (patientIds.length > 0) {
+    const { count: mCount } = await supabaseAdmin
+      .from('Memory')
+      .select('*', { count: 'exact', head: true })
+      .in('patientId', patientIds)
+    totalMemories = mCount || 0
+
+    const { count: sCount } = await supabaseAdmin
+      .from('TherapySession')
+      .select('*', { count: 'exact', head: true })
+      .in('patientId', patientIds)
+    totalSessions = sCount || 0
+  }
+
+  // Get first name
+  const firstName = session.name.split(' ')[0]
+
+  // Day-based Quotes
+  const quotes = [
+    "Every moment of care you give creates ripples of love that transcend memory.",
+    "Your patience today becomes their comfort tomorrow, even when they cannot remember why they feel safe.",
+    "When memory fades, your presence becomes the anchor that holds their world steady.",
+    "Some days will break your heart, but you are building something unbreakable: unconditional love.",
+    "In the repetition of their questions lies an opportunity to give the gift of reassurance again and again.",
+    "In caring for them, you honor not just who they were, but who they are right now.",
+    "The love you give today plants seeds of peace that bloom in ways you may never fully see."
+  ]
+
+  // Pick quote based on day of week (0-6)
+  const quoteIndex = new Date().getDay()
+  const dailyQuote = quotes[quoteIndex]
 
   return (
-    <div className="dashboard-home">
-      {/* Welcome Section with Vibrant Gradient */}
-      <div className="welcome-banner">
-        <h1 className="welcome-title">Welcome back, {session.name.split(' ')[0]}!</h1>
-        <p className="welcome-subtitle">
-          Your digital reminiscence companion is ready. You have {stats.patients} patients to care for today.
-        </p>
-      </div>
+    <div className="w-full max-w-[1800px] mx-auto min-h-[85vh] flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-6">
 
-      {/* Quick Actions Revamp */}
-      <div className="quick-actions">
-        <Link href="/dashboard/patients/new" className="action-btn">
-          <div className="action-icon-wrapper">
-            <img src="/icons/patients.png" alt="" className="premium-icon" />
-          </div>
-          <span className="action-text">Add Patient</span>
-        </Link>
-        <Link href="/dashboard/memories" className="action-btn">
-          <div className="action-icon-wrapper">
-            <img src="/icons/memories.png" alt="" className="premium-icon" />
-          </div>
-          <span className="action-text">Upload Photos</span>
-        </Link>
-        <Link href="/dashboard/progress" className="action-btn">
-          <div className="action-icon-wrapper">
-            <img src="/icons/analytics.png" alt="" className="premium-icon" />
-          </div>
-          <span className="action-text">View Stats</span>
-        </Link>
-      </div>
+      {/* TOP ROW: GREETING (66%) + ACTIONS (33%) */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-[400px]">
 
-      {/* Stats Grid */}
-      <div className="stats-grid">
-        <div className="stat-card">
-          <div className="stat-icon-3d">
-            <img src="/icons/patients.png" alt="" className="stat-icon-img" />
-          </div>
-          <div className="stat-value">{stats.patients}</div>
-          <div className="stat-label">Active Patients</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon-3d">
-            <img src="/icons/sessions.png" alt="" className="stat-icon-img" />
-          </div>
-          <div className="stat-value">{stats.sessions}</div>
-          <div className="stat-label">Total Sessions</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon-3d">
-            <img src="/icons/memories.png" alt="" className="stat-icon-img" />
-          </div>
-          <div className="stat-value">{stats.memories}</div>
-          <div className="stat-label">Memories Stored</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon-3d">
-            <img src="/icons/analytics.png" alt="" className="stat-icon-img" />
-          </div>
-          <div className="stat-value">--</div>
-          <div className="stat-label">Avg. Recall Score</div>
-        </div>
-      </div>
+        {/* 1. WELCOME CARD (Spans 2 cols) */}
+        <div className="lg:col-span-2 bg-gradient-to-br from-violet-50 to-white rounded-[3rem] p-12 relative overflow-hidden flex flex-col justify-center shadow-xl border-[6px] border-white ring-1 ring-violet-100/50">
+          {/* Decorative Blobs */}
+          <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-gradient-to-br from-violet-200/40 to-fuchsia-200/40 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2" />
+          <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-gradient-to-tr from-indigo-200/40 to-blue-200/40 rounded-full blur-[80px] translate-y-1/3 -translate-x-1/3" />
 
-      {/* Main Content Grid */}
-      <div className="dashboard-grid">
-        {/* Recent Sessions */}
-        <div className="section-card">
-          <div className="section-header">
-            <h2 className="section-title">Recent Sessions</h2>
-            <Link href="/dashboard/sessions" className="btn btn-secondary" style={{ fontSize: '0.8rem' }}>
-              View All
-            </Link>
+          <div className="relative z-10 space-y-6">
+            <div className="inline-flex items-center gap-2 text-sm font-bold text-violet-700 bg-white/80 backdrop-blur-md px-4 py-2 rounded-full border-2 border-white shadow-sm w-fit">
+              <Sparkles size={16} className="text-violet-600 fill-violet-600" />
+              <span>{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</span>
+            </div>
+
+            <h1 className="text-6xl md:text-7xl lg:text-8xl font-black text-slate-900 tracking-tight leading-[1.05]">
+              Hello, <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 animate-gradient-x">
+                {firstName}.
+              </span>
+            </h1>
+
+            <p className="text-slate-500 text-2xl font-medium max-w-3xl leading-relaxed italic">
+              "{dailyQuote}"
+            </p>
           </div>
-          <div className="section-body">
-            {stats.recentSessions.length > 0 ? (
-              stats.recentSessions.map((s: any) => (
-                <div key={s.id} className="session-item">
-                  <div className="session-info">
-                    <div className="session-avatar">
-                      {s.patient.name.charAt(0)}
-                    </div>
-                    <div>
-                      <div className="session-patient">{s.patient.name}</div>
-                      <div className="session-date">
-                        {new Date(s.date).toLocaleDateString('en-IN', {
-                          month: 'short',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                        {' · '}{s.duration} min
-                      </div>
-                    </div>
-                  </div>
-                  <div className="session-mood">
-                    {s.mood === 'happy' && '😊'}
-                    {s.mood === 'neutral' && '😐'}
-                    {s.mood === 'sad' && '😢'}
-                    {s.mood === 'confused' && '😕'}
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="empty-state">
-                <p>No sessions yet</p>
+        </div>
+
+        {/* 2. QUICK ACTIONS STACK (Spans 1 col) */}
+        <div className="lg:col-span-1 flex flex-col gap-6">
+          {/* Add Patient */}
+          <Link href="/dashboard/patients/new" className="group flex-1 bg-white hover:bg-emerald-50/50 rounded-[2.5rem] border-[6px] border-white ring-1 ring-slate-100 hover:ring-emerald-200 p-8 flex flex-col justify-between transition-all duration-300 shadow-lg hover:shadow-2xl hover:shadow-emerald-100/50 hover:-translate-y-1">
+            <div className="flex justify-between items-start">
+              <div className="w-16 h-16 rounded-[1.5rem] bg-emerald-100 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform shadow-inner">
+                <Plus size={32} strokeWidth={2.5} />
               </div>
-            )}
-          </div>
-        </div>
-
-        {/* Patients List */}
-        <div className="section-card">
-          <div className="section-header">
-            <h2 className="section-title">Your Patients</h2>
-            <Link href="/dashboard/patients/new" className="btn btn-primary" style={{ fontSize: '0.8rem' }}>
-              + Add
-            </Link>
-          </div>
-          <div className="section-body">
-            {stats.patientsList.length > 0 ? (
-              stats.patientsList.map((patient: any) => (
-                <Link
-                  key={patient.id}
-                  href={`/dashboard/patients/${patient.id}`}
-                  className="patient-item"
-                  style={{ textDecoration: 'none', color: 'inherit' }}
-                >
-                  <div className="session-avatar">
-                    {patient.name.charAt(0)}
-                  </div>
-                  <div>
-                    <div className="patient-name">{patient.name}</div>
-                    <div className="patient-meta">
-                      Age {patient.age} · MMSE: {patient.mmseScore || 'N/A'}
-                    </div>
-                  </div>
-                </Link>
-              ))
-            ) : (
-              <div className="empty-state">
-                <p>No patients yet</p>
-                <Link href="/dashboard/patients/new" className="btn btn-primary" style={{ marginTop: 'var(--space-md)' }}>
-                  Add Patient
-                </Link>
+              <div className="p-3 rounded-full bg-slate-50 text-slate-300 group-hover:bg-white group-hover:text-emerald-600 transition-colors">
+                <ArrowRight size={24} />
               </div>
-            )}
-          </div>
+            </div>
+            <div>
+              <h3 className="text-2xl font-black text-slate-900 group-hover:text-emerald-700 mb-1 transition-colors">Add Patient</h3>
+              <p className="text-slate-400 font-medium">Create a new care profile</p>
+            </div>
+          </Link>
+
+          {/* Add Memory */}
+          <Link href="/dashboard/memories/new" className="group flex-1 bg-white hover:bg-fuchsia-50/50 rounded-[2.5rem] border-[6px] border-white ring-1 ring-slate-100 hover:ring-fuchsia-200 p-8 flex flex-col justify-between transition-all duration-300 shadow-lg hover:shadow-2xl hover:shadow-fuchsia-100/50 hover:-translate-y-1">
+            <div className="flex justify-between items-start">
+              <div className="w-16 h-16 rounded-[1.5rem] bg-fuchsia-100 text-fuchsia-600 flex items-center justify-center group-hover:scale-110 transition-transform shadow-inner">
+                <Heart size={32} strokeWidth={2.5} />
+              </div>
+              <div className="p-3 rounded-full bg-slate-50 text-slate-300 group-hover:bg-white group-hover:text-fuchsia-600 transition-colors">
+                <ArrowRight size={24} />
+              </div>
+            </div>
+            <div>
+              <h3 className="text-2xl font-black text-slate-900 group-hover:text-fuchsia-700 mb-1 transition-colors">Add Memory</h3>
+              <p className="text-slate-400 font-medium">Upload photos & stories</p>
+            </div>
+          </Link>
         </div>
       </div>
+
+      {/* BOTTOM ROW: STATS (1/3 each) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-auto md:h-[280px]">
+        {/* Patients Stat */}
+        <Link href="/dashboard/patients" className="group bg-white hover:bg-violet-50/50 rounded-[2.5rem] border-[6px] border-white ring-1 ring-slate-100 hover:ring-violet-200 p-8 flex flex-col justify-between transition-all duration-300 shadow-lg hover:shadow-2xl hover:-translate-y-1 relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity duration-500">
+            <Users size={160} className="transform rotate-12 translate-x-8 -translate-y-8" />
+          </div>
+          <div className="flex items-center gap-4 relative z-10">
+            <div className="p-4 rounded-2xl bg-violet-100 text-violet-600">
+              <Users size={28} />
+            </div>
+            <span className="text-sm font-bold text-slate-500 uppercase tracking-wider">Patients</span>
+          </div>
+          <div className="relative z-10">
+            <div className="text-6xl font-black text-slate-900 tracking-tighter">{patientCount || 0}</div>
+            <div className="text-violet-600 font-bold flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+              Manage Profiles <ArrowRight size={16} />
+            </div>
+          </div>
+        </Link>
+
+        {/* Memories Stat (Featured) */}
+        <Link href="/dashboard/memories" className="group bg-[#2e1d4e] hover:bg-[#3b2563] rounded-[2.5rem] p-8 flex flex-col justify-between transition-all duration-300 shadow-xl hover:shadow-2xl hover:-translate-y-1 relative overflow-hidden border-[6px] border-white/10 ring-1 ring-white/10">
+          <div className="absolute inset-0 bg-gradient-to-br from-violet-600/30 to-indigo-600/30 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+          <div className="absolute top-0 right-0 p-8 opacity-[0.15] group-hover:opacity-[0.25] transition-opacity duration-500">
+            <Brain size={160} className="text-white transform rotate-12 translate-x-8 -translate-y-8" />
+          </div>
+
+          <div className="flex items-center gap-4 relative z-10">
+            <div className="p-4 rounded-2xl bg-white/10 text-white backdrop-blur-md border border-white/5">
+              <Brain size={28} />
+            </div>
+            <span className="text-sm font-bold text-violet-200 uppercase tracking-wider">Memories</span>
+          </div>
+          <div className="relative z-10">
+            <div className="text-6xl font-black text-white tracking-tighter">{totalMemories}</div>
+            <div className="text-violet-300 font-bold flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+              View Gallery <ArrowRight size={16} />
+            </div>
+          </div>
+        </Link>
+
+        {/* Sessions Stat */}
+        <Link href="/dashboard/sessions" className="group bg-white hover:bg-purple-50/50 rounded-[2.5rem] border-[6px] border-white ring-1 ring-slate-100 hover:ring-purple-200 p-8 flex flex-col justify-between transition-all duration-300 shadow-lg hover:shadow-2xl hover:-translate-y-1 relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity duration-500">
+            <Clock size={160} className="transform rotate-12 translate-x-8 -translate-y-8" />
+          </div>
+          <div className="flex items-center gap-4 relative z-10">
+            <div className="p-4 rounded-2xl bg-purple-100 text-purple-600">
+              <Clock size={28} />
+            </div>
+            <span className="text-sm font-bold text-slate-500 uppercase tracking-wider">Sessions</span>
+          </div>
+          <div className="relative z-10">
+            <div className="text-6xl font-black text-slate-900 tracking-tighter">{totalSessions}</div>
+            <div className="text-purple-600 font-bold flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+              View Sessions <ArrowRight size={16} />
+            </div>
+          </div>
+        </Link>
+      </div>
+
     </div>
   )
 }

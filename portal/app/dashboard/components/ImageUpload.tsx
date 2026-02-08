@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { Camera, Image as ImageIcon, Loader2 } from 'lucide-react'
 
 interface ImageUploadProps {
     onUpload: (url: string) => void
@@ -53,31 +54,33 @@ export default function ImageUpload({ onUpload, bucket, label = 'Upload Image', 
         }
     }
 
-    // Compact Mode (Custom CSS classes)
+    // Compact Mode (Used in Grids)
     if (compact) {
         return (
-            <div className="compact-uploader">
+            <div className="w-full h-full relative group cursor-pointer">
                 {preview ? (
                     <>
-                        <img src={preview} alt="Preview" className="compact-preview" />
-                        <div className="compact-overlay">
-                            <label className="compact-change-btn">
-                                {uploading ? 'Thinking...' : 'Change'}
+                        <img src={preview} alt="Preview" className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <label className="cursor-pointer px-4 py-2 bg-white/20 backdrop-blur-md rounded-full text-white text-sm font-bold border border-white/30 hover:bg-white/30 transition-all flex items-center gap-2">
+                                {uploading ? <Loader2 size={16} className="animate-spin" /> : <Camera size={16} />}
+                                <span>Change</span>
                                 <input
                                     type="file"
                                     accept="image/*"
                                     onChange={handleUpload}
                                     disabled={uploading}
-                                    className="hidden" // Keeping hidden as utility or style
-                                    style={{ display: 'none' }}
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                 />
                             </label>
                         </div>
                     </>
                 ) : (
-                    <label className="compact-uploader-label">
-                        <span className="compact-uploader-icon">📸</span>
-                        <span className="compact-uploader-text">
+                    <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer text-slate-400 group-hover:text-violet-600 transition-colors gap-2">
+                        <div className="w-10 h-10 rounded-full bg-slate-100 group-hover:bg-violet-100 flex items-center justify-center transition-colors">
+                            {uploading ? <Loader2 size={20} className="animate-spin text-violet-600" /> : <Camera size={20} />}
+                        </div>
+                        <span className="text-xs font-bold uppercase tracking-wider">
                             {uploading ? 'Uploading...' : label || 'Add Photo'}
                         </span>
                         <input
@@ -85,7 +88,8 @@ export default function ImageUpload({ onUpload, bucket, label = 'Upload Image', 
                             accept="image/*"
                             onChange={handleUpload}
                             disabled={uploading}
-                            style={{ display: 'none' }}
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-50"
+                            title={uploading ? 'Uploading...' : 'Upload photo'}
                         />
                     </label>
                 )}
@@ -93,34 +97,35 @@ export default function ImageUpload({ onUpload, bucket, label = 'Upload Image', 
         )
     }
 
-    // Standard Mode (Global CSS classes)
+    // Standard Mode (Used in forms)
     return (
-        <div className="form-group" style={{ marginBottom: 0 }}>
-            <label className="form-label">
+        <div className="space-y-3">
+            <label className="block text-sm font-bold text-slate-700">
                 {label}
             </label>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <label className={`btn btn-secondary ${uploading ? 'opacity-50' : ''}`} style={{ cursor: uploading ? 'not-allowed' : 'pointer' }}>
+            <div className="flex items-center gap-4">
+                <label className={`
+                    flex items-center gap-2 px-5 py-3 rounded-xl font-bold cursor-pointer transition-all border
+                    ${uploading
+                        ? 'bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed'
+                        : 'bg-white text-slate-700 border-slate-200 hover:border-violet-300 hover:text-violet-700 hover:bg-violet-50/50 shadow-sm'
+                    }
+                `}>
+                    {uploading ? <Loader2 size={18} className="animate-spin" /> : <ImageIcon size={18} />}
                     <span>{uploading ? 'Uploading...' : 'Choose File'}</span>
                     <input
                         type="file"
                         accept="image/*"
                         onChange={handleUpload}
                         disabled={uploading}
-                        style={{ display: 'none' }}
+                        className="hidden"
                     />
                 </label>
 
                 {preview && (
-                    <div style={{
-                        width: '64px',
-                        height: '64px',
-                        borderRadius: '0.5rem',
-                        overflow: 'hidden',
-                        border: '1px solid var(--gray-200)'
-                    }}>
-                        <img src={preview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <div className="w-12 h-12 rounded-lg overflow-hidden border border-slate-200 shadow-sm">
+                        <img src={preview} alt="Preview" className="w-full h-full object-cover" />
                     </div>
                 )}
             </div>
