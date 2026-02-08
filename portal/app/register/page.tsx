@@ -54,8 +54,8 @@ export default function RegisterPage() {
 
             <div className="w-full max-w-md bg-white/80 backdrop-blur-xl rounded-[2.5rem] shadow-2xl border border-white/50 p-8 md:p-12 relative z-10 animate-in fade-in zoom-in duration-500">
                 <div className="text-center mb-10">
-                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-neutral-800 to-neutral-900 text-white shadow-lg shadow-neutral-900/20 mb-6 animate-in slide-in-from-bottom-4 duration-700 delay-100">
-                        <span className="text-4xl">🧠</span>
+                    <div className="mb-6 animate-in slide-in-from-bottom-4 duration-700 delay-100 flex justify-center">
+                        <img src="/images/logo-full.jpg" alt="Memora" className="h-20 w-auto object-contain mix-blend-multiply" />
                     </div>
                     <h1 className="text-3xl font-extrabold tracking-tight text-neutral-900 mb-2">Create Account</h1>
                     <p className="text-neutral-500 font-medium">Join Memora to support your loved ones.</p>
@@ -143,11 +143,11 @@ export default function RegisterPage() {
 
                     <button
                         type="submit"
-                        className="w-full py-4 rounded-xl font-bold text-white bg-neutral-900 hover:bg-neutral-800 transition-all shadow-lg shadow-neutral-900/20 hover:shadow-xl hover:-translate-y-0.5 flex items-center justify-center gap-2 group disabled:opacity-70 disabled:hover:translate-y-0 mt-2"
+                        className="w-full py-4 rounded-xl font-bold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 transition-all shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/40 hover:-translate-y-0.5 flex items-center justify-center gap-2 group disabled:opacity-70 disabled:hover:translate-y-0 mt-2 text-lg"
                         disabled={loading}
                     >
                         {loading ? 'Creating account...' : 'Create Account'}
-                        {!loading && <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />}
+                        {!loading && <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />}
                     </button>
                 </form>
 

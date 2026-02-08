@@ -61,52 +61,68 @@ export default function HomePage() {
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-5 animate-in fade-in zoom-in duration-1000 delay-300">
-            <Link href="/register" className="w-full sm:w-auto px-10 py-5 rounded-2xl font-bold text-white bg-slate-900 hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/20 hover:shadow-2xl hover:-translate-y-1 flex items-center justify-center gap-3 text-lg group">
-              <span>Start Free Trial</span>
-              <div className="bg-white/20 rounded-full p-1 group-hover:bg-white/30 transition-colors">
-                <Play size={16} fill="currentColor" className="ml-0.5" />
+            <Link href="/register" className="relative w-full sm:w-auto group">
+              <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-rose-500 rounded-2xl blur opacity-30 group-hover:opacity-75 transition duration-1000 group-hover:duration-200"></div>
+              <div className="relative w-full sm:w-auto px-10 py-5 rounded-2xl font-bold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:to-indigo-600 transition-all shadow-xl flex items-center justify-center gap-3 text-lg leading-none">
+                <span>Start Free Trial</span>
+                <Play size={16} fill="currentColor" className="opacity-90" />
               </div>
             </Link>
-            <Link href="/login" className="w-full sm:w-auto px-10 py-5 rounded-2xl font-bold text-slate-700 bg-white hover:bg-indigo-50 hover:text-indigo-600 transition-all shadow-lg shadow-indigo-100/50 hover:shadow-xl hover:-translate-y-1 border border-indigo-100/50 text-lg">
-              Caregiver Login
+
+            <Link href="/login" className="w-full sm:w-auto px-10 py-5 rounded-2xl font-bold text-slate-600 bg-white/50 backdrop-blur-md border border-white/60 hover:bg-white hover:text-indigo-600 hover:border-indigo-100 hover:shadow-xl hover:shadow-indigo-100/50 transition-all text-lg leading-none group flex items-center justify-center gap-2">
+              <span>Caregiver Login</span>
+              <ArrowRight size={18} className="opacity-0 -ml-4 group-hover:opacity-100 group-hover:ml-0 transition-all duration-300" />
             </Link>
           </div>
         </section>
 
-        {/* Stats Grid - Floating Glass Style */}
-        <section className="max-w-6xl mx-auto px-6 mb-32">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="group relative bg-white/60 backdrop-blur-md rounded-[2.5rem] p-10 border border-white/60 shadow-lg shadow-indigo-100/50 hover:shadow-xl transition-all duration-500 hover:-translate-y-1">
-              <div className="relative z-10">
-                <div className="text-6xl font-black text-slate-900 mb-2">4.86%</div>
-                <div className="text-slate-500 font-medium text-lg">Kerala 65+ with dementia</div>
+        {/* Stats Grid - Balanced & Glass Style */}
+        <section className="max-w-6xl mx-auto px-6 mb-32 relative z-10">
+          <div className="text-center mb-10">
+            <h2 className="text-sm font-bold text-indigo-500 uppercase tracking-widest mb-2">Why It Matters</h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Stat 1: The Problem */}
+            <div className="group relative bg-white/60 backdrop-blur-md rounded-[2.5rem] p-10 border border-white/60 shadow-lg shadow-indigo-100/50 hover:shadow-xl transition-all duration-500 hover:-translate-y-1 flex flex-col justify-between overflow-hidden">
+              <div className="absolute top-0 right-0 p-10 opacity-10 group-hover:opacity-20 transition-opacity">
+                <Activity size={120} className="text-rose-500" />
               </div>
-              <div className="absolute bottom-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-tl-[2.5rem] rounded-br-[2.5rem] -z-10 group-hover:scale-150 transition-transform duration-700 origin-bottom-right"></div>
+
+              <div className="relative z-10">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-2 bg-rose-50 rounded-xl text-rose-500">
+                    <Activity size={24} />
+                  </div>
+                  <span className="text-rose-600 font-bold text-sm uppercase tracking-wider">The Challenge</span>
+                </div>
+                <div className="text-6xl font-black text-slate-900 mb-2">4.86%</div>
+                <div className="text-slate-500 font-medium text-lg max-w-xs">Older adults in Kerala are affected by dementia.</div>
+              </div>
             </div>
 
-            <div className="group relative bg-white/60 backdrop-blur-md rounded-[2.5rem] p-10 border border-white/60 shadow-lg shadow-indigo-100/50 hover:shadow-xl transition-all duration-500 hover:-translate-y-1 md:col-span-2 overflow-hidden">
-              <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8 h-full">
-                <div className="flex-1">
+            {/* Stat 2: The Solution */}
+            <div className="group relative bg-white/60 backdrop-blur-md rounded-[2.5rem] p-10 border border-white/60 shadow-lg shadow-indigo-100/50 hover:shadow-xl transition-all duration-500 hover:-translate-y-1 overflow-hidden">
+              <div className="absolute top-0 right-0 p-10 opacity-10 group-hover:opacity-20 transition-opacity">
+                <Shield size={120} className="text-emerald-500" />
+              </div>
+
+              <div className="relative z-10 h-full flex flex-col justify-between">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-2 bg-emerald-50 rounded-xl text-emerald-500">
+                    <Shield size={24} />
+                  </div>
+                  <span className="text-emerald-600 font-bold text-sm uppercase tracking-wider">Our Solution</span>
+                </div>
+
+                <div>
                   <div className="flex items-baseline gap-3 mb-2">
-                    <span className="text-7xl font-black text-slate-900">94%</span>
+                    <span className="text-6xl font-black text-slate-900">94%</span>
                     <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 font-bold text-sm flex items-center gap-1">
-                      <Activity size={14} /> Accuracy
+                      Accuracy
                     </span>
                   </div>
-                  <p className="text-slate-500 text-lg">Face Recognition Accuracy on as few as 5 photos.</p>
-                </div>
-                <div className="w-full md:w-auto bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 shadow-md"></div>
-                    <div className="space-y-1.5">
-                      <div className="h-2.5 w-32 bg-slate-100 rounded-full"></div>
-                      <div className="h-2.5 w-20 bg-slate-100 rounded-full"></div>
-                    </div>
-                  </div>
-                  <div className="h-3 w-full bg-slate-100 rounded-full mb-2 overflow-hidden">
-                    <div className="h-full w-[94%] bg-emerald-500 rounded-full animate-[progress_1.5s_ease-out]"></div>
-                  </div>
-                  <div className="text-xs text-slate-400 text-right font-medium">High Confidence Match</div>
+                  <p className="text-slate-500 text-lg max-w-sm">Face Recognition accuracy on as few as 5 updated photos.</p>
                 </div>
               </div>
             </div>
@@ -120,69 +136,117 @@ export default function HomePage() {
             <p className="text-slate-500 max-w-xl mx-auto text-lg">Advanced technology meets compassionate care in a seamless interface.</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {/* Feature 1 */}
-            <div className="group bg-white rounded-[2rem] p-8 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-indigo-200/40 transition-all duration-300 hover:-translate-y-2 border border-slate-100">
-              <div className="w-16 h-16 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-6 text-3xl shadow-sm rotate-3 group-hover:rotate-6 transition-transform">
-                <Users size={32} />
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+
+            {/* Feature 1: Face Recognition (Large, Dark Theme) */}
+            <div className="md:col-span-8 group relative overflow-hidden rounded-[2.5rem] bg-[#1e1b4b] p-10 text-white shadow-2xl transition-transform duration-500 hover:-translate-y-1">
+              <div className="absolute top-0 right-0 -mt-10 -mr-10 h-64 w-64 rounded-full bg-indigo-500/20 blur-3xl transition-all duration-700 group-hover:bg-indigo-500/30"></div>
+              <div className="relative z-10 flex h-full flex-col justify-between">
+                <div>
+                  <div className="mb-6 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 text-3xl text-indigo-300 shadow-inner backdrop-blur-md">
+                    <Users size={32} />
+                  </div>
+                  <h3 className="mb-4 text-3xl font-bold">Face Recognition</h3>
+                  <p className="max-w-md text-lg leading-relaxed text-indigo-100/80">
+                    Instantly identifies family members in photos to help trigger memory recall and rebuild emotional connections.
+                  </p>
+                </div>
+                <div className="mt-8 flex items-center gap-2 text-sm font-bold text-indigo-300">
+                  <span>Powered by AI</span>
+                  <div className="h-px w-12 bg-indigo-300/30"></div>
+                </div>
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-3">Face Recognition</h3>
-              <p className="text-slate-500 leading-relaxed">
-                Instantly identifies family members to help trigger memory recall and emotional connection.
-              </p>
             </div>
 
-            {/* Feature 2 */}
-            <div className="group bg-white rounded-[2rem] p-8 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-purple-200/40 transition-all duration-300 hover:-translate-y-2 border border-slate-100 lg:mt-12">
-              <div className="w-16 h-16 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center mb-6 text-3xl shadow-sm -rotate-2 group-hover:-rotate-6 transition-transform">
-                <Brain size={32} />
+            {/* Feature 2: Smart Prompts (Compact, Vertical) */}
+            <div className="md:col-span-4 group relative overflow-hidden rounded-[2.5rem] bg-white p-10 shadow-xl shadow-slate-200/50 transition-transform duration-500 hover:-translate-y-1 hover:shadow-2xl border border-slate-100">
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-50/50 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100"></div>
+              <div className="relative z-10">
+                <div className="mb-6 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-purple-50 text-3xl text-purple-600 shadow-sm transition-transform duration-500 group-hover:rotate-6">
+                  <Brain size={32} />
+                </div>
+                <h3 className="mb-3 text-2xl font-bold text-slate-900">Smart Prompts</h3>
+                <p className="text-slate-500 leading-relaxed">
+                  AI generates culturally relevant conversation openers based on the context of every photo.
+                </p>
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-3">Smart Prompts</h3>
-              <p className="text-slate-500 leading-relaxed">
-                AI generates culturally relevant conversation starters based on photo context and history.
-              </p>
             </div>
 
-            {/* Feature 3 */}
-            <div className="group bg-white rounded-[2rem] p-8 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-emerald-200/40 transition-all duration-300 hover:-translate-y-2 border border-slate-100">
-              <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-6 text-3xl shadow-sm rotate-1 group-hover:rotate-3 transition-transform">
-                <Activity size={32} />
+            {/* Feature 3: Progress Tracking (Compact, Vertical) */}
+            <div className="md:col-span-4 group relative overflow-hidden rounded-[2.5rem] bg-white p-10 shadow-xl shadow-slate-200/50 transition-transform duration-500 hover:-translate-y-1 hover:shadow-2xl border border-slate-100">
+              <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/50 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100"></div>
+              <div className="relative z-10">
+                <div className="mb-6 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50 text-3xl text-emerald-600 shadow-sm transition-transform duration-500 group-hover:-rotate-3">
+                  <Activity size={32} />
+                </div>
+                <h3 className="mb-3 text-2xl font-bold text-slate-900">Progress Tracking</h3>
+                <p className="text-slate-500 leading-relaxed">
+                  Visualize cognitive engagement trends and mood patterns with simple, easy-to-read charts.
+                </p>
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-3">Progress Tracking</h3>
-              <p className="text-slate-500 leading-relaxed">
-                Visualize cognitive engagement and mood patterns over time with detailed analytics.
-              </p>
             </div>
 
-            {/* Feature 4 */}
-            <div className="group bg-white rounded-[2rem] p-8 shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-rose-200/40 transition-all duration-300 hover:-translate-y-2 border border-slate-100 lg:mt-12">
-              <div className="w-16 h-16 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mb-6 text-3xl shadow-sm -rotate-3 group-hover:-rotate-6 transition-transform">
-                <Shield size={32} />
+            {/* Feature 4: Privacy First (Large, Light Accent Theme) */}
+            <div className="md:col-span-8 group relative overflow-hidden rounded-[2.5rem] bg-white p-10 shadow-xl shadow-slate-200/50 transition-transform duration-500 hover:-translate-y-1 hover:shadow-2xl border border-slate-100">
+              <div className="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-rose-50/80 to-transparent opacity-50 transition-opacity duration-500 group-hover:opacity-100"></div>
+              <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
+                <div className="flex-1">
+                  <div className="mb-6 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-rose-50 text-3xl text-rose-600 shadow-sm transition-transform duration-500 group-hover:rotate-3">
+                    <Shield size={32} />
+                  </div>
+                  <h3 className="mb-4 text-3xl font-bold text-slate-900">Privacy First Design</h3>
+                  <p className="text-lg leading-relaxed text-slate-500">
+                    Your data never leaves your device without permission. All sensible processing happens locally, ensuring your memories remain yours alone.
+                  </p>
+                </div>
+                {/* Decorative Lock Icon/Illustration */}
+                <div className="hidden md:flex h-32 w-32 items-center justify-center rounded-full bg-rose-50/50 text-rose-200">
+                  <Shield size={64} className="opacity-50" />
+                </div>
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-3">Privacy First</h3>
-              <p className="text-slate-500 leading-relaxed">
-                All sensitive data is processed locally on-device. Your memories remain yours, always.
-              </p>
             </div>
+
           </div>
         </section>
 
       </main>
 
       {/* Footer */}
-      <footer className="relative z-10 border-t border-slate-200 py-12 bg-white/50 backdrop-blur-xl">
+      {/* Footer - Minimal & Focused */}
+      <footer className="relative z-10 bg-[#0f172a] text-white py-12 overflow-hidden border-t border-slate-800">
         <div className="max-w-7xl mx-auto px-6 text-center">
-          <div className="flex items-center justify-center gap-3 mb-8 opacity-40 hover:opacity-100 transition-opacity">
-            <span className="text-2xl">🧠</span>
-            <span className="text-xl font-bold text-slate-900 tracking-tight">Memora</span>
+
+          {/* Logo Section */}
+          <div className="flex justify-center mb-6">
+            {/*
+                    Using CSS filters to make the JPG logo work on dark background:
+                    1. grayscale: removes color (including potential yellow patterns)
+                    2. invert: turns white background to black, dark text to white
+                    3. mix-blend-screen: hides the black background, leaving white text
+                */}
+            <img
+              src="/images/logo-full.jpg"
+              alt="Memora"
+              className="h-16 w-auto object-contain grayscale invert mix-blend-screen opacity-90"
+            />
           </div>
 
-          <p className="text-slate-500 font-medium mb-6 text-sm">© 2025 Memora - Restoring connection through digital reminiscence.</p>
+          {/* Mission Statement */}
+          <p className="text-slate-400 max-w-lg mx-auto mb-8 font-medium text-lg">
+            Restoring connection through digital reminiscence therapy.<br />
+            <span className="text-slate-500 text-sm">Built with ❤️ for Kerala's elderly community.</span>
+          </p>
 
-          <div className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-white border border-slate-200 text-slate-400 text-xs font-bold shadow-sm">
-            <span>Built with</span>
-            <Heart size={12} className="text-rose-500 fill-current animate-pulse" />
-            <span>for Kerala's elderly community</span>
+          {/* Essential Links */}
+          <div className="flex flex-wrap justify-center gap-6 text-sm text-slate-400 font-medium mb-8">
+            <Link href="#" className="hover:text-white transition-colors">Privacy Policy</Link>
+            <Link href="#" className="hover:text-white transition-colors">Terms of Service</Link>
+            <Link href="#" className="hover:text-white transition-colors">Support</Link>
+          </div>
+
+          {/* Copyright */}
+          <div className="text-slate-600 text-xs">
+            © {new Date().getFullYear()} Memora. All rights reserved.
           </div>
         </div>
       </footer>
