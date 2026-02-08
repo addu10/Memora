@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Alert, ActivityIndicator, ScrollView, Image, FlatList, Dimensions } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { api } from '../../lib/api';
-import { recognizeFace, RecognitionResult } from '../../lib/recognition';
+import { recognizeFace, RecognitionResult, getErrorMessage } from '../../lib/recognition';
 import { Memory, FamilyMember } from '../../lib/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -194,23 +194,56 @@ export default function RecognizeScreen() {
 
                             {/* Header: Match Info */}
                             <View style={styles.resultHeader}>
-                                <View style={[styles.resultIconContainer, result.match ? styles.iconGreen : styles.iconGray]}>
+                                <View style={[
+                                    styles.resultIconContainer,
+                                    result.match ? styles.iconGreen :
+                                        result.error_type === 'no_face' ? styles.iconRed :
+                                            result.error_type === 'low_quality_face' ? styles.iconYellow :
+                                                styles.iconGray
+                                ]}>
                                     <Text style={styles.resultIcon}>
-                                        {result.match ? '✅' : '❓'}
+                                        {result.match ? '✅' :
+                                            result.error_type === 'no_face' ? '🚫' :
+                                                result.error_type === 'low_quality_face' ? '📷' :
+                                                    result.error_type === 'unknown_person' ? '❓' : '⚠️'}
                                     </Text>
                                 </View>
-                                <View>
+                                <View style={{ flex: 1 }}>
                                     <Text style={styles.resultName}>
-                                        {result.match ? `This is ${result.name}` : 'Not Recognized'}
+                                        {result.match ? `This is ${result.name}` :
+                                            result.error_type === 'no_face' ? 'No Face Detected' :
+                                                result.error_type === 'low_quality_face' ? 'Low Quality Image' :
+                                                    result.error_type === 'unknown_person' ? 'Unknown Person' :
+                                                        'Recognition Failed'}
                                     </Text>
                                     <Text style={styles.resultConfidence}>
                                         {result.match
-                                            ? `Certainty: ${Math.round(result.confidence * 100)}%`
-                                            : 'Try moving closer to better light'
+                                            ? `Certainty: ${Math.round((result.confidence || 0) * 100)}%`
+                                            : getErrorMessage(result)
                                         }
                                     </Text>
                                 </View>
                             </View>
+
+                            {/* V3: Show Suggestion Hint for errors */}
+                            {!result.match && result.suggestion && (
+                                <View style={[styles.relationshipHint, { backgroundColor: '#FEF3C7' }]}>
+                                    <Text style={styles.hintIcon}>💡</Text>
+                                    <Text style={[styles.hintText, { color: '#92400E' }]}>
+                                        {result.suggestion}
+                                    </Text>
+                                </View>
+                            )}
+
+                            {/* V3: Show closest match for unknown person */}
+                            {result.error_type === 'unknown_person' && result.closest_match && (
+                                <View style={[styles.relationshipHint, { backgroundColor: '#F1F5F9' }]}>
+                                    <Text style={styles.hintIcon}>🔍</Text>
+                                    <Text style={[styles.hintText, { color: '#475569' }]}>
+                                        Closest match: {result.closest_match} ({Math.round((1 - (result.closest_distance || 0)) * 100)}% similar)
+                                    </Text>
+                                </View>
+                            )}
 
                             {/* Relationship Hint */}
                             {result.match && result.relationship && (
@@ -450,6 +483,8 @@ const styles = StyleSheet.create({
     },
     iconGreen: { backgroundColor: '#DCFCE7' },
     iconGray: { backgroundColor: '#F1F5F9' },
+    iconRed: { backgroundColor: '#FEE2E2' },
+    iconYellow: { backgroundColor: '#FEF3C7' },
     resultIcon: {
         fontSize: 32,
     },

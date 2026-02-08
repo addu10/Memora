@@ -7,14 +7,23 @@ export interface GeneratedQuestion {
 }
 
 export async function generateTherapyQuestions(photoData: {
-    title: string;
-    event: string;
-    location: string;
-    people: string[];
-    description: string;
+    // Photo-specific context
+    photoUrl: string;
+    photoIndex: number;
+    totalPhotos: number;
+    photoDescription: string;
+    photoPeople: string[];
+    facialExpressions: string;
     setting: string;
     activities: string;
-    facialExpressions: string;
+    // Memory-level context
+    memoryTitle: string;
+    memoryDescription: string;
+    memoryEvent: string;
+    memoryLocation: string;
+    memoryDate: string;
+    memoryPeople: string;
+    memoryImportance: number;
 }): Promise<GeneratedQuestion | null> {
     try {
         const { data, error } = await supabase.functions.invoke('generate-questions', {
@@ -26,9 +35,21 @@ export async function generateTherapyQuestions(photoData: {
             return null;
         }
 
-        return data as GeneratedQuestion;
+        // The edge function returns: { success, questions: [{question, hint, difficulty, type}], photoUrl }
+        // We need to transform it to: { questions: string[], hints: string[], difficulty: string[] }
+        if (data && data.questions && Array.isArray(data.questions)) {
+            return {
+                questions: data.questions.map((q: any) => q.question),
+                hints: data.questions.map((q: any) => q.hint),
+                difficulty: data.questions.map((q: any) => q.difficulty)
+            };
+        }
+
+        console.warn('Unexpected response format from generate-questions:', data);
+        return null;
     } catch (err) {
         console.error('Question generation failed:', err);
         return null;
     }
 }
+

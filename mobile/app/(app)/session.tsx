@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Alert, Image, ActivityIndicator } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../../lib/supabase';
 import { generateTherapyQuestions, GeneratedQuestion } from '../../lib/gemini';
 
@@ -31,28 +32,34 @@ export default function SessionScreen() {
     const loadMemories = async () => {
         setLoading(true);
         try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
+            // Get patient ID from AsyncStorage (mobile uses PIN login, not supabase.auth)
+            const patientData = await AsyncStorage.getItem('patient');
+            if (!patientData) {
+                console.error('No patient data in AsyncStorage');
+                setLoading(false);
+                return;
+            }
 
-            // Get the first patient for this caregiver (demo limitation)
-            const { data: patient } = await supabase
-                .from('Patient')
-                .select('id')
-                .eq('caregiverId', user.id)
-                .limit(1)
-                .single();
+            const patient = JSON.parse(patientData);
+            if (!patient.id) {
+                console.error('No patient ID found');
+                setLoading(false);
+                return;
+            }
 
-            if (patient) {
-                const { data: memoriesData, error } = await supabase
-                    .from('Memory')
-                    .select(`
-                        *,
-                        MemoryPhoto (*)
-                    `)
-                    .eq('patientId', patient.id)
-                    .order('date', { ascending: false });
+            const { data: memoriesData, error } = await supabase
+                .from('Memory')
+                .select(`
+                    *,
+                    MemoryPhoto (*)
+                `)
+                .eq('patientId', patient.id)
+                .order('date', { ascending: false });
 
-                if (!error) setMemories(memoriesData || []);
+            if (error) {
+                console.error('Error fetching memories:', error);
+            } else {
+                setMemories(memoriesData || []);
             }
         } catch (err) {
             console.error('Failed to load memories:', err);
@@ -60,6 +67,7 @@ export default function SessionScreen() {
             setLoading(false);
         }
     };
+
 
     const handleSelectMemory = async (memory: any) => {
         if (!memory.MemoryPhoto || memory.MemoryPhoto.length === 0) {
@@ -78,15 +86,26 @@ export default function SessionScreen() {
 
         const photo = memory.MemoryPhoto[photoIdx];
 
+        // Send ALL available context for truly personalized questions
         const photoData = {
-            title: memory.title,
-            event: memory.event,
-            location: memory.location,
-            people: photo.people || [],
-            description: photo.description || '',
+            // Photo-specific context (unique per photo)
+            photoUrl: photo.photoUrl || '',
+            photoIndex: photoIdx + 1,
+            totalPhotos: memory.MemoryPhoto.length,
+            photoDescription: photo.description || '',
+            photoPeople: photo.people || [],
+            facialExpressions: photo.facialExpressions || '',
             setting: photo.setting || '',
             activities: photo.activities || '',
-            facialExpressions: photo.facialExpressions || ''
+
+            // Memory-level context (shared across photos but provides important background)
+            memoryTitle: memory.title || '',
+            memoryDescription: memory.description || '',  // The full story of this memory
+            memoryEvent: memory.event || '',
+            memoryLocation: memory.location || '',
+            memoryDate: memory.date || new Date().toISOString(),
+            memoryPeople: memory.people || '',  // All people involved in this memory
+            memoryImportance: memory.importance || 3
         };
 
         const result = await generateTherapyQuestions(photoData);
@@ -129,13 +148,15 @@ export default function SessionScreen() {
     const saveSession = async () => {
         setLoading(true);
         try {
-            const { data: { user } } = await supabase.auth.getUser();
+            // Get patient data from AsyncStorage (mobile uses PIN login)
+            const patientData = await AsyncStorage.getItem('patient');
+            const patient = patientData ? JSON.parse(patientData) : null;
 
             const { data: sessionData, error: sessionErr } = await supabase
                 .from('TherapySession')
                 .insert({
-                    patientId: selectedMemory.patientId,
-                    caregiverId: user?.id,
+                    patientId: selectedMemory.patientId || patient?.id,
+                    caregiverId: null, // Mobile sessions are patient-initiated, no caregiver
                     date: new Date().toISOString(),
                     duration: 5,
                     mood: sessionMood,
@@ -159,7 +180,7 @@ export default function SessionScreen() {
 
             if (memErr) throw memErr;
 
-            Alert.alert("Success", "Clinic therapy data saved!");
+            Alert.alert("Success", "Your therapy session has been saved!");
             resetSession();
         } catch (err) {
             console.error('Save failed:', err);
