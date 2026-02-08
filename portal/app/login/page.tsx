@@ -4,6 +4,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { ArrowRight, Mail, Lock, AlertCircle, CheckCircle2 } from 'lucide-react'
 
 export default function LoginPage() {
     const router = useRouter()
@@ -64,138 +65,77 @@ export default function LoginPage() {
     }
 
     return (
-        <div className="auth-page" style={{
-            background: 'var(--mesh-gradient)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 'var(--space-lg)'
-        }}>
-            <div className="auth-card" style={{
-                background: 'rgba(255, 255, 255, 0.8)',
-                backdropFilter: 'blur(20px)',
-                border: '1px solid var(--glass-border)',
-                boxShadow: 'var(--shadow-xl)',
-                width: '100%',
-                maxWidth: '440px'
-            }}>
-                <div className="auth-header" style={{ textAlign: 'center', marginBottom: 'var(--space-xl)' }}>
-                    <div className="auth-logo" style={{
-                        marginBottom: 'var(--space-md)',
-                        animation: 'fadeInUp 0.6s ease',
-                        display: 'flex',
-                        justifyContent: 'center'
-                    }}>
-                        <img src="/icons/logo.png" alt="Memora Logo" className="premium-icon logo-icon-lg" />
+        <div className="min-h-screen w-full flex items-center justify-center p-4 bg-[#F0F4F8] relative overflow-hidden">
+            {/* Background Decorations */}
+            <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-200/30 rounded-full blur-3xl -translate-y-1/2"></div>
+            <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-indigo-200/30 rounded-full blur-3xl translate-y-1/2"></div>
+
+            <div className="w-full max-w-md bg-white/80 backdrop-blur-xl rounded-[2.5rem] shadow-2xl border border-white/50 p-8 md:p-12 relative z-10 animate-in fade-in zoom-in duration-500">
+                <div className="text-center mb-10">
+                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/30 mb-6 animate-in slide-in-from-bottom-4 duration-700 delay-100">
+                        <span className="text-4xl">🧠</span>
                     </div>
-                    <h1 className="auth-title" style={{
-                        fontSize: '2.25rem',
-                        fontWeight: 800,
-                        letterSpacing: '-0.025em',
-                        background: 'var(--purple-gradient)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        marginBottom: 'var(--space-xs)'
-                    }}>Welcome Back</h1>
-                    <p className="auth-subtitle" style={{ color: 'var(--gray-500)', fontWeight: 500 }}>
-                        Modern reminiscence therapy for your loved ones.
-                    </p>
+                    <h1 className="text-3xl font-extrabold tracking-tight text-neutral-900 mb-2">Welcome Back</h1>
+                    <p className="text-neutral-500 font-medium">Modern reminiscence therapy for your loved ones.</p>
                 </div>
 
-                <div className="demo-box" style={{
-                    background: 'var(--primary-50)',
-                    border: '1px dashed var(--primary-300)',
-                    borderRadius: 'var(--radius-lg)',
-                    padding: 'var(--space-md)',
-                    marginBottom: 'var(--space-xl)',
-                    textAlign: 'center'
-                }}>
-                    <p className="demo-title" style={{ fontWeight: 700, color: 'var(--primary-700)', fontSize: '0.85rem' }}>🔑 DEMO ACCESS</p>
-                    <p className="demo-text" style={{ fontSize: '0.875rem', color: 'var(--primary-600)' }}>demo@memora.com · demo123</p>
+                <div className="mb-8 p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100/50 text-center">
+                    <p className="text-xs font-bold text-indigo-500 uppercase tracking-wider mb-1">Demo Access</p>
+                    <p className="text-sm text-indigo-900 font-medium">demo@memora.com · demo123</p>
                 </div>
 
                 {error && (
-                    <div className="error-message" style={{
-                        background: '#fee2e2',
-                        color: '#991b1b',
-                        padding: 'var(--space-md)',
-                        borderRadius: 'var(--radius-md)',
-                        marginBottom: 'var(--space-lg)',
-                        textAlign: 'center',
-                        fontSize: '0.875rem',
-                        border: '1px solid #fecaca'
-                    }}>{error}</div>
+                    <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-2xl flex items-start gap-3 text-sm font-medium border border-red-100 animate-in fade-in slide-in-from-top-2">
+                        <AlertCircle size={18} className="shrink-0 mt-0.5" />
+                        <span>{error}</span>
+                    </div>
                 )}
 
-                <form onSubmit={handleSubmit} className="auth-form">
-                    <div className="form-group" style={{ marginBottom: 'var(--space-lg)' }}>
-                        <label className="form-label" style={{
-                            display: 'block',
-                            fontSize: '0.875rem',
-                            fontWeight: 600,
-                            color: 'var(--gray-700)',
-                            marginBottom: 'var(--space-xs)'
-                        }}>Email Address</label>
-                        <input
-                            type="email"
-                            name="email"
-                            className="form-input"
-                            placeholder="you@example.com"
-                            required
-                            style={{
-                                width: '100%',
-                                padding: 'var(--space-md)',
-                                borderRadius: 'var(--radius-lg)',
-                                border: '1px solid var(--gray-200)',
-                                background: 'rgba(255,255,255,0.5)',
-                                fontSize: '1rem'
-                            }}
-                        />
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    <div className="space-y-2">
+                        <label className="text-sm font-bold text-neutral-700 ml-1">Email Address</label>
+                        <div className="relative">
+                            <input
+                                type="email"
+                                name="email"
+                                className="w-full pl-11 pr-4 py-3.5 rounded-xl border border-neutral-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-none font-medium bg-white/50"
+                                placeholder="you@example.com"
+                                required
+                            />
+                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none">
+                                <Mail size={18} />
+                            </div>
+                        </div>
                     </div>
 
-                    <div className="form-group" style={{ marginBottom: 'var(--space-xl)' }}>
-                        <label className="form-label" style={{
-                            display: 'block',
-                            fontSize: '0.875rem',
-                            fontWeight: 600,
-                            color: 'var(--gray-700)',
-                            marginBottom: 'var(--space-xs)'
-                        }}>Password</label>
-                        <input
-                            type="password"
-                            name="password"
-                            className="form-input"
-                            placeholder="••••••••"
-                            required
-                            style={{
-                                width: '100%',
-                                padding: 'var(--space-md)',
-                                borderRadius: 'var(--radius-lg)',
-                                border: '1px solid var(--gray-200)',
-                                background: 'rgba(255,255,255,0.5)',
-                                fontSize: '1rem'
-                            }}
-                        />
+                    <div className="space-y-2">
+                        <label className="text-sm font-bold text-neutral-700 ml-1">Password</label>
+                        <div className="relative">
+                            <input
+                                type="password"
+                                name="password"
+                                className="w-full pl-11 pr-4 py-3.5 rounded-xl border border-neutral-200 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-none font-medium bg-white/50"
+                                placeholder="••••••••"
+                                required
+                            />
+                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none">
+                                <Lock size={18} />
+                            </div>
+                        </div>
                     </div>
 
-                    <button type="submit" className="btn btn-primary btn-lg" style={{
-                        width: '100%',
-                        padding: 'var(--space-md)',
-                        fontSize: '1rem',
-                        fontWeight: 700,
-                        boxShadow: '0 10px 15px -3px rgba(124, 58, 237, 0.3)'
-                    }} disabled={loading}>
+                    <button
+                        type="submit"
+                        className="w-full py-4 rounded-xl font-bold text-white bg-neutral-900 hover:bg-neutral-800 transition-all shadow-lg shadow-neutral-900/20 hover:shadow-xl hover:-translate-y-0.5 flex items-center justify-center gap-2 group disabled:opacity-70 disabled:hover:translate-y-0"
+                        disabled={loading}
+                    >
                         {loading ? 'Signing in...' : 'Sign In'}
+                        {!loading && <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />}
                     </button>
                 </form>
 
-                <div className="auth-footer" style={{
-                    textAlign: 'center',
-                    marginTop: 'var(--space-xl)',
-                    fontSize: '0.875rem',
-                    color: 'var(--gray-500)'
-                }}>
-                    <p>Don&apos;t have an account? <Link href="/register" style={{ color: 'var(--primary-600)', fontWeight: 600 }}>Create one</Link></p>
+                <div className="mt-8 text-center text-sm font-medium text-neutral-500">
+                    Don't have an account? <Link href="/register" className="text-indigo-600 hover:text-indigo-700 font-bold hover:underline">Create one</Link>
                 </div>
             </div>
         </div>

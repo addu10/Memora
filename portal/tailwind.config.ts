@@ -6,36 +6,60 @@ const config: Config = {
         "./components/**/*.{js,ts,jsx,tsx,mdx}",
         "./app/**/*.{js,ts,jsx,tsx,mdx}",
     ],
+
     theme: {
         extend: {
+            fontFamily: {
+                sans: ['Outfit', 'sans-serif'],
+            },
             colors: {
-                // "Soft Lavender" Palette
+                // Luxurious Light Palette (Mapped to CSS Variables)
+                background: 'var(--background)',
+                surface: 'var(--surface)',
+                'surface-highlight': 'var(--surface-highlight)',
+
                 primary: {
-                    50: '#f5f3ff', // very light lavender
-                    100: '#ede9fe',
-                    200: '#ddd6fe',
-                    300: '#c4b5fd',
-                    400: '#a78bfa',
-                    500: '#8b5cf6', // main purple
-                    600: '#7c3aed',
-                    700: '#6d28d9',
-                    800: '#5b21b6',
-                    900: '#4c1d95',
+                    50: 'var(--primary-50)',
+                    100: 'var(--primary-100)',
+                    200: 'var(--primary-200)',
+                    300: 'var(--primary-300)',
+                    400: 'var(--primary-400)',
+                    500: 'var(--primary-500)',
+                    600: 'var(--primary-600)',
+                    700: 'var(--primary-700)',
+                    800: 'var(--primary-800)',
+                    900: 'var(--primary-900)',
                 },
-                lavender: {
-                    50: '#F7F7FF',
-                    100: '#EBEBFF',
-                    200: '#D9D9FF',
-                    300: '#BDB9FE',
-                    400: '#9D93FD',
-                    500: '#7B6EF6',
-                    600: '#644EE6',
+                secondary: {
+                    50: 'var(--secondary-50)',
+                    100: 'var(--secondary-100)',
+                    500: 'var(--secondary-500)',
+                    600: 'var(--secondary-600)',
                 },
-                'soft-blue': {
-                    50: '#F0F5FF',
-                    100: '#E0EAFF',
-                    500: '#3B82F6',
-                }
+                neutral: {
+                    50: 'var(--neutral-50)',
+                    100: 'var(--neutral-100)',
+                    200: 'var(--neutral-200)',
+                    300: 'var(--neutral-300)',
+                    400: 'var(--neutral-400)',
+                    500: 'var(--neutral-500)',
+                    600: 'var(--neutral-600)',
+                    700: 'var(--neutral-700)',
+                    800: 'var(--neutral-800)',
+                    900: 'var(--neutral-900)',
+                },
+                slate: {
+                    50: 'var(--neutral-50)',
+                    100: 'var(--neutral-100)',
+                    200: 'var(--neutral-200)',
+                    300: 'var(--neutral-300)',
+                    400: 'var(--neutral-400)',
+                    500: 'var(--neutral-500)',
+                    600: 'var(--neutral-600)',
+                    700: 'var(--neutral-700)',
+                    800: 'var(--neutral-800)',
+                    900: 'var(--neutral-900)',
+                },
             },
             backgroundImage: {
                 'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',

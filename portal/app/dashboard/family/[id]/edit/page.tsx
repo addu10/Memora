@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import ImageUpload from '@/app/dashboard/components/ImageUpload'
+import { User, Heart, Camera, X, Plus, Save, ArrowLeft, ChevronLeft } from 'lucide-react'
 
 const relationshipOptions = [
     'Wife', 'Husband', 'Son', 'Daughter', 'Brother', 'Sister',
@@ -106,66 +107,74 @@ export default function EditFamilyMemberPage() {
 
     if (fetching) {
         return (
-            <div className="flex items-center justify-center min-h-[400px]">
-                <div className="spinner"></div>
+            <div className="flex items-center justify-center min-h-[60vh]">
+                <div className="w-12 h-12 border-4 border-violet-200 border-t-violet-600 rounded-full animate-spin"></div>
             </div>
         )
     }
 
     return (
-        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem' }}>
-            <div style={{ marginBottom: '2rem' }}>
-                <h1 style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '0.5rem' }}>Edit Family Member</h1>
-                <p style={{ color: 'var(--gray-500)' }}>Update details and reference photos.</p>
+        <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12">
+
+            {/* Header */}
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                <div>
+                    <Link href="/dashboard/family" className="inline-flex items-center gap-2 text-slate-500 hover:text-violet-600 font-bold mb-3 transition-colors">
+                        <ChevronLeft size={20} /> Back to Family
+                    </Link>
+                    <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight leading-tight">
+                        Edit Family <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 animate-gradient-x">Member</span>
+                    </h1>
+                    <p className="text-slate-500 mt-3 text-lg font-medium">Update details and reference photos for <span className="font-bold text-slate-800">{name}</span>.</p>
+                </div>
             </div>
 
             {error && (
-                <div style={{
-                    background: '#FEF2F2',
-                    color: '#991B1B',
-                    padding: '1rem',
-                    borderRadius: '0.75rem',
-                    marginBottom: '1.5rem',
-                    border: '1px solid #FCA5A5',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.75rem'
-                }}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
-                    </svg>
+                <div className="p-6 bg-red-50/80 backdrop-blur-md text-red-700 rounded-[1.5rem] flex items-center gap-3 font-bold border border-red-100 shadow-sm animate-in fade-in slide-in-from-top-2">
+                    <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center shrink-0">
+                        <X size={20} />
+                    </div>
                     {error}
                 </div>
             )}
 
-            <form onSubmit={handleSubmit}>
-                <div className="family-form-grid">
-                    {/* Left Column: Details */}
-                    <div>
-                        <div className="form-section-card">
-                            <h3 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '1.5rem', color: 'var(--gray-800)' }}>Personal Details</h3>
+            <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Left Column: Details */}
+                <div className="lg:col-span-1 space-y-8">
+                    <div className="glass-card bg-white/60 rounded-[2.5rem] p-8 shadow-sm backdrop-blur-md border border-white/50">
+                        <div className="flex items-center gap-4 mb-8">
+                            <div className="w-14 h-14 rounded-[1.2rem] bg-gradient-to-br from-violet-500 to-purple-600 text-white flex items-center justify-center shadow-lg shadow-violet-200">
+                                <User size={28} />
+                            </div>
+                            <h3 className="text-2xl font-black text-slate-900 tracking-tight">Personal Details</h3>
+                        </div>
 
-                            <div className="form-group">
-                                <label className="form-label">Name *</label>
+                        <div className="space-y-6">
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold text-slate-700 flex items-center gap-2 ml-1">
+                                    Name <span className="text-violet-500">*</span>
+                                </label>
                                 <input
                                     type="text"
                                     name="name"
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
-                                    className="form-input"
+                                    className="w-full px-5 py-4 rounded-2xl bg-white/50 border border-white/50 focus:bg-white focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all outline-none font-bold placeholder:text-slate-300 placeholder:font-medium text-slate-900 shadow-sm"
                                     placeholder="e.g., Lakshmi"
                                     required
                                 />
                             </div>
 
-                            <div className="form-group">
-                                <label className="form-label">Relationship *</label>
-                                <div style={{ position: 'relative' }}>
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold text-slate-700 flex items-center gap-2 ml-1">
+                                    Relationship <span className="text-violet-500">*</span>
+                                </label>
+                                <div className="relative">
                                     <select
                                         name="relationship"
                                         value={relationship}
                                         onChange={(e) => setRelationship(e.target.value)}
-                                        className="form-input form-select"
+                                        className="w-full px-5 py-4 rounded-2xl bg-white/50 border border-white/50 focus:bg-white focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all outline-none font-bold appearance-none text-slate-900 shadow-sm cursor-pointer"
                                         required
                                     >
                                         <option value="">Select relationship...</option>
@@ -173,58 +182,78 @@ export default function EditFamilyMemberPage() {
                                             <option key={rel} value={rel}>{rel}</option>
                                         ))}
                                     </select>
+                                    <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-violet-400">
+                                        <Heart size={20} className="fill-violet-100" />
+                                    </div>
                                 </div>
                             </div>
 
-                            <div className="form-group">
-                                <label className="form-label">Notes (Optional)</label>
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold text-slate-700 ml-1">Notes (Optional)</label>
                                 <textarea
                                     name="notes"
                                     value={notes}
                                     onChange={(e) => setNotes(e.target.value)}
-                                    className="form-input"
-                                    placeholder="Distinctive features (glasses, etc.)"
-                                    rows={4}
-                                    style={{ resize: 'none' }}
+                                    className="w-full px-5 py-4 rounded-2xl bg-white/50 border border-white/50 focus:bg-white focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all outline-none font-bold placeholder:text-slate-300 placeholder:font-medium min-h-[140px] resize-none text-slate-900 shadow-sm leading-relaxed"
+                                    placeholder="Distinctive features (glasses, etc.) or topics to discuss/avoid..."
                                 />
                             </div>
                         </div>
 
-                        <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
+                        <div className="flex items-center gap-4 mt-8 pt-8 border-t border-slate-100/50">
                             <Link
                                 href="/dashboard/family"
-                                className="btn btn-secondary"
-                                style={{ flex: 1, padding: '0.875rem' }}
+                                className="flex-1 py-4 px-4 rounded-2xl font-bold text-slate-500 bg-slate-50 hover:bg-slate-100 transition-colors text-center"
                             >
                                 Cancel
                             </Link>
                             <button
                                 type="submit"
-                                className="btn btn-primary"
-                                style={{ flex: 1, padding: '0.875rem' }}
+                                className="flex-1 py-4 px-4 rounded-2xl font-bold text-white bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 animate-gradient-x hover:shadow-purple-200 transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed hover:text-white"
                                 disabled={loading}
                             >
-                                {loading ? 'Saving...' : 'Save Changes'}
+                                {loading ? (
+                                    <>
+                                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                        <span>Saving...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Save size={20} />
+                                        <span>Save Changes</span>
+                                    </>
+                                )}
                             </button>
                         </div>
                     </div>
+                </div>
 
-                    {/* Right Column: Photos Grid */}
-                    <div>
-                        <div className="form-section-card" style={{ height: '100%' }}>
-                            <div className="photo-grid-header">
-                                <div>
-                                    <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--gray-800)' }}>Reference Photos</h3>
-                                    <p style={{ fontSize: '0.875rem', color: 'var(--gray-500)', marginTop: '0.25rem' }}>Add 5-10 clear photos from different angles.</p>
+                {/* Right Column: Photos Grid */}
+                <div className="lg:col-span-2">
+                    <div className="glass-card bg-white/40 rounded-[2.5rem] p-8 shadow-sm backdrop-blur-md border border-white/50 h-full relative overflow-hidden">
+                        {/* Decorative background blobs */}
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-violet-100/30 rounded-full blur-3xl -z-10"></div>
+                        <div className="absolute bottom-0 left-0 w-64 h-64 bg-fuchsia-100/30 rounded-full blur-3xl -z-10"></div>
+
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                            <div className="flex items-center gap-5">
+                                <div className="w-14 h-14 rounded-[1.2rem] bg-violet-500 text-white flex items-center justify-center shadow-lg shadow-violet-200">
+                                    <Camera size={28} />
                                 </div>
-                                <span className="photo-count-badge">
-                                    {photoUrls.filter(u => u !== '').length} / 10
-                                </span>
+                                <div>
+                                    <h3 className="text-2xl font-black text-slate-900 tracking-tight">Reference Photos</h3>
+                                    <p className="text-slate-500 font-medium">Update photos as the person ages or changes appearance.</p>
+                                </div>
                             </div>
+                            <div className="px-4 py-2 bg-white/60 backdrop-blur-sm border border-white/50 rounded-xl text-sm font-bold text-violet-600 shadow-sm">
+                                {photoUrls.filter(u => u !== '').length} / 10 Photos
+                            </div>
+                        </div>
 
-                            <div className="photo-grid">
-                                {photoUrls.map((url, index) => (
-                                    <div key={index} style={{ position: 'relative' }}>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
+                            {photoUrls.map((url, index) => (
+                                <div key={index} className="relative group animate-in fade-in zoom-in duration-300" style={{ animationDelay: `${index * 50}ms` }}>
+                                    <div className="aspect-square rounded-[1.5rem] overflow-hidden bg-white/40 border border-white/60 group-hover:border-violet-300 transition-all shadow-sm hover:shadow-md">
                                         <ImageUpload
                                             bucket="family-photos"
                                             onUpload={(newUrl) => updatePhotoUrl(index, newUrl)}
@@ -232,31 +261,33 @@ export default function EditFamilyMemberPage() {
                                             compact={true}
                                             currentUrl={url}
                                         />
-                                        {/* Remove Button */}
-                                        {url && photoUrls.length > 1 && (
-                                            <button
-                                                type="button"
-                                                onClick={() => removePhotoField(index)}
-                                                className="remove-photo-btn"
-                                                title="Remove photo"
-                                            >
-                                                ✕
-                                            </button>
-                                        )}
                                     </div>
-                                ))}
+                                    {/* Remove Button */}
+                                    {url && photoUrls.length > 1 && (
+                                        <button
+                                            type="button"
+                                            onClick={() => removePhotoField(index)}
+                                            className="absolute -top-3 -right-3 w-9 h-9 bg-white text-red-500 rounded-full shadow-lg border border-red-50 flex items-center justify-center hover:bg-red-50 hover:scale-110 transition-all z-10"
+                                            title="Remove photo"
+                                        >
+                                            <X size={16} strokeWidth={3} />
+                                        </button>
+                                    )}
+                                </div>
+                            ))}
 
-                                {photoUrls.length < 10 && (
-                                    <button
-                                        type="button"
-                                        onClick={addPhotoField}
-                                        className="add-slot-btn"
-                                    >
-                                        <span style={{ fontSize: '2rem', marginBottom: '0.25rem', fontWeight: 300 }}>+</span>
-                                        <span style={{ fontSize: '0.75rem', fontWeight: 600 }}>Add Slot</span>
-                                    </button>
-                                )}
-                            </div>
+                            {photoUrls.length < 10 && (
+                                <button
+                                    type="button"
+                                    onClick={addPhotoField}
+                                    className="aspect-square rounded-[1.5rem] border-2 border-dashed border-slate-200 hover:border-violet-400 hover:bg-violet-50/30 transition-all flex flex-col items-center justify-center gap-3 text-slate-400 hover:text-violet-600 group"
+                                >
+                                    <div className="w-12 h-12 rounded-2xl bg-white/50 group-hover:bg-white group-hover:shadow-md flex items-center justify-center transition-all">
+                                        <Plus size={24} />
+                                    </div>
+                                    <span className="text-sm font-bold">Add Photo Slot</span>
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>

@@ -4,7 +4,23 @@ import { getSession } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import {
+    Activity,
+    Calendar,
+    Clock,
+    TrendingUp,
+    Brain,
+    Smile,
+    Meh,
+    Frown,
+    HelpCircle,
+    BarChart2,
+    PieChart,
+    UserPlus,
+    Zap
+} from 'lucide-react'
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function getProgressData(patientId: string) {
     // Get sessions for patient
     const { data: sessionsRaw } = await supabaseAdmin
@@ -40,7 +56,9 @@ async function getProgressData(patientId: string) {
     })
 
     // Calculate average recall scores over time
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const recallOverTime = sessions.map(s => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const avgRecall = s.memories.length > 0
             ? s.memories.reduce((sum: number, m: any) => sum + m.recallScore, 0) / s.memories.length
             : 0
@@ -54,6 +72,7 @@ async function getProgressData(patientId: string) {
     // Memory-level statistics
     const memoryStatsMap: Record<string, { title: string, event: string, totalScore: number, count: number }> = {}
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ; (allSessionMemories || []).forEach((sm: any) => {
             const memoryId = sm.memoryId
             if (!memoryStatsMap[memoryId]) {
@@ -74,7 +93,6 @@ async function getProgressData(patientId: string) {
         averageRecall: (stats.totalScore / stats.count).toFixed(1)
     })).sort((a, b) => parseFloat(a.averageRecall) - parseFloat(b.averageRecall))
 
-    // Overall average recall
     const allRecalls = (allSessionMemories || []).map(m => m.recallScore)
     const avgRecall = allRecalls.length > 0
         ? (allRecalls.reduce((a, b) => a + b, 0) / allRecalls.length).toFixed(1)
@@ -118,12 +136,15 @@ export default async function ProgressPage() {
 
         if (!firstPatient) {
             return (
-                <div className="empty-state">
-                    <div className="empty-icon-3d">
-                        <img src="/icons/patients.png" alt="" className="empty-img" />
+                <div className="flex flex-col items-center justify-center min-h-[60vh] py-12 px-4 animate-in fade-in zoom-in duration-500">
+                    <div className="w-24 h-24 bg-violet-50 rounded-full flex items-center justify-center mb-6 shadow-sm">
+                        <UserPlus size={40} className="text-violet-400" />
                     </div>
-                    <h2 className="empty-title">No Patient Added Yet</h2>
-                    <Link href="/dashboard/patients/new" className="btn btn-primary">Add Patient</Link>
+                    <h2 className="text-2xl font-bold text-slate-900 mb-2">No Patient Added Yet</h2>
+                    <p className="text-slate-500 mb-8 text-center max-w-md">Get started by adding a patient profile to track their progress and memories.</p>
+                    <Link href="/dashboard/patients/new" className="px-8 py-4 bg-violet-600 text-white rounded-xl font-bold hover:bg-violet-700 transition-colors shadow-lg shadow-violet-200">
+                        Add First Patient
+                    </Link>
                 </div>
             )
         }
@@ -133,133 +154,190 @@ export default async function ProgressPage() {
     const progress = await getProgressData(patient.id)
 
     return (
-        <div className="progress-page">
-            <div className="page-header">
+        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
-                    <h1 className="page-title">Progress Analysis</h1>
-                    <p className="page-subtitle">Clinical insights for {patient.name}</p>
+                    <h1 className="text-3xl md:text-4xl font-black tracking-tight text-slate-900">
+                        Progress <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 animate-gradient-x">Analysis</span>
+                    </h1>
+                    <p className="text-slate-500 mt-2 text-lg font-medium">
+                        Clinical insights and trends for <span className="font-bold text-slate-800 border-b-2 border-violet-100">{patient.name}</span>
+                    </p>
                 </div>
             </div>
 
-            {/* Summary Stats */}
-            <div className="stats-grid">
-                <div className="stat-card">
-                    <div className="stat-icon-3d">
-                        <img src="/icons/sessions.png" alt="" className="stat-icon-img" />
+            {/* Summary Stats Grid (Unified Violet Theme) */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+                {/* Total Sessions - Violet */}
+                <div className="bg-white rounded-[2rem] p-6 shadow-sm border border-violet-200 flex flex-col items-center text-center hover:shadow-lg hover:border-violet-300 transition-all duration-300 group">
+                    <div className="w-14 h-14 rounded-2xl bg-violet-50 text-violet-600 flex items-center justify-center mb-4 group-hover:bg-violet-100 transition-colors">
+                        <Calendar size={28} strokeWidth={2.5} />
                     </div>
-                    <div className="stat-value">{progress.totalSessions}</div>
-                    <div className="stat-label">Total Sessions</div>
+                    <div className="text-4xl font-black text-slate-900 mb-1">{progress.totalSessions}</div>
+                    <div className="text-xs font-bold text-slate-400 uppercase tracking-wider group-hover:text-violet-600 transition-colors">Total Sessions</div>
                 </div>
-                <div className="stat-card">
-                    <div className="stat-icon-3d">
-                        <img src="/icons/overview.png" alt="" className="stat-icon-img" />
+
+                {/* Total Minutes - Indigo */}
+                <div className="bg-white rounded-[2rem] p-6 shadow-sm border border-violet-200 flex flex-col items-center text-center hover:shadow-lg hover:border-violet-300 transition-all duration-300 group">
+                    <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-4 group-hover:bg-indigo-100 transition-colors">
+                        <Clock size={28} strokeWidth={2.5} />
                     </div>
-                    <div className="stat-value">{progress.totalDuration}</div>
-                    <div className="stat-label">Total Minutes</div>
+                    <div className="text-4xl font-black text-slate-900 mb-1">{progress.totalDuration}</div>
+                    <div className="text-xs font-bold text-slate-400 uppercase tracking-wider group-hover:text-indigo-600 transition-colors">Total Minutes</div>
                 </div>
-                <div className="stat-card">
-                    <div className="stat-icon-3d">
-                        <img src="/icons/analytics.png" alt="" className="stat-icon-img" />
+
+                {/* Avg Recall - Fuchsia/Purple */}
+                <div className="bg-white rounded-[2rem] p-6 shadow-sm border border-violet-200 flex flex-col items-center text-center hover:shadow-lg hover:border-violet-300 transition-all duration-300 group">
+                    <div className="w-14 h-14 rounded-2xl bg-fuchsia-50 text-fuchsia-600 flex items-center justify-center mb-4 group-hover:bg-fuchsia-100 transition-colors">
+                        <Activity size={28} strokeWidth={2.5} />
                     </div>
-                    <div className="stat-value">{progress.avgRecall}</div>
-                    <div className="stat-label">Avg. Recall</div>
+                    <div className="text-4xl font-black text-slate-900 mb-1">{progress.avgRecall}</div>
+                    <div className="text-xs font-bold text-slate-400 uppercase tracking-wider group-hover:text-fuchsia-600 transition-colors">Avg. Recall</div>
                 </div>
-                <div className="stat-card">
-                    <div className="stat-icon-3d">
-                        <img src="/icons/wellness.svg" alt="" className="stat-icon-img" />
+
+                {/* Positive Days - Emerald (Kept for semantic meaning but style unified) */}
+                <div className="bg-white rounded-[2rem] p-6 shadow-sm border border-violet-200 flex flex-col items-center text-center hover:shadow-lg hover:border-emerald-300 transition-all duration-300 group">
+                    <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4 group-hover:bg-emerald-100 transition-colors">
+                        <Smile size={28} strokeWidth={2.5} />
                     </div>
-                    <div className="stat-value">{progress.moodCounts.happy}</div>
-                    <div className="stat-label">Positive Days</div>
+                    <div className="text-4xl font-black text-slate-900 mb-1">{progress.moodCounts.happy}</div>
+                    <div className="text-xs font-bold text-slate-400 uppercase tracking-wider group-hover:text-emerald-600 transition-colors">Positive Days</div>
                 </div>
             </div>
 
-            <div className="progress-grid">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Left Column: Charts */}
-                <div className="progress-main">
+                <div className="lg:col-span-2 space-y-8">
                     {/* Recall Progress */}
                     {progress.recallOverTime.length > 0 && (
-                        <div className="section-card">
-                            <div className="section-header">
-                                <h2 className="section-title">Recall Trend</h2>
-                            </div>
-                            <div className="section-body">
-                                <div className="recall-timeline">
-                                    {progress.recallOverTime.slice(-10).map((item, i) => (
-                                        <div key={i} className="recall-item">
-                                            <div className="recall-score-bar" style={{ height: `${(parseFloat(item.avgRecall) / 5) * 100}%` }} />
-                                            <span className="recall-score">{item.avgRecall}</span>
-                                            <span className="recall-date">
-                                                {new Date(item.date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}
-                                            </span>
-                                        </div>
-                                    ))}
+                        <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-violet-200">
+                            <div className="flex items-center gap-4 mb-8">
+                                <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center shadow-sm">
+                                    <TrendingUp size={24} />
                                 </div>
+                                <div>
+                                    <h2 className="text-xl font-bold text-slate-900">Recall Trend</h2>
+                                    <p className="text-sm text-slate-500 font-medium">Cognitive performance over last 10 sessions</p>
+                                </div>
+                            </div>
+
+                            <div className="h-64 flex items-end justify-between gap-3 px-2 pb-2">
+                                {progress.recallOverTime.slice(-10).map((item, i) => (
+                                    <div key={i} className="flex flex-col items-center gap-3 group w-full">
+                                        <div className="relative w-full flex justify-end flex-col items-center h-48">
+                                            <div
+                                                className="w-full max-w-[40px] bg-violet-600 rounded-t-xl group-hover:bg-violet-700 transition-all duration-300 relative shadow-sm"
+                                                style={{ height: `${(parseFloat(item.avgRecall) / 5) * 100}%` }}
+                                            >
+                                                <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs font-bold px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
+                                                    {item.avgRecall}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="text-xs font-bold text-slate-400 group-hover:text-violet-600 transition-colors truncate w-full text-center">
+                                            {new Date(item.date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     )}
 
                     {/* Memory Performance */}
-                    <div className="section-card">
-                        <div className="section-header">
-                            <h2 className="section-title">Memory Support Analysis</h2>
-                            <p className="text-xs text-gray-500">How well the patient recalls specific events</p>
+                    <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-violet-200">
+                        <div className="flex items-center gap-4 mb-8">
+                            <div className="w-12 h-12 rounded-2xl bg-violet-50 text-violet-600 flex items-center justify-center shadow-sm">
+                                <Brain size={24} />
+                            </div>
+                            <div>
+                                <h2 className="text-xl font-bold text-slate-900">Memory Support Analysis</h2>
+                                <p className="text-sm text-slate-500 font-medium">Recall strength for specific memories</p>
+                            </div>
                         </div>
-                        <div className="section-body">
+
+                        <div className="space-y-4">
                             {progress.memoryStats.length > 0 ? (
-                                <div className="memory-stats-list">
+                                <div className="grid gap-3">
                                     {progress.memoryStats.map((stat, i) => (
-                                        <div key={i} className="memory-stat-item">
-                                            <div className="memory-stat-info">
-                                                <span className="memory-stat-title">{stat.title}</span>
-                                                <span className="memory-stat-event">{stat.event}</span>
+                                        <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:border-violet-200 hover:bg-violet-50/30 transition-all duration-200 group">
+                                            <div className="flex-1 min-w-0 pr-4">
+                                                <h4 className="font-bold text-slate-900 truncate group-hover:text-violet-700 transition-colors">{stat.title}</h4>
+                                                <p className="text-sm text-slate-500 truncate">{stat.event}</p>
                                             </div>
-                                            <div className="memory-stat-score">
-                                                <div className="score-badge" style={{
-                                                    background: parseFloat(stat.averageRecall) > 4 ? '#dcfce7' : parseFloat(stat.averageRecall) > 2 ? '#fef9c3' : '#fee2e2',
-                                                    color: parseFloat(stat.averageRecall) > 4 ? '#166534' : parseFloat(stat.averageRecall) > 2 ? '#854d0e' : '#991b1b'
-                                                }}>
-                                                    {stat.averageRecall} / 5
-                                                </div>
+                                            <div className={`px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 shadow-sm ${parseFloat(stat.averageRecall) > 4
+                                                ? 'bg-emerald-100 text-emerald-700'
+                                                : parseFloat(stat.averageRecall) > 2.5
+                                                    ? 'bg-amber-100 text-amber-700'
+                                                    : 'bg-red-100 text-red-700'
+                                                }`}>
+                                                <span>{stat.averageRecall}</span>
+                                                <span className="opacity-50 text-xs text-current">/ 5</span>
                                             </div>
                                         </div>
                                     ))}
                                 </div>
                             ) : (
-                                <div className="empty-state-compact">No data yet. Complete a session to see analysis.</div>
+                                <div className="text-center py-12 text-slate-400 bg-slate-50 rounded-3xl border border-dashed border-slate-200">
+                                    No data available yet. Complete a session to see analysis.
+                                </div>
                             )}
                         </div>
                     </div>
                 </div>
 
                 {/* Right Column: Mood Distribution */}
-                <div className="progress-side">
-                    <div className="section-card">
-                        <div className="section-header">
-                            <h2 className="section-title">Emotional Wellbeing</h2>
-                        </div>
-                        <div className="section-body">
-                            <div className="mood-bars">
-                                {[
-                                    { label: 'Happy', key: 'happy', color: 'happy' },
-                                    { label: 'Neutral', key: 'neutral', color: 'neutral' },
-                                    { label: 'Sad', key: 'sad', color: 'sad' },
-                                    { label: 'Confused', key: 'confused', color: 'confused' }
-                                ].map(m => (
-                                    <div key={m.key} className="mood-bar-item">
-                                        <span className="mood-label">{m.label}</span>
-                                        <div className="mood-bar">
-                                            <div
-                                                className="mood-bar-fill"
-                                                style={{
-                                                    width: `${(progress.moodCounts[m.key] / Math.max(progress.totalSessions, 1)) * 100}%`,
-                                                    backgroundColor: m.color === 'happy' ? '#10b981' : m.color === 'neutral' ? '#6b7280' : m.color === 'sad' ? '#3b82f6' : '#f59e0b'
-                                                }}
-                                            />
-                                        </div>
-                                        <span className="mood-count">{progress.moodCounts[m.key]}</span>
-                                    </div>
-                                ))}
+                <div className="space-y-8">
+                    <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-violet-200 h-full relative overflow-hidden">
+                        {/* Decorative Blur */}
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-violet-50/50 rounded-full blur-3xl -z-10"></div>
+
+                        <div className="flex items-center gap-4 mb-8">
+                            <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shadow-sm">
+                                <PieChart size={24} />
                             </div>
+                            <div>
+                                <h2 className="text-xl font-bold text-slate-900">Emotional Wellbeing</h2>
+                                <p className="text-sm text-slate-500 font-medium">Mood distribution</p>
+                            </div>
+                        </div>
+
+                        <div className="space-y-6">
+                            {[
+                                { label: 'Happy', key: 'happy', color: 'bg-emerald-500', icon: Smile, text: 'text-emerald-600', bg: 'bg-emerald-50' },
+                                { label: 'Neutral', key: 'neutral', color: 'bg-slate-400', icon: Meh, text: 'text-slate-600', bg: 'bg-slate-50' },
+                                { label: 'Sad', key: 'sad', color: 'bg-blue-500', icon: Frown, text: 'text-blue-600', bg: 'bg-blue-50' },
+                                { label: 'Confused', key: 'confused', color: 'bg-amber-500', icon: HelpCircle, text: 'text-amber-600', bg: 'bg-amber-50' }
+                            ].map(m => (
+                                <div key={m.key} className="space-y-2">
+                                    <div className="flex items-center justify-between text-sm font-bold">
+                                        <div className="flex items-center gap-3">
+                                            <div className={`p-1.5 rounded-lg ${m.bg}`}>
+                                                <m.icon size={16} className={m.text} />
+                                            </div>
+                                            <span className="text-slate-700">{m.label}</span>
+                                        </div>
+                                        <span className="text-slate-900 bg-slate-50 px-2.5 py-1 rounded-md min-w-[30px] text-center">{progress.moodCounts[m.key]}</span>
+                                    </div>
+                                    <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden">
+                                        <div
+                                            className={`h-full rounded-full ${m.color} transition-all duration-1000 ease-out shadow-sm`}
+                                            style={{
+                                                width: `${(progress.moodCounts[m.key] / Math.max(progress.totalSessions, 1)) * 100}%`
+                                            }}
+                                        />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="mt-8 p-6 bg-gradient-to-br from-violet-50 to-indigo-50 rounded-3xl border border-violet-100">
+                            <h4 className="font-bold text-violet-900 mb-2 flex items-center gap-2">
+                                <Zap size={18} className="fill-violet-600 text-violet-600" />
+                                Insight
+                            </h4>
+                            <p className="text-sm text-violet-700/80 leading-relaxed font-medium">
+                                Tracking emotional patterns helps identify triggers and effective memory recall strategies. Consistent positive sessions indicate effective therapy.
+                            </p>
                         </div>
                     </div>
                 </div>

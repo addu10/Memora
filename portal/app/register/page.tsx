@@ -4,6 +4,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { ArrowRight, Mail, Lock, User, Phone, AlertCircle } from 'lucide-react'
 
 export default function RegisterPage() {
     const router = useRouter()
@@ -46,78 +47,112 @@ export default function RegisterPage() {
     }
 
     return (
-        <div className="auth-page">
-            <div className="auth-card">
-                <div className="auth-header">
-                    <div className="auth-logo">🧠</div>
-                    <h1 className="auth-title">Create Account</h1>
-                    <p className="auth-subtitle">Register as a caregiver to get started</p>
+        <div className="min-h-screen w-full flex items-center justify-center p-4 bg-[#F0F4F8] relative overflow-hidden">
+            {/* Background Decorations */}
+            <div className="absolute top-0 right-1/4 w-96 h-96 bg-purple-200/30 rounded-full blur-3xl -translate-y-1/2"></div>
+            <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-amber-200/30 rounded-full blur-3xl translate-y-1/2"></div>
+
+            <div className="w-full max-w-md bg-white/80 backdrop-blur-xl rounded-[2.5rem] shadow-2xl border border-white/50 p-8 md:p-12 relative z-10 animate-in fade-in zoom-in duration-500">
+                <div className="text-center mb-10">
+                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-neutral-800 to-neutral-900 text-white shadow-lg shadow-neutral-900/20 mb-6 animate-in slide-in-from-bottom-4 duration-700 delay-100">
+                        <span className="text-4xl">🧠</span>
+                    </div>
+                    <h1 className="text-3xl font-extrabold tracking-tight text-neutral-900 mb-2">Create Account</h1>
+                    <p className="text-neutral-500 font-medium">Join Memora to support your loved ones.</p>
                 </div>
 
                 {error && (
-                    <div className="error-message">{error}</div>
+                    <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-2xl flex items-start gap-3 text-sm font-medium border border-red-100 animate-in fade-in slide-in-from-top-2">
+                        <AlertCircle size={18} className="shrink-0 mt-0.5" />
+                        <span>{error}</span>
+                    </div>
                 )}
 
-                <form onSubmit={handleSubmit} className="auth-form">
-                    <div className="form-group">
-                        <label className="form-label">Full Name</label>
-                        <input
-                            type="text"
-                            name="name"
-                            className="form-input"
-                            placeholder="Your full name"
-                            required
-                        />
+                <form onSubmit={handleSubmit} className="space-y-5">
+                    <div className="space-y-2">
+                        <label className="text-sm font-bold text-neutral-700 ml-1">Full Name</label>
+                        <div className="relative">
+                            <input
+                                type="text"
+                                name="name"
+                                className="w-full pl-11 pr-4 py-3.5 rounded-xl border border-neutral-200 focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-900 transition-all outline-none font-medium bg-white/50"
+                                placeholder="Your full name"
+                                required
+                            />
+                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none">
+                                <User size={18} />
+                            </div>
+                        </div>
                     </div>
 
-                    <div className="form-group">
-                        <label className="form-label">Email</label>
-                        <input
-                            type="email"
-                            name="email"
-                            className="form-input"
-                            placeholder="you@example.com"
-                            required
-                        />
+                    <div className="space-y-2">
+                        <label className="text-sm font-bold text-neutral-700 ml-1">Email Address</label>
+                        <div className="relative">
+                            <input
+                                type="email"
+                                name="email"
+                                className="w-full pl-11 pr-4 py-3.5 rounded-xl border border-neutral-200 focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-900 transition-all outline-none font-medium bg-white/50"
+                                placeholder="you@example.com"
+                                required
+                            />
+                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none">
+                                <Mail size={18} />
+                            </div>
+                        </div>
                     </div>
 
-                    <div className="form-group">
-                        <label className="form-label">Password</label>
-                        <input
-                            type="password"
-                            name="password"
-                            className="form-input"
-                            placeholder="Minimum 8 characters, 1 number"
-                            minLength={8}
-                            pattern="^(?=.*[0-9]).{8,}$"
-                            title="Password must be at least 8 characters long and contain at least one number."
-                            required
-                        />
-                        <p className="form-hint" style={{ fontSize: '0.75rem', color: 'var(--gray-500)', marginTop: '4px' }}>
+                    <div className="space-y-2">
+                        <label className="text-sm font-bold text-neutral-700 ml-1">Password</label>
+                        <div className="relative">
+                            <input
+                                type="password"
+                                name="password"
+                                className="w-full pl-11 pr-4 py-3.5 rounded-xl border border-neutral-200 focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-900 transition-all outline-none font-medium bg-white/50"
+                                placeholder="Min 8 chars, 1 number"
+                                minLength={8}
+                                pattern="^(?=.*[0-9]).{8,}$"
+                                title="Password must be at least 8 characters long and contain at least one number."
+                                required
+                            />
+                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none">
+                                <Lock size={18} />
+                            </div>
+                        </div>
+                        <p className="text-xs text-neutral-500 font-medium ml-1">
                             Must be at least 8 characters and contain a number.
                         </p>
                     </div>
 
-                    <div className="form-group">
-                        <label className="form-label">Phone</label>
-                        <input
-                            type="tel"
-                            name="phone"
-                            className="form-input"
-                            placeholder="+91 9876543210"
-                            pattern="^\+?[\d\s-]{10,}$"
-                            title="Please enter a valid phone number (at least 10 digits)."
-                            required
-                        />
+                    <div className="space-y-2">
+                        <label className="text-sm font-bold text-neutral-700 ml-1">Phone</label>
+                        <div className="relative">
+                            <input
+                                type="tel"
+                                name="phone"
+                                className="w-full pl-11 pr-4 py-3.5 rounded-xl border border-neutral-200 focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-900 transition-all outline-none font-medium bg-white/50"
+                                placeholder="+91 9876543210"
+                                pattern="^\+?[\d\s-]{10,}$"
+                                title="Please enter a valid phone number (at least 10 digits)."
+                                required
+                            />
+                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none">
+                                <Phone size={18} />
+                            </div>
+                        </div>
                     </div>
 
-                    <button type="submit" className="btn btn-primary btn-lg" style={{ width: '100%', marginTop: 'var(--space-md)' }} disabled={loading}>
+                    <button
+                        type="submit"
+                        className="w-full py-4 rounded-xl font-bold text-white bg-neutral-900 hover:bg-neutral-800 transition-all shadow-lg shadow-neutral-900/20 hover:shadow-xl hover:-translate-y-0.5 flex items-center justify-center gap-2 group disabled:opacity-70 disabled:hover:translate-y-0 mt-2"
+                        disabled={loading}
+                    >
                         {loading ? 'Creating account...' : 'Create Account'}
+                        {!loading && <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />}
                     </button>
                 </form>
 
-                <div className="auth-footer">
-                    <p>Already have an account? <Link href="/login">Sign In</Link></p>
+                <div className="mt-8 text-center text-sm font-medium text-neutral-500">
+                    Already have an account? <Link href="/login" className="text-neutral-900 hover:text-black font-bold hover:underline">Sign In</Link>
                 </div>
             </div>
         </div>

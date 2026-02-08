@@ -3,6 +3,7 @@
 // Settings Page
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { User, Phone, Mail, Lock, Shield, CheckCircle2, AlertCircle, Save } from 'lucide-react'
 
 export default function SettingsPage() {
     const router = useRouter()
@@ -90,187 +91,164 @@ export default function SettingsPage() {
     }
 
     return (
-        <div style={{ maxWidth: '900px', margin: '0 auto', padding: 'var(--space-xl)' }}>
-            <div className="page-header" style={{ marginBottom: 'var(--space-2xl)' }}>
+        <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
-                    <h1 className="page-title" style={{ fontSize: '2.5rem', fontWeight: 800 }}>Profile & Settings</h1>
-                    <p className="page-subtitle" style={{ fontSize: '1.1rem', color: 'var(--gray-600)' }}>Manage your caregiver account information and security.</p>
+                    <h1 className="text-3xl md:text-4xl font-black tracking-tight text-slate-900">
+                        Profile & <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 animate-gradient-x">Settings</span>
+                    </h1>
+                    <p className="text-neutral-500 mt-2 text-lg">Manage your caregiver account information and security.</p>
                 </div>
             </div>
 
-            <div style={{ display: 'grid', gap: 'var(--space-xl)' }}>
+            <div className="grid gap-8">
                 {/* Profile Section */}
-                <div className="stat-card" style={{ padding: 'var(--space-xl)', background: 'white' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)', marginBottom: 'var(--space-xl)' }}>
-                        <div className="user-avatar" style={{ width: '56px', height: '56px', fontSize: '1.5rem' }}>
+                <div className="bg-white rounded-[2.5rem] p-8 shadow-sm-soft border border-neutral-100">
+                    <div className="flex items-center gap-6 mb-8 border-b border-neutral-100 pb-8">
+                        <div className="w-16 h-16 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center text-2xl font-bold shrink-0">
                             {name.charAt(0).toUpperCase()}
                         </div>
                         <div>
-                            <h3 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>Public Profile</h3>
-                            <p style={{ color: 'var(--gray-500)', margin: 0 }}>This information will be visible to family members.</p>
+                            <h3 className="text-xl font-bold text-neutral-900">Public Profile</h3>
+                            <p className="text-neutral-500">This information will be visible to family members.</p>
                         </div>
                     </div>
 
                     {profileSuccess && (
-                        <div className="success-alert" style={{
-                            padding: 'var(--space-md)',
-                            background: 'var(--success)',
-                            color: 'white',
-                            borderRadius: 'var(--radius-md)',
-                            marginBottom: 'var(--space-lg)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 'var(--space-sm)',
-                            fontWeight: 600
-                        }}>
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                                <polyline points="20 6 9 17 4 12" />
-                            </svg> {profileSuccess}
+                        <div className="mb-6 p-4 bg-emerald-50 text-emerald-700 rounded-2xl flex items-center gap-3 font-medium border border-emerald-100">
+                            <CheckCircle2 size={20} />
+                            {profileSuccess}
                         </div>
                     )}
                     {profileError && (
-                        <div className="error-alert" style={{
-                            padding: 'var(--space-md)',
-                            background: 'var(--error)',
-                            color: 'white',
-                            borderRadius: 'var(--radius-md)',
-                            marginBottom: 'var(--space-lg)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 'var(--space-sm)',
-                            fontWeight: 600
-                        }}>
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                                <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
-                            </svg> {profileError}
+                        <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-2xl flex items-center gap-3 font-medium border border-red-100">
+                            <AlertCircle size={20} />
+                            {profileError}
                         </div>
                     )}
 
-                    <form onSubmit={handleProfileUpdate} style={{ display: 'grid', gap: 'var(--space-xl)' }}>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 'var(--space-lg)' }}>
-                            <div className="form-group">
-                                <label className="form-label">Full Name</label>
+                    <form onSubmit={handleProfileUpdate} className="space-y-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold text-neutral-700 flex items-center gap-2">
+                                    <User size={16} />
+                                    Full Name
+                                </label>
                                 <input
                                     type="text"
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
-                                    className="form-input"
-                                    style={{ width: '100%' }}
+                                    className="w-full px-4 py-3 rounded-xl border border-neutral-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none font-medium"
                                     required
                                 />
                             </div>
-                            <div className="form-group">
-                                <label className="form-label">Phone Number</label>
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold text-neutral-700 flex items-center gap-2">
+                                    <Phone size={16} />
+                                    Phone Number
+                                </label>
                                 <input
                                     type="tel"
                                     value={phone}
                                     onChange={(e) => setPhone(e.target.value)}
-                                    className="form-input"
-                                    style={{ width: '100%' }}
+                                    className="w-full px-4 py-3 rounded-xl border border-neutral-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none font-medium"
                                     placeholder="+91..."
                                 />
                             </div>
                         </div>
-                        <div className="form-group">
-                            <label className="form-label">Email Address (Read-only)</label>
+                        <div className="space-y-2">
+                            <label className="text-sm font-bold text-neutral-700 flex items-center gap-2">
+                                <Mail size={16} />
+                                Email Address (Read-only)
+                            </label>
                             <input
                                 type="email"
                                 value={email}
                                 disabled
-                                className="form-input"
-                                style={{ width: '100%', background: 'var(--gray-50)', color: 'var(--gray-500)', cursor: 'not-allowed' }}
+                                className="w-full px-4 py-3 rounded-xl border border-neutral-200 bg-neutral-50 text-neutral-500 cursor-not-allowed font-medium"
                             />
                         </div>
-                        <div style={{ textAlign: 'right' }}>
+                        <div className="flex justify-end pt-4">
                             <button
                                 type="submit"
-                                className="btn btn-primary"
-                                style={{ padding: 'var(--space-md) var(--space-2xl)', fontWeight: 600 }}
+                                className="flex items-center gap-2 px-8 py-4 bg-neutral-900 text-white rounded-xl font-bold hover:bg-neutral-800 transition-colors shadow-lg shadow-neutral-900/20 disabled:opacity-70 disabled:cursor-not-allowed"
                                 disabled={profileLoading}
                             >
-                                {profileLoading ? 'Saving...' : 'Update Profile'}
+                                {profileLoading ? (
+                                    <>
+                                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                        <span>Saving...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Save size={18} />
+                                        <span>Update Profile</span>
+                                    </>
+                                )}
                             </button>
                         </div>
                     </form>
                 </div>
 
                 {/* Security Section */}
-                <div className="stat-card" style={{ padding: 'var(--space-xl)', background: 'white' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)', marginBottom: 'var(--space-xl)' }}>
-                        <div className="user-avatar" style={{ width: '56px', height: '56px', fontSize: '1.5rem', background: 'var(--gray-100)', color: 'var(--gray-700)' }}>
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
-                                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                            </svg>
+                <div className="bg-white rounded-[2.5rem] p-8 shadow-sm-soft border border-neutral-100">
+                    <div className="flex items-center gap-6 mb-8 border-b border-neutral-100 pb-8">
+                        <div className="w-16 h-16 rounded-full bg-neutral-100 text-neutral-600 flex items-center justify-center shrink-0">
+                            <Shield size={28} strokeWidth={2.5} />
                         </div>
                         <div>
-                            <h3 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>Security & Password</h3>
-                            <p style={{ color: 'var(--gray-500)', margin: 0 }}>Change your password to keep your account secure.</p>
+                            <h3 className="text-xl font-bold text-neutral-900">Security & Password</h3>
+                            <p className="text-neutral-500">Change your password to keep your account secure.</p>
                         </div>
                     </div>
 
                     {securitySuccess && (
-                        <div className="success-alert" style={{
-                            padding: 'var(--space-md)',
-                            background: 'var(--success)',
-                            color: 'white',
-                            borderRadius: 'var(--radius-md)',
-                            marginBottom: 'var(--space-lg)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 'var(--space-sm)',
-                            fontWeight: 600
-                        }}>
-                            <span>✓</span> {securitySuccess}
+                        <div className="mb-6 p-4 bg-emerald-50 text-emerald-700 rounded-2xl flex items-center gap-3 font-medium border border-emerald-100">
+                            <CheckCircle2 size={20} />
+                            {securitySuccess}
                         </div>
                     )}
                     {securityError && (
-                        <div className="error-alert" style={{
-                            padding: 'var(--space-md)',
-                            background: 'var(--error)',
-                            color: 'white',
-                            borderRadius: 'var(--radius-md)',
-                            marginBottom: 'var(--space-lg)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 'var(--space-sm)',
-                            fontWeight: 600
-                        }}>
-                            <span>⚠</span> {securityError}
+                        <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-2xl flex items-center gap-3 font-medium border border-red-100">
+                            <AlertCircle size={20} />
+                            {securityError}
                         </div>
                     )}
 
-                    <form onSubmit={handlePasswordUpdate} style={{ display: 'grid', gap: 'var(--space-xl)' }}>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 'var(--space-lg)' }}>
-                            <div className="form-group">
-                                <label className="form-label">Current Password</label>
+                    <form onSubmit={handlePasswordUpdate} className="space-y-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold text-neutral-700 flex items-center gap-2">
+                                    <Lock size={16} />
+                                    Current Password
+                                </label>
                                 <input
                                     type="password"
                                     value={currentPassword}
                                     onChange={(e) => setCurrentPassword(e.target.value)}
-                                    className="form-input"
-                                    style={{ width: '100%' }}
+                                    className="w-full px-4 py-3 rounded-xl border border-neutral-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none font-medium"
                                     required
                                 />
                             </div>
-                            <div className="form-group">
-                                <label className="form-label">New Password</label>
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold text-neutral-700 flex items-center gap-2">
+                                    <CheckCircle2 size={16} />
+                                    New Password
+                                </label>
                                 <input
                                     type="password"
                                     value={newPassword}
                                     onChange={(e) => setNewPassword(e.target.value)}
-                                    className="form-input"
-                                    style={{ width: '100%' }}
+                                    className="w-full px-4 py-3 rounded-xl border border-neutral-200 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none font-medium"
                                     minLength={6}
                                     required
                                 />
                             </div>
                         </div>
-                        <div style={{ textAlign: 'right' }}>
+                        <div className="flex justify-end pt-4">
                             <button
                                 type="submit"
-                                className="btn btn-secondary"
-                                style={{ padding: 'var(--space-md) var(--space-2xl)', fontWeight: 600 }}
+                                className="flex items-center gap-2 px-8 py-4 bg-white text-neutral-900 border border-neutral-200 rounded-xl font-bold hover:bg-neutral-50 transition-colors shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
                                 disabled={securityLoading}
                             >
                                 {securityLoading ? 'Updating...' : 'Update Password'}
