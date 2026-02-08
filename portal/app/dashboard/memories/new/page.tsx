@@ -27,6 +27,8 @@ import {
 } from 'lucide-react'
 import ModernDatePicker from '../../components/ModernDatePicker'
 import ModernSelect from '../../components/ModernSelect'
+import { handleEnterKeyNavigation } from '@/lib/utils'
+import PremiumAlert from '../../components/PremiumAlert'
 
 
 const eventCategories = [
@@ -86,6 +88,8 @@ export default function NewMemoryPage() {
     const [photoUrls, setPhotoUrls] = useState<string[]>([''])
     const [photoLabels, setPhotoLabels] = useState<PhotoLabel[]>([])
     const [activePhotoIndex, setActivePhotoIndex] = useState<number | null>(null)
+    const [showAlert, setShowAlert] = useState(false)
+    const [alertConfig, setAlertConfig] = useState({ title: '', message: '' })
 
     // Family Member Selection State
     const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([])
@@ -255,6 +259,30 @@ export default function NewMemoryPage() {
         setError('')
 
         const validPhotos = photoUrls.filter(url => url.trim() !== '')
+        const uploadedPhotosCount = validPhotos.length
+
+        // Validation for photo labels if photos exist
+        if (uploadedPhotosCount > 0) {
+            for (const url of validPhotos) {
+                if (!isPhotoLabelComplete(url)) {
+                    const msg = 'Please fill in all details for your uploaded photos before creating the memory.'
+                    setError(msg)
+                    setAlertConfig({
+                        title: 'Almost there!',
+                        message: msg
+                    })
+                    setShowAlert(true)
+                    setLoading(false)
+                    // Set active index to the first incomplete photo to help user fix it
+                    const errorIndex = photoUrls.findIndex(u => u === url)
+                    setActivePhotoIndex(errorIndex)
+                    // Scroll to top to show the error message clearly
+                    window.scrollTo({ top: 0, behavior: 'smooth' })
+                    return
+                }
+            }
+        }
+
         const validPhotoLabels = photoLabels.filter(l => validPhotos.includes(l.photoUrl))
 
         const data = {
@@ -679,10 +707,21 @@ export default function NewMemoryPage() {
                 {/* Header / Progress */}
                 <div className="mb-8">
                     <div className="flex justify-between items-center mb-4">
-                        <Link href="/dashboard/memories" className="flex items-center gap-2 text-neutral-500 hover:text-neutral-900 font-bold transition-colors">
-                            <ChevronLeft size={20} />
-                            <span>Back</span>
-                        </Link>
+                        {step > 1 ? (
+                            <button
+                                type="button"
+                                onClick={prevStep}
+                                className="flex items-center gap-2 text-neutral-500 hover:text-neutral-900 font-bold transition-colors"
+                            >
+                                <ChevronLeft size={20} />
+                                <span>Back</span>
+                            </button>
+                        ) : (
+                            <Link href="/dashboard/memories" className="flex items-center gap-2 text-neutral-500 hover:text-neutral-900 font-bold transition-colors">
+                                <ChevronLeft size={20} />
+                                <span>Back</span>
+                            </Link>
+                        )}
                         <span className="text-sm font-bold text-primary-600 bg-primary-50 px-3 py-1 rounded-full">
                             Step {step} of {totalSteps}
                         </span>
@@ -701,7 +740,11 @@ export default function NewMemoryPage() {
                     <div className="absolute top-0 right-0 w-80 h-80 bg-primary-50/50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 -z-10" />
                     <div className="absolute bottom-0 left-0 w-80 h-80 bg-indigo-50/50 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2 -z-10" />
 
-                    <form onSubmit={handleSubmit} className="relative z-10 flex flex-col flex-grow">
+                    <form
+                        onSubmit={handleSubmit}
+                        onKeyDown={handleEnterKeyNavigation}
+                        className="relative z-10 flex flex-col flex-grow"
+                    >
                         {error && (
                             <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-2xl text-sm font-bold flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
                                 <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
@@ -749,6 +792,14 @@ export default function NewMemoryPage() {
                     </form>
                 </div>
             </div>
+
+            <PremiumAlert
+                isOpen={showAlert}
+                onCloseAction={() => setShowAlert(false)}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                type="error"
+            />
         </div>
     )
 }

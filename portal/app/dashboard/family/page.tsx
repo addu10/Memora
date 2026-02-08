@@ -82,13 +82,7 @@ export default async function FamilyPage() {
                     </p>
                 </div>
 
-                <Link
-                    href="/dashboard/family/new"
-                    className="group flex items-center gap-2 bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 animate-gradient-x text-white px-6 py-3.5 rounded-2xl font-bold transition-all shadow-xl hover:shadow-2xl hover:-translate-y-1 hover:shadow-purple-200 hover:text-white"
-                >
-                    <UserPlus size={20} className="group-hover:scale-110 transition-transform" />
-                    <span>Add Family Member</span>
-                </Link>
+
             </div>
 
             {members.length > 0 ? (

@@ -7,6 +7,8 @@ import Link from 'next/link'
 import Cookies from 'js-cookie'
 import ImageUpload from '../../components/ImageUpload'
 import { UserPlus, User, Heart, Camera, X, Plus, ChevronLeft } from 'lucide-react'
+import ModernSelect from '../../components/ModernSelect'
+import { handleEnterKeyNavigation } from '@/lib/utils'
 
 const relationshipOptions = [
     'Wife', 'Husband', 'Son', 'Daughter', 'Brother', 'Sister',
@@ -19,6 +21,7 @@ export default function NewFamilyMemberPage() {
     const router = useRouter()
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
+    const [relationship, setRelationship] = useState('')
     const [photoUrls, setPhotoUrls] = useState<string[]>([''])
 
     const addPhotoField = () => {
@@ -46,7 +49,7 @@ export default function NewFamilyMemberPage() {
 
         const data = {
             name: formData.get('name'),
-            relationship: formData.get('relationship'),
+            relationship: relationship,
             photoUrls: photoUrls.filter(url => url.trim() !== ''),
             notes: formData.get('notes'),
             patientId: Cookies.get('selectedPatientId')
@@ -98,7 +101,11 @@ export default function NewFamilyMemberPage() {
                 </div>
             )}
 
-            <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <form
+                onSubmit={handleSubmit}
+                onKeyDown={handleEnterKeyNavigation}
+                className="grid grid-cols-1 lg:grid-cols-3 gap-8"
+            >
                 {/* Left Column: Details */}
                 <div className="lg:col-span-1 space-y-8">
                     <div className="glass-card bg-white/60 rounded-[2.5rem] p-8 shadow-sm backdrop-blur-md border border-white/50">
@@ -127,21 +134,13 @@ export default function NewFamilyMemberPage() {
                                 <label className="text-sm font-bold text-slate-700 flex items-center gap-2 ml-1">
                                     Relationship <span className="text-violet-500">*</span>
                                 </label>
-                                <div className="relative">
-                                    <select
-                                        name="relationship"
-                                        className="w-full px-5 py-4 rounded-2xl bg-white/50 border border-white/50 focus:bg-white focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all outline-none font-bold appearance-none text-slate-900 shadow-sm cursor-pointer"
-                                        required
-                                    >
-                                        <option value="">Select relationship...</option>
-                                        {relationshipOptions.map(rel => (
-                                            <option key={rel} value={rel}>{rel}</option>
-                                        ))}
-                                    </select>
-                                    <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-violet-400">
-                                        <Heart size={20} className="fill-violet-100" />
-                                    </div>
-                                </div>
+                                <ModernSelect
+                                    value={relationship}
+                                    onSelectAction={(val) => setRelationship(val)}
+                                    options={relationshipOptions}
+                                    placeholder="Select relationship..."
+                                    icon={<Heart size={20} className="text-violet-400 fill-violet-100" />}
+                                />
                             </div>
 
                             <div className="space-y-2">

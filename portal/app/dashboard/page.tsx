@@ -41,6 +41,21 @@ export default async function DashboardOverview() {
   // Get first name
   const firstName = session.name.split(' ')[0]
 
+  // Day-based Quotes
+  const quotes = [
+    "Every moment of care you give creates ripples of love that transcend memory.",
+    "Your patience today becomes their comfort tomorrow, even when they cannot remember why they feel safe.",
+    "When memory fades, your presence becomes the anchor that holds their world steady.",
+    "Some days will break your heart, but you are building something unbreakable: unconditional love.",
+    "In the repetition of their questions lies an opportunity to give the gift of reassurance again and again.",
+    "In caring for them, you honor not just who they were, but who they are right now.",
+    "The love you give today plants seeds of peace that bloom in ways you may never fully see."
+  ]
+
+  // Pick quote based on day of week (0-6)
+  const quoteIndex = new Date().getDay()
+  const dailyQuote = quotes[quoteIndex]
+
   return (
     <div className="w-full max-w-[1800px] mx-auto min-h-[85vh] flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-6">
 
@@ -66,8 +81,8 @@ export default async function DashboardOverview() {
               </span>
             </h1>
 
-            <p className="text-slate-500 text-2xl font-medium max-w-2xl leading-relaxed">
-              Your dashboard is ready. You have <strong className="text-slate-900">{patientCount || 0} active patients</strong> and <strong className="text-slate-900">{totalMemories} memories</strong> preserved today.
+            <p className="text-slate-500 text-2xl font-medium max-w-3xl leading-relaxed italic">
+              "{dailyQuote}"
             </p>
           </div>
         </div>

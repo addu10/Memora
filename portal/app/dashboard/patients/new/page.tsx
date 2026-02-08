@@ -4,6 +4,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { handleEnterKeyNavigation } from '@/lib/utils'
 import {
     User,
     Calendar,
@@ -253,10 +254,21 @@ export default function NewPatientPage() {
                 {/* Header / Progress */}
                 <div className="mb-8">
                     <div className="flex justify-between items-center mb-4">
-                        <Link href="/dashboard/patients" className="flex items-center gap-2 text-neutral-500 hover:text-neutral-900 font-bold transition-colors">
-                            <ChevronLeft size={20} />
-                            <span>Back</span>
-                        </Link>
+                        {step > 1 ? (
+                            <button
+                                type="button"
+                                onClick={prevStep}
+                                className="flex items-center gap-2 text-neutral-500 hover:text-neutral-900 font-bold transition-colors"
+                            >
+                                <ChevronLeft size={20} />
+                                <span>Back</span>
+                            </button>
+                        ) : (
+                            <Link href="/dashboard/patients" className="flex items-center gap-2 text-neutral-500 hover:text-neutral-900 font-bold transition-colors">
+                                <ChevronLeft size={20} />
+                                <span>Back</span>
+                            </Link>
+                        )}
                         <span className="text-sm font-bold text-primary-600 bg-primary-50 px-3 py-1 rounded-full">
                             Step {step} of {totalSteps}
                         </span>
@@ -280,7 +292,11 @@ export default function NewPatientPage() {
                         <Sparkles size={80} fill="currentColor" />
                     </div>
 
-                    <form onSubmit={handleSubmit} className="relative z-10">
+                    <form
+                        onSubmit={handleSubmit}
+                        onKeyDown={handleEnterKeyNavigation}
+                        className="relative z-10"
+                    >
                         {error && (
                             <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-2xl text-sm font-bold flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
                                 <div className="w-1.5 h-1.5 rounded-full bg-red-500" />

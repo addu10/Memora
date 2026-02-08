@@ -6,6 +6,7 @@ import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import ImageUpload from '@/app/dashboard/components/ImageUpload'
 import { User, Heart, Camera, X, Plus, Save, ArrowLeft, ChevronLeft } from 'lucide-react'
+import ModernSelect from '@/app/dashboard/components/ModernSelect'
 
 const relationshipOptions = [
     'Wife', 'Husband', 'Son', 'Daughter', 'Brother', 'Sister',
@@ -169,23 +170,13 @@ export default function EditFamilyMemberPage() {
                                 <label className="text-sm font-bold text-slate-700 flex items-center gap-2 ml-1">
                                     Relationship <span className="text-violet-500">*</span>
                                 </label>
-                                <div className="relative">
-                                    <select
-                                        name="relationship"
-                                        value={relationship}
-                                        onChange={(e) => setRelationship(e.target.value)}
-                                        className="w-full px-5 py-4 rounded-2xl bg-white/50 border border-white/50 focus:bg-white focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all outline-none font-bold appearance-none text-slate-900 shadow-sm cursor-pointer"
-                                        required
-                                    >
-                                        <option value="">Select relationship...</option>
-                                        {relationshipOptions.map(rel => (
-                                            <option key={rel} value={rel}>{rel}</option>
-                                        ))}
-                                    </select>
-                                    <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-violet-400">
-                                        <Heart size={20} className="fill-violet-100" />
-                                    </div>
-                                </div>
+                                <ModernSelect
+                                    value={relationship}
+                                    onSelectAction={(val) => setRelationship(val)}
+                                    options={relationshipOptions}
+                                    placeholder="Select relationship..."
+                                    icon={<Heart size={20} className="text-violet-400 fill-violet-100" />}
+                                />
                             </div>
 
                             <div className="space-y-2">

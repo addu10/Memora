@@ -54,7 +54,12 @@ export default function ModernSelect({
         setIsOpen(false)
     }
 
-    const displayValue = value ? getDisplayLabel() : placeholder
+    // "Other" option logic
+    const hasOtherOption = normalizedOptions.some(opt => opt.value === 'Other')
+    const isValueInOptions = normalizedOptions.some(opt => opt.value === value)
+    const isOtherActive = hasOtherOption && (value === 'Other' || (value && !isValueInOptions))
+
+    const displayValue = value ? (getDisplayLabel() || value) : placeholder
 
     // Style classes based on variant
     const triggerClasses = isDark
@@ -82,51 +87,72 @@ export default function ModernSelect({
         }`
 
     return (
-        <div className="relative" ref={containerRef}>
-            {/* Trigger Button */}
-            <button
-                type="button"
-                onClick={() => setIsOpen(!isOpen)}
-                className={triggerClasses}
-            >
-                {displayValue}
-            </button>
+        <div className="space-y-3">
+            <div className="relative" ref={containerRef}>
+                {/* Trigger Button */}
+                <button
+                    type="button"
+                    onClick={() => setIsOpen(!isOpen)}
+                    className={triggerClasses}
+                >
+                    <span className="truncate block">
+                        {isOtherActive ? 'Other' : displayValue}
+                    </span>
+                </button>
 
-            {/* Left Icon */}
-            {icon && (
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    {icon}
-                </div>
-            )}
+                {/* Left Icon */}
+                {icon && (
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        {icon}
+                    </div>
+                )}
 
-            {/* Dropdown Arrow */}
-            <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
-                <ChevronDown
-                    className={`h-5 w-5 transition-transform duration-200 ${isOpen
+                {/* Dropdown Arrow */}
+                <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                    <ChevronDown
+                        className={`h-5 w-5 transition-transform duration-200 ${isOpen
                             ? `rotate-180 ${isDark ? 'text-primary-400' : 'text-primary-600'}`
                             : isDark ? 'text-neutral-400' : 'text-neutral-400'
-                        }`}
-                />
+                            }`}
+                    />
+                </div>
+
+                {/* Dropdown Menu */}
+                {isOpen && (
+                    <div className={dropdownClasses}>
+                        <div className="max-h-60 overflow-y-auto py-1">
+                            {normalizedOptions.map((option) => (
+                                <button
+                                    key={option.value}
+                                    type="button"
+                                    onClick={() => handleSelect(option.value)}
+                                    className={optionClasses(value === option.value)}
+                                >
+                                    <span>{option.label}</span>
+                                    {value === option.value && (
+                                        <Check size={16} className={isDark ? 'text-primary-400' : 'text-primary-600'} />
+                                    )}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
             </div>
 
-            {/* Dropdown Menu */}
-            {isOpen && (
-                <div className={dropdownClasses}>
-                    <div className="max-h-60 overflow-y-auto py-1">
-                        {normalizedOptions.map((option) => (
-                            <button
-                                key={option.value}
-                                type="button"
-                                onClick={() => handleSelect(option.value)}
-                                className={optionClasses(value === option.value)}
-                            >
-                                <span>{option.label}</span>
-                                {value === option.value && (
-                                    <Check size={16} className={isDark ? 'text-primary-400' : 'text-primary-600'} />
-                                )}
-                            </button>
-                        ))}
-                    </div>
+            {/* Other Input Field */}
+            {isOtherActive && (
+                <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                    <input
+                        type="text"
+                        autoFocus
+                        value={value === 'Other' ? '' : value}
+                        onChange={(e) => onSelectAction(e.target.value)}
+                        placeholder="Please specify..."
+                        className={isDark
+                            ? "w-full px-4 py-3 rounded-xl border border-primary-500/50 bg-white/5 text-white placeholder:text-neutral-500 focus:ring-2 focus:ring-primary-500/30 outline-none transition-all font-medium"
+                            : "w-full px-4 py-4 rounded-xl border border-primary-500/30 bg-primary-50/30 text-neutral-900 placeholder:text-neutral-400 focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all font-medium"
+                        }
+                    />
                 </div>
             )}
         </div>

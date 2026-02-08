@@ -4,7 +4,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowRight, Mail, Lock, User, Phone, AlertCircle } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Mail, Lock, User, Phone, AlertCircle } from 'lucide-react'
 import AuthLoadingOverlay from '@/app/components/AuthLoadingOverlay'
 
 export default function RegisterPage() {
@@ -66,6 +66,14 @@ export default function RegisterPage() {
             <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-amber-200/30 rounded-full blur-3xl translate-y-1/2"></div>
 
             <div className="w-full max-w-md bg-white/80 backdrop-blur-xl rounded-[2.5rem] shadow-2xl border border-white/50 p-8 md:p-12 relative z-10 animate-in fade-in zoom-in duration-500">
+                <Link
+                    href="/"
+                    className="absolute top-8 left-8 flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-indigo-600 transition-colors group"
+                >
+                    <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+                    Back
+                </Link>
+
                 <div className="text-center mb-10">
                     <div className="mb-6 animate-in slide-in-from-bottom-4 duration-700 delay-100 flex justify-center">
                         <img src="/images/logo-full.jpg" alt="Memora" className="h-20 w-auto object-contain mix-blend-multiply" />
