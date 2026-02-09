@@ -113,5 +113,9 @@ export interface PatientStats {
     memoryCount: number;
     familyCount: number;
     averageRecall?: number;
+    // Alternative property names used by home.tsx
+    totalMemories?: number;
+    totalSessions?: number;
+    totalFamily?: number;
 }
 

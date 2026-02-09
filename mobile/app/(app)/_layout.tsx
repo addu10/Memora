@@ -1,15 +1,22 @@
-// App Tab Layout - Professional & Elegant
+// App Tab Layout - Luxurious Light Aesthetic
 import { Tabs } from 'expo-router';
 import { Text, View, StyleSheet, Platform } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Theme } from '../../constants/Theme';
+import { Home, Image as ImageIcon, ScanLine, Brain, Users } from 'lucide-react-native';
 
-function TabIcon({ icon, label, focused }: { icon: keyof typeof Ionicons.glyphMap; label: string; focused: boolean }) {
+interface TabIconProps {
+    IconComponent: any;
+    label: string;
+    focused: boolean;
+}
+
+function TabIcon({ IconComponent, label, focused }: TabIconProps) {
     return (
         <View style={[styles.tabItem, focused && styles.tabItemFocused]}>
-            <Ionicons
-                name={focused ? icon : `${icon}-outline` as any}
-                size={28}
-                color={focused ? '#2563EB' : '#94A3B8'}
+            <IconComponent
+                size={24}
+                color={focused ? Theme.colors.primary : Theme.colors.textSecondary}
+                strokeWidth={focused ? 2.5 : 2}
                 style={styles.tabIcon}
             />
             <Text style={[styles.tabLabel, focused && styles.tabLabelFocused]}>{label}</Text>
@@ -21,18 +28,15 @@ export default function AppLayout() {
     return (
         <Tabs
             screenOptions={{
-                headerShown: false, // Removed default header as requested
+                headerShown: false,
                 tabBarStyle: {
-                    height: Platform.OS === 'ios' ? 100 : 80,
+                    height: Platform.OS === 'ios' ? 100 : 85,
                     paddingBottom: Platform.OS === 'ios' ? 30 : 16,
                     paddingTop: 12,
-                    backgroundColor: '#FFFFFF',
+                    backgroundColor: Theme.colors.surface,
                     borderTopWidth: 1,
-                    borderTopColor: '#F1F5F9',
-                    elevation: 10,
-                    shadowColor: '#000',
-                    shadowOpacity: 0.05,
-                    shadowRadius: 10,
+                    borderTopColor: Theme.colors.border,
+                    ...Theme.shadows.lg,
                 },
                 tabBarShowLabel: false,
             }}
@@ -42,7 +46,7 @@ export default function AppLayout() {
                 options={{
                     title: 'Home',
                     tabBarIcon: ({ focused }) => (
-                        <TabIcon icon="home" label="Home" focused={focused} />
+                        <TabIcon IconComponent={Home} label="Home" focused={focused} />
                     ),
                 }}
             />
@@ -51,7 +55,7 @@ export default function AppLayout() {
                 options={{
                     title: 'Photos',
                     tabBarIcon: ({ focused }) => (
-                        <TabIcon icon="images" label="Photos" focused={focused} />
+                        <TabIcon IconComponent={ImageIcon} label="Photos" focused={focused} />
                     ),
                 }}
             />
@@ -60,7 +64,7 @@ export default function AppLayout() {
                 options={{
                     title: 'Who?',
                     tabBarIcon: ({ focused }) => (
-                        <TabIcon icon="scan-circle" label="Who?" focused={focused} />
+                        <TabIcon IconComponent={ScanLine} label="Who?" focused={focused} />
                     ),
                 }}
             />
@@ -69,7 +73,7 @@ export default function AppLayout() {
                 options={{
                     title: 'Play',
                     tabBarIcon: ({ focused }) => (
-                        <TabIcon icon="game-controller" label="Play" focused={focused} />
+                        <TabIcon IconComponent={Brain} label="Play" focused={focused} />
                     ),
                 }}
             />
@@ -78,7 +82,7 @@ export default function AppLayout() {
                 options={{
                     title: 'Family',
                     tabBarIcon: ({ focused }) => (
-                        <TabIcon icon="people" label="Family" focused={focused} />
+                        <TabIcon IconComponent={Users} label="Family" focused={focused} />
                     ),
                 }}
             />
@@ -92,12 +96,6 @@ export default function AppLayout() {
                 name="profile"
                 options={{ href: null }}
             />
-            {/* If there are any other auto-generated routes, explicit hide them or ensure file structure is correct. 
-                Expo Router automatically creates routes for files in the directory.
-                Any file that is NOT a tab needs href: null if it's in this folder.
-                However, sub-folders like family/[id] do not generate tab buttons automatically, only direct files do usually.
-                But if 'progress.tsx' was there, it definitely needs hiding. 
-            */}
         </Tabs>
     );
 }
@@ -110,18 +108,19 @@ const styles = StyleSheet.create({
         height: '100%',
     },
     tabItemFocused: {
-        // Removed background color for cleaner look, relying on icon color
+        // Subtle indicator can be added here if needed
     },
     tabIcon: {
-        marginBottom: 4,
+        marginBottom: 6,
     },
     tabLabel: {
-        fontSize: 12,
-        color: '#94A3B8',
-        fontWeight: '500',
+        fontFamily: Theme.typography.fontFamily,
+        fontSize: 11,
+        color: Theme.colors.textSecondary,
+        fontWeight: '600',
     },
     tabLabelFocused: {
-        color: '#2563EB',
-        fontWeight: '700',
+        color: Theme.colors.primary,
+        fontWeight: '800',
     },
 });

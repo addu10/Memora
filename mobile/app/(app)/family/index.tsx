@@ -1,9 +1,14 @@
 // Family Directory Screen
 import { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Image, ActivityIndicator, Dimensions, Platform } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
+import { Theme } from '../../../constants/Theme';
 import { api } from '../../../lib/api';
 import type { FamilyMember } from '../../../lib/types';
+import { Heart, User, ChevronRight, Users, ArrowRight } from 'lucide-react-native';
+import Animated, { FadeInDown, FadeInUp, FadeIn } from 'react-native-reanimated';
+
+const { width } = Dimensions.get('window');
 
 export default function FamilyScreen() {
     const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
@@ -30,114 +35,160 @@ export default function FamilyScreen() {
     if (loading) {
         return (
             <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#3B82F6" />
+                <ActivityIndicator size="large" color={Theme.colors.primary} />
                 <Text style={styles.loadingText}>Loading family...</Text>
             </View>
         );
     }
 
     return (
-        <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-            <View style={styles.header}>
-                <Text style={styles.title}>My Family</Text>
-                <Text style={styles.subtitle}>People who love you ❤️</Text>
-            </View>
+        <View style={styles.container}>
+            {/* Mesh Background */}
+            <Animated.View
+                entering={FadeIn.duration(1200)}
+                style={[styles.meshGradient, { backgroundColor: 'rgba(167, 139, 250, 0.08)', top: -100, left: -100 }]}
+            />
 
-            <View style={styles.list}>
-                {familyMembers.map((member) => (
-                    <TouchableOpacity
-                        key={member.id}
-                        style={styles.card}
-                        onPress={() => router.push(`/family/${member.id}`)}
-                    >
-                        <View style={styles.imageContainer}>
-                            {member.photoUrls && member.photoUrls.length > 0 ? (
-                                <Image
-                                    source={{ uri: member.photoUrls[0] }}
-                                    style={styles.image}
-                                    resizeMode="cover"
-                                />
-                            ) : (
-                                <View style={[styles.image, styles.imagePlaceholder]}>
-                                    <Text style={styles.placeholderIcon}>👤</Text>
+            <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+                <Animated.View
+                    entering={FadeInDown.duration(800).springify()}
+                    style={styles.header}
+                >
+                    <Text style={styles.title}>My Family</Text>
+                    <Text style={styles.subtitle}>People who love you <Heart size={18} color="#EF4444" fill="#EF4444" /></Text>
+                </Animated.View>
+
+                <View style={styles.list}>
+                    {familyMembers.map((member, index) => (
+                        <Animated.View
+                            key={member.id}
+                            entering={FadeInUp.delay(200 + index * 100).duration(600).springify()}
+                        >
+                            <TouchableOpacity
+                                style={[styles.card, styles.cardShadow]}
+                                onPress={() => router.push(`/family/${member.id}`)}
+                                activeOpacity={0.8}
+                            >
+                                <View style={styles.imageContainer}>
+                                    {member.photoUrls && member.photoUrls.length > 0 ? (
+                                        <Image
+                                            source={{ uri: member.photoUrls[0] }}
+                                            style={styles.image}
+                                            resizeMode="cover"
+                                        />
+                                    ) : (
+                                        <View style={[styles.image, styles.imagePlaceholder]}>
+                                            <User size={32} color={Theme.colors.textSecondary} strokeWidth={1.5} />
+                                        </View>
+                                    )}
                                 </View>
-                            )}
-                        </View>
-                        <View style={styles.cardInfo}>
-                            <Text style={styles.name}>{member.name}</Text>
-                            <View style={styles.relationTag}>
-                                <Text style={styles.relationText}>{member.relationship}</Text>
-                            </View>
-                        </View>
-                        <View style={styles.arrowContainer}>
-                            <Text style={styles.arrow}>→</Text>
-                        </View>
-                    </TouchableOpacity>
-                ))}
+                                <View style={styles.cardInfo}>
+                                    <Text style={styles.name}>{member.name}</Text>
+                                    <View style={styles.relationTag}>
+                                        <Text style={styles.relationText}>{member.relationship}</Text>
+                                    </View>
+                                </View>
+                                <View style={styles.arrowContainer}>
+                                    <ChevronRight size={20} color={Theme.colors.primary} strokeWidth={3} />
+                                </View>
+                            </TouchableOpacity>
+                        </Animated.View>
+                    ))}
 
-                {familyMembers.length === 0 && (
-                    <View style={styles.emptyState}>
-                        <Text style={styles.emptyIcon}>👨‍👩‍👧</Text>
-                        <Text style={styles.emptyText}>No family members added yet.</Text>
-                        <Text style={styles.emptySubtext}>Ask your caregiver to add them in the portal.</Text>
-                    </View>
-                )}
-            </View>
-        </ScrollView>
+                    {familyMembers.length === 0 && (
+                        <Animated.View
+                            entering={FadeInUp.delay(300).duration(800)}
+                            style={styles.emptyState}
+                        >
+                            <View style={styles.emptyIconBg}>
+                                <Users size={48} color={Theme.colors.textSecondary} opacity={0.5} />
+                            </View>
+                            <Text style={styles.emptyText}>No family members added yet.</Text>
+                            <Text style={styles.emptySubtext}>Ask your caregiver to add them in the portal.</Text>
+                        </Animated.View>
+                    )}
+                </View>
+                <View style={{ height: 40 }} />
+            </ScrollView>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F8FAFC',
+        backgroundColor: Theme.colors.background,
+    },
+    meshGradient: {
+        position: 'absolute',
+        width: width * 1.2,
+        height: width * 1.2,
+        borderRadius: width * 0.6,
+        opacity: 0.8,
     },
     loadingContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#F8FAFC',
+        backgroundColor: Theme.colors.background,
     },
     loadingText: {
+        fontFamily: Theme.typography.fontFamily,
         marginTop: 16,
         fontSize: 18,
-        color: '#64748B',
+        color: Theme.colors.textSecondary,
+        fontWeight: '600',
     },
     content: {
         padding: 24,
         paddingBottom: 48,
+        paddingTop: Platform.OS === 'ios' ? 60 : 40,
     },
     header: {
         marginTop: 20,
         marginBottom: 32,
     },
     title: {
+        fontFamily: Theme.typography.fontFamily,
         fontSize: 36,
-        fontWeight: '800',
-        color: '#1E293B',
+        fontWeight: '900',
+        color: Theme.colors.text,
         marginBottom: 8,
-        letterSpacing: -0.5,
+        letterSpacing: -1,
     },
     subtitle: {
+        fontFamily: Theme.typography.fontFamily,
         fontSize: 18,
-        color: '#64748B',
+        color: Theme.colors.textSecondary,
+        fontWeight: '600',
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
     },
     list: {
         gap: 16,
     },
     card: {
-        backgroundColor: '#FFFFFF',
-        borderRadius: 24,
+        backgroundColor: Theme.colors.surface,
+        borderRadius: 28,
         padding: 16,
         flexDirection: 'row',
         alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.05,
-        shadowRadius: 10,
-        elevation: 3,
         borderWidth: 1,
-        borderColor: 'rgba(0,0,0,0.02)',
+        borderColor: Theme.colors.border,
+    },
+    cardShadow: {
+        ...Platform.select({
+            ios: {
+                shadowColor: Theme.colors.secondary,
+                shadowOffset: { width: 0, height: 8 },
+                shadowOpacity: 0.04,
+                shadowRadius: 16,
+            },
+            android: {
+                elevation: 3,
+            }
+        })
     },
     imageContainer: {
         width: 80,
@@ -145,83 +196,84 @@ const styles = StyleSheet.create({
         borderRadius: 40,
         overflow: 'hidden',
         borderWidth: 3,
-        borderColor: '#F1F5F9',
+        borderColor: '#FFFFFF',
     },
     image: {
         width: '100%',
         height: '100%',
     },
     imagePlaceholder: {
-        backgroundColor: '#E2E8F0',
+        backgroundColor: Theme.colors.background,
         justifyContent: 'center',
         alignItems: 'center',
     },
-    placeholderIcon: {
-        fontSize: 32,
-    },
     cardInfo: {
         flex: 1,
-        marginLeft: 16,
+        marginLeft: 20,
     },
     name: {
+        fontFamily: Theme.typography.fontFamily,
         fontSize: 22,
-        fontWeight: '700',
-        color: '#1E293B',
+        fontWeight: '800',
+        color: Theme.colors.text,
         marginBottom: 6,
+        letterSpacing: -0.5,
     },
     relationTag: {
-        backgroundColor: '#EFF6FF',
+        backgroundColor: Theme.colors.primaryUltraLight,
         alignSelf: 'flex-start',
         paddingVertical: 4,
         paddingHorizontal: 12,
         borderRadius: 100,
     },
     relationText: {
+        fontFamily: Theme.typography.fontFamily,
         fontSize: 14,
-        color: '#2563EB',
-        fontWeight: '600',
+        color: Theme.colors.primary,
+        fontWeight: '700',
     },
     arrowContainer: {
-        width: 40,
-        height: 40,
-        backgroundColor: '#F8FAFC',
-        borderRadius: 20,
+        width: 44,
+        height: 44,
+        backgroundColor: Theme.colors.background,
+        borderRadius: 22,
         justifyContent: 'center',
         alignItems: 'center',
         marginLeft: 12,
     },
-    arrow: {
-        fontSize: 20,
-        color: '#64748B',
-        fontWeight: '800',
-        marginBottom: 4, // Visual alignment
-    },
     emptyState: {
         alignItems: 'center',
-        marginTop: 48,
-        padding: 32,
-        backgroundColor: '#FFFFFF',
-        borderRadius: 24,
+        marginTop: 40,
+        padding: 40,
+        backgroundColor: Theme.colors.surface,
+        borderRadius: 32,
         borderWidth: 1,
-        borderColor: '#E2E8F0',
+        borderColor: Theme.colors.border,
         borderStyle: 'dashed',
     },
-    emptyIcon: {
-        fontSize: 48,
-        marginBottom: 16,
-        opacity: 0.5,
+    emptyIconBg: {
+        width: 100,
+        height: 100,
+        borderRadius: 50,
+        backgroundColor: Theme.colors.background,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 20,
     },
     emptyText: {
+        fontFamily: Theme.typography.fontFamily,
         fontSize: 20,
-        fontWeight: '700',
-        color: '#475569',
+        fontWeight: '800',
+        color: Theme.colors.text,
         textAlign: 'center',
         marginBottom: 8,
     },
     emptySubtext: {
+        fontFamily: Theme.typography.fontFamily,
         fontSize: 16,
-        color: '#94A3B8',
+        color: Theme.colors.textSecondary,
         textAlign: 'center',
         lineHeight: 24,
+        fontWeight: '500',
     },
 });

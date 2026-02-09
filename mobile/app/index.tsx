@@ -1,56 +1,116 @@
-// Welcome/Landing Screen - Elderly-Friendly Design
-import { Link } from 'expo-router';
-import { StyleSheet, Text, View, TouchableOpacity, Dimensions } from 'react-native';
+// Welcome/Landing Screen - Luxurious Light Aesthetic
+import { Link, router } from 'expo-router';
+import { StyleSheet, Text, View, TouchableOpacity, Dimensions, Image, Platform } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Theme } from '../constants/Theme';
+import { Camera, UserCheck, Image as ImageIcon, Brain, ArrowRight, Heart } from 'lucide-react-native';
+import Animated, { FadeInDown, FadeInUp, FadeIn } from 'react-native-reanimated';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 export default function WelcomeScreen() {
     return (
         <View style={styles.container}>
+            {/* Luxurious Mesh Gradient Background Elements */}
+            <Animated.View
+                entering={FadeIn.duration(1200)}
+                style={[styles.meshGradient, { backgroundColor: 'rgba(167, 139, 250, 0.12)', top: -100, left: -100, opacity: undefined }]}
+            />
+            <Animated.View
+                entering={FadeIn.delay(200).duration(1200)}
+                style={[styles.meshGradient, { backgroundColor: 'rgba(196, 181, 253, 0.12)', top: -50, right: -100, opacity: undefined }]}
+            />
+            <Animated.View
+                entering={FadeIn.delay(400).duration(1200)}
+                style={[styles.meshGradient, { backgroundColor: 'rgba(221, 214, 254, 0.12)', bottom: -100, right: -50, opacity: undefined }]}
+            />
+
             {/* Hero Section */}
-            <View style={styles.hero}>
-                <Text style={styles.logo}>🧠</Text>
-                <Text style={styles.title}>Memora</Text>
+            <Animated.View
+                entering={FadeInDown.duration(800).springify()}
+                style={styles.hero}
+            >
+                <Image
+                    source={require('../Memora_Logo.png')}
+                    style={styles.logoImage}
+                    resizeMode="contain"
+                />
+                <View style={styles.taglineBadge}>
+                    <Text style={styles.tagline}>YOUR MEMORY COMPANION</Text>
+                </View>
                 <Text style={styles.subtitle}>
-                    Memory Therapy{'\n'}Made Simple
+                    Reconnect with precious moments{'\n'}and the people you love.
                 </Text>
-            </View>
+            </Animated.View>
 
-            {/* Simple Features */}
+            {/* Bento Feature Cards */}
             <View style={styles.features}>
-                <View style={styles.featureItem}>
-                    <Text style={styles.featureIcon}>👤</Text>
-                    <Text style={styles.featureText}>Recognize{'\n'}Family</Text>
-                </View>
-                <View style={styles.featureItem}>
-                    <Text style={styles.featureIcon}>📷</Text>
-                    <Text style={styles.featureText}>View{'\n'}Memories</Text>
-                </View>
-                <View style={styles.featureItem}>
-                    <Text style={styles.featureIcon}>💬</Text>
-                    <Text style={styles.featureText}>Therapy{'\n'}Sessions</Text>
-                </View>
+                <Animated.View
+                    entering={FadeInUp.delay(300).duration(600).springify()}
+                    style={[styles.featureCard, styles.cardShadow]}
+                >
+                    <View style={[styles.featureIconBg, { backgroundColor: '#F5F3FF' }]}>
+                        <UserCheck size={26} color={Theme.colors.primary} strokeWidth={2.5} />
+                    </View>
+                    <Text style={styles.featureTitle}>Recognize</Text>
+                    <Text style={styles.featureDesc}>Family Faces</Text>
+                </Animated.View>
+
+                <Animated.View
+                    entering={FadeInUp.delay(500).duration(600).springify()}
+                    style={[styles.featureCard, styles.cardShadow]}
+                >
+                    <View style={[styles.featureIconBg, { backgroundColor: '#EEF2FF' }]}>
+                        <ImageIcon size={26} color="#6366F1" strokeWidth={2.5} />
+                    </View>
+                    <Text style={styles.featureTitle}>Relive</Text>
+                    <Text style={styles.featureDesc}>Memories</Text>
+                </Animated.View>
+
+                <Animated.View
+                    entering={FadeInUp.delay(700).duration(600).springify()}
+                    style={[styles.featureCard, styles.cardShadow]}
+                >
+                    <View style={[styles.featureIconBg, { backgroundColor: '#F0FDF4' }]}>
+                        <Brain size={26} color="#10B981" strokeWidth={2.5} />
+                    </View>
+                    <Text style={styles.featureTitle}>Engage</Text>
+                    <Text style={styles.featureDesc}>Therapy</Text>
+                </Animated.View>
             </View>
 
-            {/* Large Buttons */}
-            <View style={styles.buttonContainer}>
-                <Link href="/(auth)/login" asChild>
-                    <TouchableOpacity style={styles.primaryButton} accessibilityLabel="Start using the app">
-                        <Text style={styles.primaryButtonText}>Start</Text>
-                    </TouchableOpacity>
-                </Link>
+            <Animated.View
+                entering={FadeInUp.delay(900).duration(800)}
+                style={{ width: '100%' }}
+            >
+                <TouchableOpacity
+                    style={[styles.primaryButtonContainer, styles.buttonShadow]}
+                    onPress={() => router.push('/(auth)/login')}
+                    activeOpacity={0.9}
+                >
+                    <LinearGradient
+                        colors={Theme.colors.brandGradient as any}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={styles.primaryButtonGradient}
+                    >
+                        <Text style={styles.primaryButtonText}>Get Started</Text>
+                        <View style={styles.buttonArrowContainer}>
+                            <ArrowRight size={20} color="#FFFFFF" strokeWidth={3} />
+                        </View>
+                    </LinearGradient>
+                </TouchableOpacity>
+            </Animated.View>
 
-                <Link href="/(app)/home" asChild>
-                    <TouchableOpacity style={styles.secondaryButton} accessibilityLabel="Continue without logging in">
-                        <Text style={styles.secondaryButtonText}>Skip Login</Text>
-                    </TouchableOpacity>
-                </Link>
-            </View>
-
-            {/* Footer */}
-            <Text style={styles.footer}>
-                Made with ❤️ for Kerala's elders
-            </Text>
+            <Animated.View
+                entering={FadeIn.delay(1200).duration(1000)}
+                style={styles.footerInfo}
+            >
+                <View style={styles.divider} />
+                <Text style={styles.footerText}>
+                    Designed with care for elders <Heart size={14} color="#EF4444" fill="#EF4444" />
+                </Text>
+            </Animated.View>
         </View>
     );
 }
@@ -58,92 +118,157 @@ export default function WelcomeScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f0f9ff',
+        backgroundColor: Theme.colors.background,
         alignItems: 'center',
-        justifyContent: 'center',
-        padding: 32,
+        paddingHorizontal: 24,
+    },
+    meshGradient: {
+        position: 'absolute',
+        width: width * 1.2,
+        height: width * 1.2,
+        borderRadius: width * 0.6,
+        opacity: 0.8,
     },
     hero: {
         alignItems: 'center',
+        marginTop: height * 0.12,
         marginBottom: 48,
     },
-    logo: {
-        fontSize: 100,
-        marginBottom: 16,
+    logoImage: {
+        width: 240,
+        height: 60,
+        marginBottom: 24,
     },
-    title: {
-        fontSize: 48,
-        fontWeight: 'bold',
-        color: '#1e3a8a',
-        marginBottom: 12,
+    taglineBadge: {
+        backgroundColor: Theme.colors.primaryLight,
+        paddingHorizontal: 16,
+        paddingVertical: 6,
+        borderRadius: Theme.borderRadius.full,
+        marginBottom: 20,
+        borderWidth: 1,
+        borderColor: 'rgba(139, 92, 246, 0.1)',
+    },
+    tagline: {
+        fontFamily: Theme.typography.fontFamily,
+        fontSize: 12,
+        color: Theme.colors.primary,
+        fontWeight: '800',
+        letterSpacing: 1.5,
     },
     subtitle: {
-        fontSize: 22,
-        color: '#475569',
+        fontFamily: Theme.typography.fontFamily,
+        fontSize: 20,
+        color: Theme.colors.textSecondary,
         textAlign: 'center',
-        lineHeight: 32,
+        lineHeight: 30,
+        fontWeight: '500',
     },
     features: {
         flexDirection: 'row',
-        justifyContent: 'space-around',
-        width: '100%',
-        marginBottom: 48,
+        gap: 12,
+        marginBottom: 64,
     },
-    featureItem: {
-        alignItems: 'center',
+    featureCard: {
         flex: 1,
+        backgroundColor: Theme.colors.surface,
+        borderRadius: Theme.borderRadius['2xl'],
+        padding: 16,
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: Theme.colors.border,
     },
-    featureIcon: {
-        fontSize: 48,
-        marginBottom: 8,
+    cardShadow: {
+        ...Platform.select({
+            ios: {
+                shadowColor: '#6366F1',
+                shadowOffset: { width: 0, height: 8 },
+                shadowOpacity: 0.04,
+                shadowRadius: 16,
+            },
+            android: {
+                elevation: 4,
+            }
+        })
     },
-    featureText: {
-        fontSize: 16,
-        color: '#475569',
+    featureIconBg: {
+        width: 52,
+        height: 52,
+        borderRadius: 14,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    featureTitle: {
+        fontFamily: Theme.typography.fontFamily,
+        fontSize: 15,
+        fontWeight: '700',
+        color: Theme.colors.text,
+        marginBottom: 4,
+    },
+    featureDesc: {
+        fontFamily: Theme.typography.fontFamily,
+        fontSize: 12,
+        color: Theme.colors.textSecondary,
         fontWeight: '600',
-        textAlign: 'center',
-        lineHeight: 22,
     },
-    buttonContainer: {
+    primaryButtonContainer: {
         width: '100%',
+        height: 72,
+        borderRadius: Theme.borderRadius.full,
+        overflow: 'hidden',
+    },
+    primaryButtonGradient: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
         gap: 16,
     },
-    primaryButton: {
-        backgroundColor: '#3b82f6',
-        paddingVertical: 24,
-        borderRadius: 16,
-        alignItems: 'center',
-        shadowColor: '#3b82f6',
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.35,
-        shadowRadius: 12,
-        elevation: 8,
-        minHeight: 80,
-        justifyContent: 'center',
+    buttonShadow: {
+        ...Platform.select({
+            ios: {
+                shadowColor: Theme.colors.primary,
+                shadowOffset: { width: 0, height: 12 },
+                shadowOpacity: 0.25,
+                shadowRadius: 20,
+            },
+            android: {
+                elevation: 8,
+            }
+        })
     },
     primaryButtonText: {
-        color: '#fff',
-        fontSize: 28,
-        fontWeight: '700',
-    },
-    secondaryButton: {
-        backgroundColor: '#fff',
-        paddingVertical: 20,
-        borderRadius: 16,
-        alignItems: 'center',
-        borderWidth: 2,
-        borderColor: '#e2e8f0',
-        minHeight: 70,
-        justifyContent: 'center',
-    },
-    secondaryButtonText: {
-        color: '#64748b',
+        fontFamily: Theme.typography.fontFamily,
+        color: '#FFFFFF',
         fontSize: 22,
-        fontWeight: '600',
+        fontWeight: '800',
     },
-    footer: {
-        marginTop: 48,
-        fontSize: 16,
-        color: '#94a3b8',
+    buttonArrowContainer: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    footerInfo: {
+        marginTop: 40,
+        alignItems: 'center',
+    },
+    divider: {
+        width: 40,
+        height: 4,
+        backgroundColor: Theme.colors.border,
+        borderRadius: 2,
+        marginBottom: 16,
+    },
+    footerText: {
+        fontFamily: Theme.typography.fontFamily,
+        fontSize: 14,
+        color: Theme.colors.textSecondary,
+        fontWeight: '600',
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
     },
 });

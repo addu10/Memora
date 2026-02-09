@@ -1,17 +1,51 @@
-// Home Screen - Patient-Centric, Elderly-Friendly
+// Home Screen - Luxurious Light Patient Dashboard
 import { useState, useEffect } from 'react';
 import { Link, router } from 'expo-router';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Alert, Image } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Image, Dimensions, Platform } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api } from '../../lib/api';
+import { Theme } from '../../constants/Theme';
+import {
+    User,
+    Sparkles,
+    Image as ImageIcon,
+    Brain,
+    Users,
+    ArrowRight,
+    Lightbulb,
+    Quote as QuoteIcon,
+    ChevronRight,
+    Heart
+} from 'lucide-react-native';
+import Animated, { FadeInDown, FadeInUp, FadeInRight, FadeIn } from 'react-native-reanimated';
+
+const { width, height } = Dimensions.get('window');
+
+// Motivational quotes for elderly
+const DAILY_QUOTES = [
+    "Every memory is a treasure. Let's explore them together! ✨",
+    "Your stories matter. Share them with those you love. 💝",
+    "Today is a beautiful day to remember. 🌸",
+    "Cherish every moment, big and small. 🌟",
+    "Family is the heart of every memory. 👨‍👩‍👧‍👦",
+    "You are loved, today and always. ❤️",
+    "Small steps lead to big memories. 🪜",
+];
 
 export default function HomeScreen() {
     const [patientName, setPatientName] = useState('');
     const [greeting, setGreeting] = useState('Hello');
+    const [quote, setQuote] = useState('');
+    const [stats, setStats] = useState({ memories: 0, sessions: 0, familyMembers: 0 });
+    const [recentMemory, setRecentMemory] = useState<any>(null);
 
     useEffect(() => {
         loadPatientInfo();
         updateGreeting();
+        setRandomQuote();
+        loadStats();
+        loadRecentMemory();
     }, []);
 
     const loadPatientInfo = async () => {
@@ -33,243 +67,510 @@ export default function HomeScreen() {
         else setGreeting('Good Evening');
     };
 
-    const handleLogout = () => {
-        Alert.alert(
-            'Exit App?',
-            'Do you want to close Memora?',
-            [
-                { text: 'No', style: 'cancel' },
-                {
-                    text: 'Yes',
-                    onPress: async () => {
-                        api.setPatientId(''); // Clear API state
-                        await AsyncStorage.removeItem('patient');
-                        router.replace('/');
-                    }
-                }
-            ]
-        );
+    const setRandomQuote = () => {
+        const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
+        setQuote(DAILY_QUOTES[dayOfYear % DAILY_QUOTES.length]);
+    };
+
+    const loadStats = async () => {
+        try {
+            const statsData = await api.getPatientStats();
+            if (statsData.data) {
+                setStats({
+                    memories: statsData.data.totalMemories || 0,
+                    sessions: statsData.data.totalSessions || 0,
+                    familyMembers: statsData.data.totalFamily || 0,
+                });
+            }
+        } catch (e) {
+            console.log('Stats load error:', e);
+        }
+    };
+
+    const loadRecentMemory = async () => {
+        try {
+            const memoriesRes = await api.getMemories();
+            if (memoriesRes.data && memoriesRes.data.length > 0) {
+                setRecentMemory(memoriesRes.data[0]);
+            }
+        } catch (e) {
+            console.log('Recent memory load error:', e);
+        }
     };
 
     return (
-        <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-            {/* Welcome Section */}
-            <View style={styles.headerContainer}>
-                <View>
-                    <Text style={styles.greeting}>{greeting},</Text>
-                    <Text style={styles.patientName}>{patientName}</Text>
+        <View style={styles.container}>
+            {/* Mesh Background */}
+            <Animated.View
+                entering={FadeIn.duration(1200)}
+                style={[styles.meshGradient, { backgroundColor: 'rgba(167, 139, 250, 0.08)', top: -100, left: -100, opacity: undefined }]}
+            />
+            <Animated.View
+                entering={FadeIn.delay(400).duration(1200)}
+                style={[styles.meshGradient, { backgroundColor: 'rgba(221, 214, 254, 0.08)', bottom: -100, right: -50, opacity: undefined }]}
+            />
+
+            <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+                {/* Header Section */}
+                <Animated.View
+                    entering={FadeInDown.duration(800).springify()}
+                    style={styles.header}
+                >
+                    <View style={styles.greetingSection}>
+                        <Text style={styles.greeting}>{greeting},</Text>
+                        <Text style={styles.patientName}>{patientName} <Heart size={24} color="#EF4444" fill="#EF4444" /></Text>
+                    </View>
+                    <TouchableOpacity
+                        style={[styles.profileButton, styles.cardShadow]}
+                        onPress={() => router.push('/(app)/profile')}
+                        activeOpacity={0.7}
+                    >
+                        <User size={24} color={Theme.colors.primary} strokeWidth={2.5} />
+                    </TouchableOpacity>
+                </Animated.View>
+
+                {/* Daily Quote Card */}
+                <Animated.View
+                    entering={FadeInUp.delay(200).duration(800).springify()}
+                    style={[styles.quoteCard, styles.cardShadow]}
+                >
+                    <View style={styles.quoteAccent} />
+                    <View style={styles.quoteContent}>
+                        <QuoteIcon size={16} color={Theme.colors.primary} style={styles.quoteIcon} />
+                        <Text style={styles.quoteText}>{quote}</Text>
+                    </View>
+                </Animated.View>
+
+                {/* Stats Row */}
+                <View style={styles.statsRow}>
+                    <Animated.View
+                        entering={FadeInRight.delay(400).duration(600).springify()}
+                        style={[styles.statCard, styles.cardShadow]}
+                    >
+                        <View style={[styles.statIconBg, { backgroundColor: Theme.colors.primaryLight }]}>
+                            <ImageIcon size={20} color={Theme.colors.primary} strokeWidth={2.5} />
+                        </View>
+                        <Text style={styles.statNumber}>{stats.memories}</Text>
+                        <Text style={styles.statLabel}>Memories</Text>
+                    </Animated.View>
+
+                    <Animated.View
+                        entering={FadeInRight.delay(500).duration(600).springify()}
+                        style={[styles.statCard, styles.cardShadow]}
+                    >
+                        <View style={[styles.statIconBg, { backgroundColor: Theme.colors.secondaryLight }]}>
+                            <Brain size={20} color={Theme.colors.secondary} strokeWidth={2.5} />
+                        </View>
+                        <Text style={styles.statNumber}>{stats.sessions}</Text>
+                        <Text style={styles.statLabel}>Sessions</Text>
+                    </Animated.View>
+
+                    <Animated.View
+                        entering={FadeInRight.delay(600).duration(600).springify()}
+                        style={[styles.statCard, styles.cardShadow]}
+                    >
+                        <View style={[styles.statIconBg, { backgroundColor: '#F0FDF4' }]}>
+                            <Users size={20} color="#10B981" strokeWidth={2.5} />
+                        </View>
+                        <Text style={styles.statNumber}>{stats.familyMembers}</Text>
+                        <Text style={styles.statLabel}>Family</Text>
+                    </Animated.View>
                 </View>
-                <Link href="/(app)/profile" asChild>
-                    <TouchableOpacity style={styles.profileButton}>
-                        <Text style={styles.profileIcon}>👤</Text>
-                    </TouchableOpacity>
-                </Link>
-            </View>
 
-            {/* Today's Tip */}
-            <View style={styles.tipCard}>
-                <View style={styles.tipHeader}>
-                    <Text style={styles.tipIcon}>💡</Text>
-                    <Text style={styles.tipTitle}>Daily Inspiration</Text>
-                </View>
-                <Text style={styles.tipText}>
-                    "Looking at old photos can help strengthen memory pathways. Try the 'Memory Game' today!"
-                </Text>
-            </View>
-
-            {/* Main Actions Grid */}
-            <View style={styles.gridContainer}>
-                <Link href="/(app)/recognize" asChild>
-                    <TouchableOpacity style={[styles.card, styles.cardBlue]}>
-                        <View style={styles.cardContent}>
-                            <Text style={styles.cardIcon}>👀</Text>
-                            <View>
-                                <Text style={styles.cardTitle}>Face Scan</Text>
-                                <Text style={styles.cardSubtitle}>Who is this?</Text>
+                <Animated.View entering={FadeInUp.delay(700).duration(800).springify()}>
+                    <TouchableOpacity
+                        style={[styles.featuredCardContainer, styles.featuredShadow]}
+                        onPress={() => router.push('/(app)/session')}
+                        activeOpacity={0.9}
+                    >
+                        <LinearGradient
+                            colors={Theme.colors.brandGradient as any}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 0 }}
+                            style={styles.featuredCardGradient}
+                        >
+                            <View style={styles.featuredContent}>
+                                <View style={styles.featuredIconOuter}>
+                                    <View style={styles.featuredIconBg}>
+                                        <Sparkles size={24} color={Theme.colors.primary} fill={Theme.colors.primaryLight} strokeWidth={2} />
+                                    </View>
+                                </View>
+                                <View style={styles.featuredText}>
+                                    <Text style={styles.featuredTitle}>Start Memory Exercise</Text>
+                                    <Text style={styles.featuredSubtitle}>Keep your mind active and bright</Text>
+                                </View>
                             </View>
-                        </View>
-                        <View style={styles.cardArrow}>
-                            <Text style={styles.arrowText}>→</Text>
-                        </View>
-                    </TouchableOpacity>
-                </Link>
-
-                <Link href="/(app)/session" asChild>
-                    <TouchableOpacity style={[styles.card, styles.cardOrange]}>
-                        <View style={styles.cardContent}>
-                            <Text style={styles.cardIcon}>🧩</Text>
-                            <View>
-                                <Text style={styles.cardTitle}>Play Game</Text>
-                                <Text style={styles.cardSubtitle}>Memory exercises</Text>
+                            <View style={styles.featuredArrow}>
+                                <ArrowRight size={20} color="#FFFFFF" strokeWidth={3} />
                             </View>
-                        </View>
-                        <View style={styles.cardArrow}>
-                            <Text style={styles.arrowText}>→</Text>
-                        </View>
+                        </LinearGradient>
                     </TouchableOpacity>
-                </Link>
+                </Animated.View>
 
-                <Link href="/(app)/memories" asChild>
-                    <TouchableOpacity style={[styles.card, styles.cardGreen]}>
-                        <View style={styles.cardContent}>
-                            <Text style={styles.cardIcon}>📸</Text>
-                            <View>
-                                <Text style={styles.cardTitle}>Gallery</Text>
-                                <Text style={styles.cardSubtitle}>View photos</Text>
+                {/* Recent Memory Preview */}
+                {recentMemory && (
+                    <Animated.View
+                        entering={FadeInUp.delay(900).duration(800)}
+                        style={styles.recentSection}
+                    >
+                        <View style={styles.sectionHeader}>
+                            <Text style={styles.sectionTitle}>Recent Memory</Text>
+                            <TouchableOpacity onPress={() => router.push('/(app)/memories')} style={styles.viewAllButton}>
+                                <Text style={styles.viewAllText}>View All</Text>
+                                <ChevronRight size={16} color={Theme.colors.primary} strokeWidth={3} />
+                            </TouchableOpacity>
+                        </View>
+                        <TouchableOpacity
+                            style={[styles.recentCard, styles.cardShadow]}
+                            onPress={() => router.push(`/(app)/memories/${recentMemory.id}`)}
+                            activeOpacity={0.8}
+                        >
+                            {recentMemory.photoUrls?.[0] && (
+                                <Image
+                                    source={{ uri: recentMemory.photoUrls[0] }}
+                                    style={styles.recentImage}
+                                />
+                            )}
+                            <View style={styles.recentContent}>
+                                <View style={styles.recentInfo}>
+                                    <Text style={styles.recentTitle} numberOfLines={1}>{recentMemory.title}</Text>
+                                    <Text style={styles.recentDate}>
+                                        {new Date(recentMemory.date).toLocaleDateString('en-US', {
+                                            month: 'long',
+                                            day: 'numeric',
+                                            year: 'numeric'
+                                        })}
+                                    </Text>
+                                </View>
+                                {recentMemory.event && (
+                                    <View style={styles.eventTag}>
+                                        <Text style={styles.eventText}>{recentMemory.event}</Text>
+                                    </View>
+                                )}
                             </View>
-                        </View>
-                        <View style={styles.cardArrow}>
-                            <Text style={styles.arrowText}>→</Text>
-                        </View>
-                    </TouchableOpacity>
-                </Link>
+                        </TouchableOpacity>
+                    </Animated.View>
+                )}
 
-                <Link href="/(app)/family" asChild>
-                    <TouchableOpacity style={[styles.card, styles.cardPurple]}>
-                        <View style={styles.cardContent}>
-                            <Text style={styles.cardIcon}>👨‍👩‍👧</Text>
-                            <View>
-                                <Text style={styles.cardTitle}>Family</Text>
-                                <Text style={styles.cardSubtitle}>My loved ones</Text>
-                            </View>
-                        </View>
-                        <View style={styles.cardArrow}>
-                            <Text style={styles.arrowText}>→</Text>
-                        </View>
-                    </TouchableOpacity>
-                </Link>
-            </View>
-        </ScrollView>
+                {/* Quick Tip */}
+                <Animated.View
+                    entering={FadeInUp.delay(1200).duration(800)}
+                    style={styles.tipCard}
+                >
+                    <View style={styles.tipIconBg}>
+                        <Lightbulb size={20} color="#F59E0B" fill="#FEF3C7" strokeWidth={2.5} />
+                    </View>
+                    <Text style={styles.tipText}>
+                        Tip: Use <Text style={styles.tipBold}>Who?</Text> to recognize family in real-time.
+                    </Text>
+                </Animated.View>
+
+                <View style={{ height: 40 }} />
+            </ScrollView>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F8FAFC', // Slate-50
+        backgroundColor: Theme.colors.background,
     },
-    content: {
+    meshGradient: {
+        position: 'absolute',
+        width: width * 1.2,
+        height: width * 1.2,
+        borderRadius: width * 0.6,
+        opacity: 0.8,
+    },
+    scrollContent: {
         padding: 24,
-        paddingTop: 80, // Increased to account for hidden header and status bar
+        paddingTop: Platform.OS === 'ios' ? 70 : 50,
     },
-    headerContainer: {
+    header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: 32,
     },
+    greetingSection: {},
     greeting: {
-        fontSize: 18,
-        color: '#64748B', // Slate-500
-        fontWeight: '500',
-    },
-    patientName: {
-        fontSize: 32,
-        fontWeight: '800',
-        color: '#1E293B', // Slate-800
-        letterSpacing: -0.5,
-    },
-    profileButton: {
-        width: 50,
-        height: 50,
-        borderRadius: 25,
-        backgroundColor: '#E2E8F0',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    profileIcon: {
-        fontSize: 24,
-    },
-    tipCard: {
-        backgroundColor: '#FFFBEB', // Amber-50
-        borderRadius: 24,
-        padding: 24,
-        marginBottom: 32,
-        borderWidth: 1,
-        borderColor: '#FDE68A', // Amber-200
-    },
-    tipHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 12,
-        gap: 8,
-    },
-    tipIcon: {
-        fontSize: 24,
-    },
-    tipTitle: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: '#92400E', // Amber-800
-    },
-    tipText: {
-        fontSize: 18,
-        color: '#B45309', // Amber-700
-        lineHeight: 26,
-    },
-    gridContainer: {
-        gap: 16,
-    },
-    card: {
-        backgroundColor: 'white',
-        borderRadius: 24,
-        padding: 24,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.05,
-        shadowRadius: 12,
-        elevation: 4,
-        borderWidth: 1,
-        borderColor: 'rgba(0,0,0,0.03)',
-    },
-    cardContent: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 20,
-    },
-    cardBlue: { borderLeftWidth: 6, borderLeftColor: '#3B82F6' },
-    cardOrange: { borderLeftWidth: 6, borderLeftColor: '#F97316' },
-    cardGreen: { borderLeftWidth: 6, borderLeftColor: '#22C55E' },
-    cardPurple: { borderLeftWidth: 6, borderLeftColor: '#A855F7' },
-
-    cardIcon: {
-        fontSize: 32,
-    },
-    cardTitle: {
-        fontSize: 22,
-        fontWeight: '700',
-        color: '#1E293B',
+        fontFamily: Theme.typography.fontFamily,
+        fontSize: 16,
+        color: Theme.colors.textSecondary,
+        fontWeight: '600',
         marginBottom: 4,
     },
-    cardSubtitle: {
-        fontSize: 16,
-        color: '#64748B',
+    patientName: {
+        fontFamily: Theme.typography.fontFamily,
+        fontSize: 32,
+        fontWeight: '900',
+        color: Theme.colors.text,
+        letterSpacing: -0.5,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
     },
-    cardArrow: {
-        width: 40,
-        height: 40,
+    profileButton: {
+        width: 54,
+        height: 54,
+        borderRadius: 18,
+        backgroundColor: Theme.colors.surface,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+        borderColor: Theme.colors.border,
+    },
+    cardShadow: {
+        ...Platform.select({
+            ios: {
+                shadowColor: Theme.colors.secondary,
+                shadowOffset: { width: 0, height: 8 },
+                shadowOpacity: 0.04,
+                shadowRadius: 16,
+            },
+            android: {
+                elevation: 3,
+            }
+        })
+    },
+    quoteCard: {
+        backgroundColor: Theme.colors.surface,
+        borderRadius: Theme.borderRadius['2xl'],
+        padding: 24,
+        marginBottom: 32,
+        borderWidth: 1,
+        borderColor: Theme.colors.border,
+        flexDirection: 'row',
+        alignItems: 'stretch',
+    },
+    quoteAccent: {
+        width: 4,
+        backgroundColor: Theme.colors.primary,
+        borderRadius: 2,
+        marginRight: 16,
+    },
+    quoteContent: {
+        flex: 1,
+    },
+    quoteIcon: {
+        marginBottom: 8,
+        opacity: 0.5,
+    },
+    quoteText: {
+        fontFamily: Theme.typography.fontFamily,
+        fontSize: 18,
+        color: Theme.colors.text,
+        lineHeight: 28,
+        fontWeight: '600',
+        fontStyle: 'italic',
+    },
+    statsRow: {
+        flexDirection: 'row',
+        gap: 12,
+        marginBottom: 32,
+    },
+    statCard: {
+        flex: 1,
+        backgroundColor: Theme.colors.surface,
+        borderRadius: Theme.borderRadius.xl,
+        padding: 16,
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: Theme.colors.border,
+    },
+    statIconBg: {
+        width: 44,
+        height: 44,
+        borderRadius: 12,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    statNumber: {
+        fontFamily: Theme.typography.fontFamily,
+        fontSize: 24,
+        fontWeight: '800',
+        color: Theme.colors.text,
+    },
+    statLabel: {
+        fontFamily: Theme.typography.fontFamily,
+        fontSize: 12,
+        color: Theme.colors.textSecondary,
+        marginTop: 4,
+        fontWeight: '700',
+    },
+    featuredCardContainer: {
+        borderRadius: Theme.borderRadius['3xl'],
+        marginBottom: 40,
+        overflow: 'hidden',
+    },
+    featuredCardGradient: {
+        padding: 24,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    featuredShadow: {
+        ...Platform.select({
+            ios: {
+                shadowColor: Theme.colors.primary,
+                shadowOffset: { width: 0, height: 16 },
+                shadowOpacity: 0.3,
+                shadowRadius: 24,
+            },
+            android: {
+                elevation: 10,
+            }
+        })
+    },
+    featuredContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 16,
+        flex: 1,
+    },
+    featuredIconOuter: {
+        width: 60,
+        height: 60,
         borderRadius: 20,
-        backgroundColor: '#F1F5F9', // Slate-100
+        backgroundColor: 'rgba(255,255,255,0.15)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    featuredIconBg: {
+        width: 44,
+        height: 44,
+        borderRadius: 14,
+        backgroundColor: '#FFFFFF',
         alignItems: 'center',
         justifyContent: 'center',
     },
-    arrowText: {
+    featuredText: {
+        flex: 1,
+    },
+    featuredTitle: {
+        fontFamily: Theme.typography.fontFamily,
         fontSize: 20,
-        color: '#94A3B8',
-        fontWeight: 'bold',
+        fontWeight: '900',
+        color: '#FFFFFF',
+        marginBottom: 4,
     },
-    logoutButton: {
-        marginTop: 40,
-        alignSelf: 'center',
-        paddingVertical: 12,
-        paddingHorizontal: 24,
-    },
-    logoutText: {
-        fontSize: 18,
-        color: '#EF4444', // Red-500
+    featuredSubtitle: {
+        fontFamily: Theme.typography.fontFamily,
+        fontSize: 14,
+        color: 'rgba(255,255,255,0.85)',
         fontWeight: '600',
+    },
+    featuredArrow: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    recentSection: {
+        marginBottom: 32,
+    },
+    sectionHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 16,
+    },
+    sectionTitle: {
+        fontFamily: Theme.typography.fontFamily,
+        fontSize: 22,
+        fontWeight: '900',
+        color: Theme.colors.text,
+        letterSpacing: -0.5,
+    },
+    viewAllButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+    },
+    viewAllText: {
+        fontFamily: Theme.typography.fontFamily,
+        fontSize: 15,
+        color: Theme.colors.primary,
+        fontWeight: '700',
+    },
+    recentCard: {
+        backgroundColor: Theme.colors.surface,
+        borderRadius: Theme.borderRadius['2xl'],
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: Theme.colors.border,
+    },
+    recentImage: {
+        width: '100%',
+        height: 180,
+    },
+    recentContent: {
+        padding: 20,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    recentInfo: {
+        flex: 1,
+    },
+    recentTitle: {
+        fontFamily: Theme.typography.fontFamily,
+        fontSize: 20,
+        fontWeight: '800',
+        color: Theme.colors.text,
+        marginBottom: 4,
+    },
+    recentDate: {
+        fontFamily: Theme.typography.fontFamily,
+        fontSize: 14,
+        color: Theme.colors.textSecondary,
+        fontWeight: '600',
+    },
+    eventTag: {
+        backgroundColor: Theme.colors.primaryUltraLight,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: Theme.borderRadius.sm,
+    },
+    eventText: {
+        fontFamily: Theme.typography.fontFamily,
+        fontSize: 13,
+        color: Theme.colors.primary,
+        fontWeight: '800',
+    },
+    tipCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: Theme.colors.secondaryLight,
+        borderRadius: Theme.borderRadius.xl,
+        padding: 16,
+        gap: 12,
+        borderWidth: 1,
+        borderColor: 'rgba(99, 102, 241, 0.1)',
+    },
+    tipIconBg: {
+        width: 40,
+        height: 40,
+        borderRadius: 12,
+        backgroundColor: '#FFFFFF',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    tipText: {
+        fontFamily: Theme.typography.fontFamily,
+        flex: 1,
+        fontSize: 14,
+        color: Theme.colors.text,
+        lineHeight: 20,
+        fontWeight: '600',
+    },
+    tipBold: {
+        fontFamily: Theme.typography.fontFamily,
+        color: Theme.colors.primary,
+        fontWeight: '800',
     },
 });
