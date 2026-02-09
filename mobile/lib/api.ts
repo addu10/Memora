@@ -54,6 +54,29 @@ class MemoraApiClient {
         }
     }
 
+    async getEventTypes(): Promise<ApiResponse<string[]>> {
+        const auth = this.checkAuth();
+        if (auth.error) return { error: auth.error, status: auth.status };
+
+        try {
+            const { data, error } = await supabase
+                .from('Memory')
+                .select('event')
+                .eq('patientId', this.patientId);
+
+            if (error) throw error;
+
+            // Extract unique non-null events
+            const allEvents = data.map(m => m.event).filter(Boolean) as string[];
+            const uniqueEvents = Array.from(new Set(allEvents));
+
+            return { data: uniqueEvents, status: 200 };
+        } catch (e: any) {
+            console.error('Fetch event types error:', e);
+            return { error: e.message, status: 500 };
+        }
+    }
+
     async getMemory(id: string): Promise<ApiResponse<Memory>> {
         try {
             const { data, error } = await supabase
@@ -242,12 +265,22 @@ class MemoraApiClient {
                 .select('*', { count: 'exact', head: true })
                 .eq('patientId', this.patientId);
 
+            const { count: sessionCount } = await supabase
+                .from('TherapySession')
+                .select('*', { count: 'exact', head: true })
+                .eq('patientId', this.patientId);
+
             return {
                 data: {
-                    sessionCount: 0,
+                    // Required properties
+                    sessionCount: sessionCount || 0,
                     memoryCount: memoryCount || 0,
                     familyCount: familyCount || 0,
-                    averageRecall: 0
+                    averageRecall: 0,
+                    // Alternative names used by home.tsx
+                    totalMemories: memoryCount || 0,
+                    totalSessions: sessionCount || 0,
+                    totalFamily: familyCount || 0,
                 },
                 status: 200
             };

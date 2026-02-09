@@ -8,7 +8,7 @@ The Memora Mobile App is designed for elderly patients with early-stage Alzheime
 
 - **Large, accessible UI** with clear fonts and simple navigation
 - **Face recognition (V2)** for instant family identification
-- **AI-Powered Therapy** using Gemini interactive prompts
+- **AI-Powered Therapy** with personalized interactive prompts
 - **Memory performance badges** (Mastered, In Progress, Needs Practice)
 - **Personalized profiles** with caregiver emergency contact
 
@@ -126,7 +126,7 @@ npx expo start --web
 - **Real-time**: Leverages parallel processing for sub-second recognition
 
 ### 6. AI Session Therapy
-- **Interactive Prompts**: Gemini-1.5-Pro generated clinically-backed questions
+- **Interactive Prompts**: AI-generated clinically-backed questions
 - **Recall Tracking**: Marks photos from 1-5 to update clinical progress
 - **Mood Logging**: Tracks emotional response to reminiscence
 

@@ -1,9 +1,14 @@
-// Family Member Detail Screen
+// Family Member Detail Screen 
 import { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, ScrollView, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, Image, TouchableOpacity, ActivityIndicator, Dimensions, Platform } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Theme } from '../../../constants/Theme';
 import { api } from '../../../lib/api';
 import type { FamilyMember } from '../../../lib/types';
+import { ChevronLeft, User, MessageSquare, BookOpen, Camera } from 'lucide-react-native';
+import Animated, { FadeInDown, FadeInUp, FadeIn } from 'react-native-reanimated';
+
+const { width } = Dimensions.get('window');
 
 export default function FamilyDetailScreen() {
     const { id } = useLocalSearchParams();
@@ -14,9 +19,6 @@ export default function FamilyDetailScreen() {
     useEffect(() => {
         const loadMember = async () => {
             if (!id) return;
-            // In a real app we might fetch just one, but here we can find from list or use a new getFamilyMember(id) API.
-            // For simplicity and since we have getAll, we can filter or fetch all.
-            // ideally we add `getFamilyMember(id)` to api.ts, but filtering is okay for small lists.
             const { data } = await api.getFamilyMembers();
             const found = data?.find(m => m.id === id);
             setMember(found || null);
@@ -28,7 +30,7 @@ export default function FamilyDetailScreen() {
     if (loading) {
         return (
             <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#3B82F6" />
+                <ActivityIndicator size="large" color={Theme.colors.primary} />
             </View>
         );
     }
@@ -47,111 +49,166 @@ export default function FamilyDetailScreen() {
     const mainPhoto = member.photoUrls?.[0];
 
     return (
-        <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-            <TouchableOpacity style={styles.backRow} onPress={() => router.back()}>
-                <Text style={styles.backArrow}>←</Text>
-                <Text style={styles.backText}>Back to Family</Text>
-            </TouchableOpacity>
+        <View style={styles.container}>
+            {/* Mesh Background */}
+            <Animated.View
+                entering={FadeIn.duration(1200)}
+                style={[styles.meshGradient, { backgroundColor: 'rgba(167, 139, 250, 0.08)', top: -100, left: -100 }]}
+            />
 
-            <View style={styles.profileCard}>
-                <View style={styles.imageContainer}>
-                    {mainPhoto ? (
-                        <Image source={{ uri: mainPhoto }} style={styles.image} resizeMode="cover" />
-                    ) : (
-                        <View style={[styles.image, styles.placeholder]}>
-                            <Text style={styles.placeholderIcon}>👤</Text>
+            <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+                <Animated.View entering={FadeInDown.duration(800).springify()}>
+                    <TouchableOpacity style={styles.backRow} onPress={() => router.back()} activeOpacity={0.7}>
+                        <View style={styles.backIconBg}>
+                            <ChevronLeft size={24} color={Theme.colors.primary} strokeWidth={3} />
                         </View>
-                    )}
-                </View>
-                <Text style={styles.name}>{member.name}</Text>
-                <View style={styles.badge}>
-                    <Text style={styles.badgeText}>{member.relationship}</Text>
-                </View>
-            </View>
+                        <Text style={styles.backText}>Back to Family</Text>
+                    </TouchableOpacity>
+                </Animated.View>
 
-            {member.notes && (
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Details</Text>
-                    <View style={styles.noteCard}>
-                        <Text style={styles.noteText}>{member.notes}</Text>
+                <Animated.View
+                    entering={FadeInUp.delay(200).duration(800).springify()}
+                    style={[styles.profileCard, styles.cardShadow]}
+                >
+                    <View style={styles.imageContainer}>
+                        {mainPhoto ? (
+                            <Image source={{ uri: mainPhoto }} style={styles.image} resizeMode="cover" />
+                        ) : (
+                            <View style={[styles.image, styles.placeholder]}>
+                                <User size={64} color={Theme.colors.textSecondary} strokeWidth={1.5} />
+                            </View>
+                        )}
                     </View>
-                </View>
-            )}
+                    <Text style={styles.name}>{member.name}</Text>
+                    <View style={styles.badge}>
+                        <Text style={styles.badgeText}>{member.relationship}</Text>
+                    </View>
+                </Animated.View>
 
-            {member.photoUrls && member.photoUrls.length > 0 && (
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>{member.name.split(' ')[0]}'s Photos</Text>
-                    <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={styles.photoGallery}
+                {member.notes && (
+                    <Animated.View
+                        entering={FadeInUp.delay(400).duration(800).springify()}
+                        style={styles.section}
                     >
-                        {member.photoUrls.map((url, index) => (
-                            <Image
-                                key={index}
-                                source={{ uri: url }}
-                                style={styles.galleryImage}
-                                resizeMode="cover"
-                            />
-                        ))}
-                    </ScrollView>
-                </View>
-            )}
-        </ScrollView>
+                        <View style={styles.sectionHeader}>
+                            <BookOpen size={20} color={Theme.colors.textSecondary} />
+                            <Text style={styles.sectionTitle}>About {member.name.split(' ')[0]}</Text>
+                        </View>
+                        <View style={styles.noteCard}>
+                            <Text style={styles.noteText}>{member.notes}</Text>
+                        </View>
+                    </Animated.View>
+                )}
+
+                {member.photoUrls && member.photoUrls.length > 0 && (
+                    <Animated.View
+                        entering={FadeInUp.delay(600).duration(800).springify()}
+                        style={styles.section}
+                    >
+                        <View style={styles.sectionHeader}>
+                            <Camera size={20} color={Theme.colors.textSecondary} />
+                            <Text style={styles.sectionTitle}>Shared Gallery</Text>
+                        </View>
+                        <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={styles.photoGallery}
+                        >
+                            {member.photoUrls.map((url, index) => (
+                                <View key={index} style={styles.galleryImageContainer}>
+                                    <Image
+                                        source={{ uri: url }}
+                                        style={styles.galleryImage}
+                                        resizeMode="cover"
+                                    />
+                                </View>
+                            ))}
+                        </ScrollView>
+                    </Animated.View>
+                )}
+                <View style={{ height: 40 }} />
+            </ScrollView>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F8FAFC',
+        backgroundColor: Theme.colors.background,
+    },
+    meshGradient: {
+        position: 'absolute',
+        width: width * 1.2,
+        height: width * 1.2,
+        borderRadius: width * 0.6,
+        opacity: 0.8,
     },
     loadingContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
+        backgroundColor: Theme.colors.background,
     },
     content: {
         padding: 24,
         paddingBottom: 48,
+        paddingTop: Platform.OS === 'ios' ? 60 : 40,
     },
     backRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginTop: 40, // More top margin for no-header layout
-        marginBottom: 24,
+        marginBottom: 32,
+        marginTop: 20,
     },
-    backArrow: {
-        fontSize: 28,
-        color: '#3B82F6',
-        marginRight: 8,
+    backIconBg: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        backgroundColor: Theme.colors.surface,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 12,
+        borderWidth: 1,
+        borderColor: Theme.colors.border,
     },
     backText: {
+        fontFamily: Theme.typography.fontFamily,
         fontSize: 18,
-        color: '#3B82F6',
-        fontWeight: '600',
+        color: Theme.colors.textSecondary,
+        fontWeight: '700',
     },
     profileCard: {
-        backgroundColor: '#FFFFFF',
-        borderRadius: 32,
+        backgroundColor: Theme.colors.surface,
+        borderRadius: 36,
         padding: 32,
         alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.05,
-        shadowRadius: 12,
-        elevation: 4,
         marginBottom: 32,
+        borderWidth: 1,
+        borderColor: Theme.colors.border,
+    },
+    cardShadow: {
+        ...Platform.select({
+            ios: {
+                shadowColor: Theme.colors.secondary,
+                shadowOffset: { width: 0, height: 12 },
+                shadowOpacity: 0.08,
+                shadowRadius: 20,
+            },
+            android: {
+                elevation: 6,
+            }
+        })
     },
     imageContainer: {
-        width: 160,
-        height: 160,
-        borderRadius: 80,
-        backgroundColor: '#F1F5F9',
+        width: 180,
+        height: 180,
+        borderRadius: 90,
+        backgroundColor: Theme.colors.background,
         overflow: 'hidden',
         marginBottom: 24,
         borderWidth: 6,
-        borderColor: '#EFF6FF',
+        borderColor: '#FFFFFF',
     },
     image: {
         width: '100%',
@@ -161,70 +218,91 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
-    placeholderIcon: {
-        fontSize: 64,
-    },
     name: {
-        fontSize: 32,
-        fontWeight: '800',
-        color: '#1E293B',
+        fontFamily: Theme.typography.fontFamily,
+        fontSize: 36,
+        fontWeight: '900',
+        color: Theme.colors.text,
         marginBottom: 12,
         textAlign: 'center',
+        letterSpacing: -1,
     },
     badge: {
-        backgroundColor: '#DBEAFE',
+        backgroundColor: Theme.colors.primaryUltraLight,
         paddingVertical: 8,
-        paddingHorizontal: 20,
+        paddingHorizontal: 24,
         borderRadius: 100,
     },
     badgeText: {
+        fontFamily: Theme.typography.fontFamily,
         fontSize: 18,
-        fontWeight: '700',
-        color: '#1E40AF',
+        fontWeight: '800',
+        color: Theme.colors.primary,
     },
     section: {
         marginBottom: 32,
     },
-    sectionTitle: {
-        fontSize: 22,
-        fontWeight: '700',
-        color: '#1E293B',
+    sectionHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
         marginBottom: 16,
         marginLeft: 4,
     },
+    sectionTitle: {
+        fontFamily: Theme.typography.fontFamily,
+        fontSize: 22,
+        fontWeight: '900',
+        color: Theme.colors.text,
+        letterSpacing: -0.5,
+    },
     noteCard: {
-        backgroundColor: '#FFFFFF',
+        backgroundColor: Theme.colors.surface,
         padding: 24,
-        borderRadius: 20,
+        borderRadius: 24,
         borderWidth: 1,
-        borderColor: '#E2E8F0',
+        borderColor: Theme.colors.border,
     },
     noteText: {
+        fontFamily: Theme.typography.fontFamily,
         fontSize: 18,
-        color: '#475569',
+        color: Theme.colors.text,
         lineHeight: 28,
+        fontWeight: '500',
     },
     photoGallery: {
         paddingRight: 24,
-        gap: 16,
+        gap: 20,
+    },
+    galleryImageContainer: {
+        borderRadius: 24,
+        overflow: 'hidden',
+        backgroundColor: Theme.colors.surface,
+        borderWidth: 1,
+        borderColor: Theme.colors.border,
     },
     galleryImage: {
-        width: 200,
-        height: 150,
-        borderRadius: 16,
-        backgroundColor: '#E2E8F0',
+        width: 240,
+        height: 180,
     },
     errorText: {
+        fontFamily: Theme.typography.fontFamily,
         fontSize: 20,
+        color: Theme.colors.text,
         marginBottom: 20,
+        textAlign: 'center',
+        fontWeight: '700',
     },
     backButton: {
         padding: 16,
-        backgroundColor: '#3B82F6',
+        backgroundColor: Theme.colors.primary,
         borderRadius: 12,
+        alignItems: 'center',
     },
     backButtonText: {
+        fontFamily: Theme.typography.fontFamily,
         color: '#FFF',
         fontSize: 16,
+        fontWeight: '700',
     },
 });

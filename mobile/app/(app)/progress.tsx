@@ -1,214 +1,318 @@
 // Progress Screen - Elderly-Friendly Stats View
-import { StyleSheet, Text, View, ScrollView } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, Platform, TouchableOpacity, Dimensions } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Theme } from '../../constants/Theme';
+import {
+    Target,
+    ImageIcon,
+    Brain,
+    Users,
+    Calendar,
+    Smile,
+    Meh,
+    Frown,
+    Lightbulb,
+    TrendingUp,
+    Heart
+} from 'lucide-react-native';
+import Animated, { FadeInDown, FadeInUp, FadeInLeft, FadeIn } from 'react-native-reanimated';
+
+const { width } = Dimensions.get('window');
 
 export default function ProgressScreen() {
     return (
-        <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-            {/* Header */}
-            <View style={styles.header}>
-                <Text style={styles.title}>Your Progress</Text>
-                <Text style={styles.subtitle}>You are doing great! 🌟</Text>
-            </View>
+        <View style={styles.container}>
+            {/* Mesh Background */}
+            <Animated.View
+                entering={FadeIn.duration(1200)}
+                style={[styles.meshGradient, { backgroundColor: 'rgba(167, 139, 250, 0.08)', top: -100, left: -100 }]}
+            />
 
-            {/* Big Stats Cards */}
-            <View style={styles.statsGrid}>
-                <View style={[styles.statCard, styles.statBlue]}>
-                    <View style={styles.statHeader}>
-                        <Text style={styles.statIcon}>🎯</Text>
-                        <Text style={styles.statLabel}>Sessions</Text>
-                    </View>
-                    <Text style={styles.statValue}>12</Text>
-                    <Text style={styles.statSubtext}>Outstanding details</Text>
-                </View>
+            <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+                {/* Header */}
+                <Animated.View
+                    entering={FadeInDown.duration(800).springify()}
+                    style={styles.header}
+                >
+                    <Text style={styles.title}>Your Progress</Text>
+                    <Text style={styles.subtitle}>You are doing great! <Heart size={18} color="#EF4444" fill="#EF4444" /></Text>
+                </Animated.View>
 
-                <View style={[styles.statCard, styles.statGreen]}>
-                    <View style={styles.statHeader}>
-                        <Text style={styles.statIcon}>📷</Text>
-                        <Text style={styles.statLabel}>Photos</Text>
-                    </View>
-                    <Text style={styles.statValue}>48</Text>
-                    <Text style={styles.statSubtext}>Memories viewed</Text>
-                </View>
-
-                <View style={[styles.statCard, styles.statOrange]}>
-                    <View style={styles.statHeader}>
-                        <Text style={styles.statIcon}>🧠</Text>
-                        <Text style={styles.statLabel}>Memory</Text>
-                    </View>
-                    <Text style={styles.statValue}>High</Text>
-                    <Text style={styles.statSubtext}>Keep it up!</Text>
-                </View>
-
-                <View style={[styles.statCard, styles.statPurple]}>
-                    <View style={styles.statHeader}>
-                        <Text style={styles.statIcon}>👨‍👩‍👧</Text>
-                        <Text style={styles.statLabel}>Family</Text>
-                    </View>
-                    <Text style={styles.statValue}>8</Text>
-                    <Text style={styles.statSubtext}>People recognized</Text>
-                </View>
-            </View>
-
-            {/* Recent Activity */}
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Recent Activity</Text>
-
-                {/* List items would go here, using empty state for now */}
-                <View style={styles.emptyState}>
-                    <Text style={styles.emptyIcon}>📅</Text>
-                    <Text style={styles.emptyText}>
-                        Your daily activity log will appear here.
-                    </Text>
-                </View>
-            </View>
-
-            {/* Mood History */}
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>How You Felt</Text>
-                <View style={styles.moodRow}>
-                    <View style={styles.moodItem}>
-                        <Text style={styles.moodEmoji}>😊</Text>
-                        <Text style={styles.moodLabel}>Happy</Text>
-                        <View style={styles.moodBar}>
-                            <View style={[styles.moodFill, { height: '60%', backgroundColor: '#22C55E' }]} />
+                {/* Big Stats Cards */}
+                <View style={styles.statsGrid}>
+                    <Animated.View
+                        entering={FadeInUp.delay(200).duration(600).springify()}
+                        style={[styles.statCard, styles.statBlue]}
+                    >
+                        <View style={styles.statHeader}>
+                            <Target size={24} color="#FFFFFF" strokeWidth={2.5} />
+                            <Text style={styles.statLabel}>Sessions</Text>
                         </View>
-                        <Text style={styles.moodCount}>12</Text>
-                    </View>
-                    <View style={styles.moodItem}>
-                        <Text style={styles.moodEmoji}>😐</Text>
-                        <Text style={styles.moodLabel}>Okay</Text>
-                        <View style={styles.moodBar}>
-                            <View style={[styles.moodFill, { height: '30%', backgroundColor: '#F59E0B' }]} />
-                        </View>
-                        <Text style={styles.moodCount}>5</Text>
-                    </View>
-                    <View style={styles.moodItem}>
-                        <Text style={styles.moodEmoji}>😢</Text>
-                        <Text style={styles.moodLabel}>Sad</Text>
-                        <View style={styles.moodBar}>
-                            <View style={[styles.moodFill, { height: '10%', backgroundColor: '#EF4444' }]} />
-                        </View>
-                        <Text style={styles.moodCount}>2</Text>
-                    </View>
-                </View>
-            </View>
+                        <Text style={styles.statValue}>12</Text>
+                        <Text style={styles.statSubtext}>Outstanding details</Text>
+                    </Animated.View>
 
-            {/* Encouragement */}
-            <View style={styles.encourageCard}>
-                <View style={styles.encourageContent}>
-                    <Text style={styles.encourageTitle}>Top Tip</Text>
-                    <Text style={styles.encourageText}>
-                        "Reviewing photos before bed can help strengthen memory pathways."
-                    </Text>
+                    <Animated.View
+                        entering={FadeInUp.delay(300).duration(600).springify()}
+                        style={[styles.statCard, styles.statGreen]}
+                    >
+                        <View style={styles.statHeader}>
+                            <ImageIcon size={24} color="#FFFFFF" strokeWidth={2.5} />
+                            <Text style={styles.statLabel}>Photos</Text>
+                        </View>
+                        <Text style={styles.statValue}>48</Text>
+                        <Text style={styles.statSubtext}>Memories viewed</Text>
+                    </Animated.View>
+
+                    <Animated.View
+                        entering={FadeInUp.delay(400).duration(600).springify()}
+                        style={[styles.statCard, styles.statOrange]}
+                    >
+                        <View style={styles.statHeader}>
+                            <Brain size={24} color="#FFFFFF" strokeWidth={2.5} />
+                            <Text style={styles.statLabel}>Memory</Text>
+                        </View>
+                        <Text style={styles.statValue}>High</Text>
+                        <Text style={styles.statSubtext}>Keep it up!</Text>
+                    </Animated.View>
+
+                    <Animated.View
+                        entering={FadeInUp.delay(500).duration(600).springify()}
+                        style={styles.statCardContainer}
+                    >
+                        <TouchableOpacity
+                            style={{ flex: 1 }}
+                            activeOpacity={0.9}
+                        >
+                            <LinearGradient
+                                colors={Theme.colors.brandGradient as any}
+                                style={styles.statCardGradient}
+                            >
+                                <View style={styles.statHeader}>
+                                    <Users size={24} color="#FFFFFF" strokeWidth={2.5} />
+                                    <Text style={styles.statLabel}>Family</Text>
+                                </View>
+                                <Text style={styles.statValue}>8</Text>
+                                <Text style={styles.statSubtext}>People recognized</Text>
+                            </LinearGradient>
+                        </TouchableOpacity>
+                    </Animated.View>
                 </View>
-                <Text style={styles.encourageIcon}>💡</Text>
-            </View>
-        </ScrollView>
+
+                {/* Recent Activity */}
+                <Animated.View
+                    entering={FadeInUp.delay(600).duration(800)}
+                    style={styles.section}
+                >
+                    <Text style={styles.sectionTitle}>Recent Activity</Text>
+                    <View style={styles.emptyState}>
+                        <View style={styles.emptyIconBg}>
+                            <Calendar size={40} color={Theme.colors.textSecondary} opacity={0.5} />
+                        </View>
+                        <Text style={styles.emptyText}>
+                            Your daily activity log will appear here.
+                        </Text>
+                    </View>
+                </Animated.View>
+
+                {/* Mood History */}
+                <Animated.View
+                    entering={FadeInUp.delay(800).duration(800)}
+                    style={styles.section}
+                >
+                    <Text style={styles.sectionTitle}>How You Felt</Text>
+                    <View style={styles.moodRow}>
+                        <Animated.View
+                            entering={FadeInLeft.delay(1000).duration(600).springify()}
+                            style={styles.moodItem}
+                        >
+                            <Smile size={32} color="#22C55E" strokeWidth={2.5} />
+                            <Text style={styles.moodLabel}>Happy</Text>
+                            <View style={styles.moodBar}>
+                                <View style={[styles.moodFill, { height: '60%', backgroundColor: '#22C55E' }]} />
+                            </View>
+                            <Text style={styles.moodCount}>12</Text>
+                        </Animated.View>
+
+                        <Animated.View
+                            entering={FadeInLeft.delay(1100).duration(600).springify()}
+                            style={styles.moodItem}
+                        >
+                            <Meh size={32} color="#F59E0B" strokeWidth={2.5} />
+                            <Text style={styles.moodLabel}>Okay</Text>
+                            <View style={styles.moodBar}>
+                                <View style={[styles.moodFill, { height: '30%', backgroundColor: '#F59E0B' }]} />
+                            </View>
+                            <Text style={styles.moodCount}>5</Text>
+                        </Animated.View>
+
+                        <Animated.View
+                            entering={FadeInLeft.delay(1200).duration(600).springify()}
+                            style={styles.moodItem}
+                        >
+                            <Frown size={32} color="#EF4444" strokeWidth={2.5} />
+                            <Text style={styles.moodLabel}>Sad</Text>
+                            <View style={styles.moodBar}>
+                                <View style={[styles.moodFill, { height: '10%', backgroundColor: '#EF4444' }]} />
+                            </View>
+                            <Text style={styles.moodCount}>2</Text>
+                        </Animated.View>
+                    </View>
+                </Animated.View>
+
+                {/* Encouragement */}
+                <Animated.View
+                    entering={FadeInUp.delay(1400).duration(800).springify()}
+                    style={styles.encourageCard}
+                >
+                    <View style={styles.encourageContent}>
+                        <View style={styles.encourageHeader}>
+                            <TrendingUp size={18} color="#854D0E" strokeWidth={3} />
+                            <Text style={styles.encourageTitle}>Top Tip</Text>
+                        </View>
+                        <Text style={styles.encourageText}>
+                            "Reviewing photos before bed can help strengthen memory pathways."
+                        </Text>
+                    </View>
+                    <View style={styles.encourageIconBg}>
+                        <Lightbulb size={32} color="#EAB308" strokeWidth={2.5} fill="#FEF08A" />
+                    </View>
+                </Animated.View>
+            </ScrollView>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F8FAFC', // Slate-50
+        backgroundColor: Theme.colors.background,
+    },
+    meshGradient: {
+        position: 'absolute',
+        width: width * 1.2,
+        height: width * 1.2,
+        borderRadius: width * 0.6,
+        opacity: 0.8,
     },
     content: {
         padding: 24,
         paddingBottom: 48,
+        paddingTop: Platform.OS === 'ios' ? 60 : 40,
     },
     header: {
         marginTop: 20,
         marginBottom: 32,
     },
     title: {
+        fontFamily: Theme.typography.fontFamily,
         fontSize: 36,
-        fontWeight: '800',
-        color: '#1E293B',
+        fontWeight: '900',
+        color: Theme.colors.text,
         marginBottom: 8,
-        letterSpacing: -0.5,
+        letterSpacing: -1,
     },
     subtitle: {
+        fontFamily: Theme.typography.fontFamily,
         fontSize: 18,
-        color: '#64748B',
+        color: Theme.colors.textSecondary,
+        fontWeight: '600',
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
     },
     statsGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
         gap: 16,
-        marginBottom: 40,
+        marginBottom: 32,
     },
     statCard: {
-        width: '47%',
-        borderRadius: 24,
+        width: '47.5%',
+        borderRadius: 28,
         padding: 20,
         minHeight: 160,
         justifyContent: 'space-between',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.05,
-        shadowRadius: 10,
-        elevation: 3,
         borderWidth: 1,
         borderColor: 'rgba(255,255,255,0.2)',
+    },
+    statCardContainer: {
+        width: '47.5%',
+        borderRadius: 28,
+        minHeight: 160,
+        overflow: 'hidden',
+    },
+    statCardGradient: {
+        flex: 1,
+        padding: 20,
+        justifyContent: 'space-between',
     },
     statBlue: { backgroundColor: '#3B82F6' },
     statGreen: { backgroundColor: '#10B981' },
     statOrange: { backgroundColor: '#F59E0B' },
-    statPurple: { backgroundColor: '#8B5CF6' },
 
     statHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 8,
-    },
-    statIcon: {
-        fontSize: 24,
+        gap: 10,
     },
     statLabel: {
+        fontFamily: Theme.typography.fontFamily,
         fontSize: 16,
-        fontWeight: '600',
+        fontWeight: '700',
         color: 'rgba(255,255,255,0.9)',
     },
     statValue: {
+        fontFamily: Theme.typography.fontFamily,
         fontSize: 42,
-        fontWeight: '800',
+        fontWeight: '900',
         color: '#FFFFFF',
         marginVertical: 4,
+        letterSpacing: -1,
     },
     statSubtext: {
+        fontFamily: Theme.typography.fontFamily,
         fontSize: 13,
         color: 'rgba(255,255,255,0.8)',
-        fontWeight: '500',
+        fontWeight: '600',
     },
 
     section: {
-        marginBottom: 40,
+        marginBottom: 32,
     },
     sectionTitle: {
-        fontSize: 24,
-        fontWeight: '800',
-        color: '#1E293B',
+        fontFamily: Theme.typography.fontFamily,
+        fontSize: 22,
+        fontWeight: '900',
+        color: Theme.colors.text,
         marginBottom: 20,
+        letterSpacing: -0.5,
     },
     emptyState: {
-        backgroundColor: '#FFFFFF',
-        borderRadius: 20,
+        backgroundColor: Theme.colors.surface,
+        borderRadius: 24,
         padding: 32,
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: '#E2E8F0',
+        borderColor: Theme.colors.border,
         borderStyle: 'dashed',
     },
-    emptyIcon: {
-        fontSize: 48,
+    emptyIconBg: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        backgroundColor: Theme.colors.background,
+        justifyContent: 'center',
+        alignItems: 'center',
         marginBottom: 16,
-        opacity: 0.5,
     },
     emptyText: {
+        fontFamily: Theme.typography.fontFamily,
         fontSize: 16,
-        color: '#94A3B8',
+        color: Theme.colors.textSecondary,
         textAlign: 'center',
         lineHeight: 24,
+        fontWeight: '600',
     },
 
     moodRow: {
@@ -218,26 +322,20 @@ const styles = StyleSheet.create({
     },
     moodItem: {
         flex: 1,
-        backgroundColor: '#FFFFFF',
-        borderRadius: 20,
+        backgroundColor: Theme.colors.surface,
+        borderRadius: 24,
         padding: 16,
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: '#E2E8F0',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.03,
-        shadowRadius: 8,
-    },
-    moodEmoji: {
-        fontSize: 32,
-        marginBottom: 8,
+        borderColor: Theme.colors.border,
     },
     moodLabel: {
+        fontFamily: Theme.typography.fontFamily,
         fontSize: 14,
-        fontWeight: '600',
-        color: '#64748B',
+        fontWeight: '700',
+        color: Theme.colors.textSecondary,
         marginBottom: 12,
+        marginTop: 8,
     },
     moodBar: {
         width: 8,
@@ -253,42 +351,52 @@ const styles = StyleSheet.create({
         borderRadius: 4,
     },
     moodCount: {
+        fontFamily: Theme.typography.fontFamily,
         fontSize: 18,
-        fontWeight: 'bold',
-        color: '#1E293B',
+        fontWeight: '900',
+        color: Theme.colors.text,
     },
 
     encourageCard: {
-        backgroundColor: '#FEF9C3', // Yellow-100
-        borderRadius: 24,
+        backgroundColor: '#FEF9C3',
+        borderRadius: 28,
         padding: 24,
         flexDirection: 'row',
         alignItems: 'center',
         gap: 20,
         borderWidth: 1,
         borderColor: '#FEF08A',
-        shadowColor: '#EAB308',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 12,
-        elevation: 2,
+        marginBottom: 40,
     },
     encourageContent: {
         flex: 1,
     },
-    encourageTitle: {
-        fontSize: 20,
-        fontWeight: '800',
-        color: '#854D0E', // Yellow-900
+    encourageHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
         marginBottom: 4,
     },
+    encourageTitle: {
+        fontFamily: Theme.typography.fontFamily,
+        fontSize: 20,
+        fontWeight: '900',
+        color: '#854D0E',
+    },
     encourageText: {
+        fontFamily: Theme.typography.fontFamily,
         fontSize: 16,
-        color: '#A16207', // Yellow-700
+        color: '#A16207',
         lineHeight: 24,
         fontStyle: 'italic',
+        fontWeight: '600',
     },
-    encourageIcon: {
-        fontSize: 40,
+    encourageIconBg: {
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        backgroundColor: '#FFFFFF',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
 });
