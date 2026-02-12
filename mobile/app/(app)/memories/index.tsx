@@ -160,7 +160,7 @@ export default function MemoriesScreen() {
                                             <Image
                                                 source={{ uri: mainPhoto }}
                                                 style={styles.memoryImage}
-                                                resizeMode="cover"
+                                                resizeMode="contain"
                                             />
                                         ) : (
                                             <View style={[styles.memoryImage, styles.placeholderImage]}>
@@ -347,6 +347,7 @@ const styles = StyleSheet.create({
     memoryImage: {
         width: '100%',
         height: '100%',
+        backgroundColor: '#FFFFFF',
     },
     placeholderImage: {
         alignItems: 'center',

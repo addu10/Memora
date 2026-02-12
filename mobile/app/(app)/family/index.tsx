@@ -74,7 +74,7 @@ export default function FamilyScreen() {
                                         <Image
                                             source={{ uri: member.photoUrls[0] }}
                                             style={styles.image}
-                                            resizeMode="cover"
+                                            resizeMode="contain"
                                         />
                                     ) : (
                                         <View style={[styles.image, styles.imagePlaceholder]}>
@@ -201,6 +201,7 @@ const styles = StyleSheet.create({
     image: {
         width: '100%',
         height: '100%',
+        backgroundColor: Theme.colors.background,
     },
     imagePlaceholder: {
         backgroundColor: Theme.colors.background,

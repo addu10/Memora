@@ -311,7 +311,7 @@ export default function SessionScreen() {
                                     style={styles.memoryCardSmallContainer}
                                 >
                                     <TouchableOpacity style={[styles.memoryCardSmall, styles.cardShadow]} onPress={() => handleSelectMemory(m)} activeOpacity={0.9}>
-                                        <Image source={{ uri: m.photoUrls?.[0] }} style={styles.memoryThumb} />
+                                        <Image source={{ uri: m.photoUrls?.[0] }} style={styles.memoryThumb} resizeMode="contain" />
                                         <View style={styles.memoryInfo}>
                                             <Text style={styles.memoryCardTitle} numberOfLines={1}>{m.title}</Text>
                                             <View style={styles.memoryCardMeta}>
@@ -352,7 +352,7 @@ export default function SessionScreen() {
                     >
                         <View style={styles.photoContainer}>
                             {currentPhoto.photoUrl ? (
-                                <Image source={{ uri: currentPhoto.photoUrl }} style={styles.mainPhoto} />
+                                <Image source={{ uri: currentPhoto.photoUrl }} style={styles.mainPhoto} resizeMode="contain" />
                             ) : (
                                 <View style={styles.mainPhotoPlaceholder}>
                                     <Camera size={64} color={Theme.colors.textSecondary} opacity={0.3} />
@@ -740,6 +740,7 @@ const styles = StyleSheet.create({
     mainPhoto: {
         width: '100%',
         height: 320,
+        backgroundColor: '#FFFFFF',
     },
     mainPhotoPlaceholder: {
         width: '100%',

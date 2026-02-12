@@ -72,7 +72,7 @@ export default function FamilyDetailScreen() {
                 >
                     <View style={styles.imageContainer}>
                         {mainPhoto ? (
-                            <Image source={{ uri: mainPhoto }} style={styles.image} resizeMode="cover" />
+                            <Image source={{ uri: mainPhoto }} style={styles.image} resizeMode="contain" />
                         ) : (
                             <View style={[styles.image, styles.placeholder]}>
                                 <User size={64} color={Theme.colors.textSecondary} strokeWidth={1.5} />
@@ -119,7 +119,7 @@ export default function FamilyDetailScreen() {
                                     <Image
                                         source={{ uri: url }}
                                         style={styles.galleryImage}
-                                        resizeMode="cover"
+                                        resizeMode="contain"
                                     />
                                 </View>
                             ))}
@@ -213,6 +213,7 @@ const styles = StyleSheet.create({
     image: {
         width: '100%',
         height: '100%',
+        backgroundColor: Theme.colors.background,
     },
     placeholder: {
         justifyContent: 'center',
@@ -284,6 +285,7 @@ const styles = StyleSheet.create({
     galleryImage: {
         width: 240,
         height: 180,
+        backgroundColor: '#FFFFFF',
     },
     errorText: {
         fontFamily: Theme.typography.fontFamily,

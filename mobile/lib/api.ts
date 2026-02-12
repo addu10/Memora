@@ -114,6 +114,31 @@ class MemoraApiClient {
         }
     }
 
+    async getTaggedPhotos(name: string, memoryIds: string[]): Promise<ApiResponse<string[]>> {
+        try {
+            if (memoryIds.length === 0) return { data: [], status: 200 };
+
+            // Fetch from MemoryPhoto table where name is in the people array
+            const { data, error } = await supabase
+                .from('MemoryPhoto')
+                .select('photoUrl, people')
+                .in('memoryId', memoryIds);
+
+            if (error) throw error;
+
+            // Filter manually since Postgres array case-insensitivity can be tricky
+            const filtered = data
+                .filter(p => p.people && Array.isArray(p.people) &&
+                    p.people.some((pName: string) => pName.toLowerCase().includes(name.toLowerCase())))
+                .map(p => p.photoUrl);
+
+            return { data: filtered, status: 200 };
+        } catch (e: any) {
+            console.error('Fetch tagged photos error:', e);
+            return { error: e.message, status: 500 };
+        }
+    }
+
     // ============ FAMILY ============
 
     async getFamilyMembers(): Promise<ApiResponse<FamilyMember[]>> {

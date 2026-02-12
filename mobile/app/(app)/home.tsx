@@ -229,6 +229,7 @@ export default function HomeScreen() {
                                 <Image
                                     source={{ uri: recentMemory.photoUrls[0] }}
                                     style={styles.recentImage}
+                                    resizeMode="contain"
                                 />
                             )}
                             <View style={styles.recentContent}>
@@ -507,6 +508,7 @@ const styles = StyleSheet.create({
     recentImage: {
         width: '100%',
         height: 180,
+        backgroundColor: '#FFFFFF',
     },
     recentContent: {
         padding: 20,

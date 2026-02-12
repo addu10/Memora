@@ -74,7 +74,7 @@ export default function MemoryDetailScreen() {
                                         key={index}
                                         source={{ uri: url }}
                                         style={styles.slideImage}
-                                        resizeMode="cover"
+                                        resizeMode="contain"
                                     />
                                 ))
                             ) : (
@@ -222,6 +222,7 @@ const styles = StyleSheet.create({
     slideImage: {
         width: width - 48,
         height: 380,
+        backgroundColor: '#FFFFFF',
     },
     placeholder: {
         justifyContent: 'center',
