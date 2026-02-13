@@ -1,6 +1,7 @@
 // Memories Screen - Dynamic Gallery from Supabase
 import { useState, useEffect, useCallback } from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Image, ActivityIndicator, Dimensions, Platform } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Theme } from '../../../constants/Theme';
 import { api } from '../../../lib/api';
@@ -31,13 +32,21 @@ export default function MemoriesScreen() {
 
     const loadMemories = async () => {
         setLoading(true);
+        console.log('[MEMORIES] Loading photo gallery and session history...');
         const { data: mems } = await api.getMemories();
         const { data: results } = await api.getLatestSessionMemories();
         const { data: eventTypes } = await api.getEventTypes();
 
-        if (mems) setMemories(mems);
-        if (results) setSessionResults(results);
+        if (mems) {
+            console.log(`[MEMORIES] Loaded ${mems.length} memory records.`);
+            setMemories(mems);
+        }
+        if (results) {
+            console.log(`[MEMORIES] Loaded ${results.length} recent session results.`);
+            setSessionResults(results);
+        }
         if (eventTypes) {
+            console.log(`[MEMORIES] Found ${eventTypes.length} unique event tags.`);
             setEvents(['All', ...eventTypes]);
         }
 
@@ -84,7 +93,7 @@ export default function MemoriesScreen() {
             {/* Mesh Background */}
             <Animated.View
                 entering={FadeIn.duration(1200)}
-                style={[styles.meshGradient, { backgroundColor: 'rgba(167, 139, 250, 0.08)', top: -100, left: -100, opacity: undefined }]}
+                style={[styles.meshGradient, { backgroundColor: 'rgba(167, 139, 250, 0.08)', top: -100, left: -100 }]}
             />
 
             <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -146,51 +155,56 @@ export default function MemoriesScreen() {
                         return (
                             <Animated.View
                                 key={memory.id}
-                                entering={FadeInUp.delay(300 + index * 100).duration(600).springify()}
+                                entering={FadeInUp.delay(Math.min(300 + index * 100, 800)).duration(600).springify()}
                                 style={styles.memoryCardContainer}
                             >
                                 <TouchableOpacity
-                                    style={[styles.memoryCard, styles.cardShadow]}
+                                    style={styles.memoryCardWrapper}
                                     accessibilityLabel={`View ${memory.title} photo`}
-                                    onPress={() => router.push(`/memories/${memory.id}`)}
+                                    onPress={() => router.push(`/(app)/memories/${memory.id}`)}
                                     activeOpacity={0.9}
                                 >
-                                    <View style={styles.memoryImageContainer}>
-                                        {mainPhoto ? (
-                                            <Image
-                                                source={{ uri: mainPhoto }}
-                                                style={styles.memoryImage}
-                                                resizeMode="contain"
-                                            />
-                                        ) : (
-                                            <View style={[styles.memoryImage, styles.placeholderImage]}>
-                                                <Camera size={48} color={Theme.colors.textSecondary} opacity={0.3} />
-                                            </View>
-                                        )}
-                                        {status && (
-                                            <View style={[styles.badge, { backgroundColor: status.color }]}>
-                                                {(() => {
-                                                    const StatusIcon = status.icon;
-                                                    return <StatusIcon size={12} color="white" strokeWidth={3} />;
-                                                })()}
-                                                <Text style={styles.badgeText}>{status.label}</Text>
-                                            </View>
-                                        )}
-                                    </View>
-                                    <View style={styles.cardFooter}>
-                                        <Text style={styles.memoryTitle} numberOfLines={1}>{memory.title}</Text>
-                                        <View style={styles.footerRow}>
-                                            <View style={styles.dateGroup}>
-                                                <Calendar size={12} color={Theme.colors.textSecondary} />
-                                                <Text style={styles.memoryDate}>
-                                                    {memory.date ? new Date(memory.date).toLocaleDateString() : 'No date'}
-                                                </Text>
-                                            </View>
+                                    <LinearGradient
+                                        colors={['#FFFFFF', '#F5F3FF']}
+                                        style={styles.memoryCard}
+                                    >
+                                        <View style={styles.memoryImageContainer}>
+                                            {mainPhoto ? (
+                                                <Image
+                                                    source={{ uri: mainPhoto }}
+                                                    style={styles.memoryImage}
+                                                    resizeMode="contain"
+                                                />
+                                            ) : (
+                                                <View style={[styles.memoryImage, styles.placeholderImage]}>
+                                                    <Camera size={48} color={Theme.colors.textSecondary} opacity={0.3} />
+                                                </View>
+                                            )}
+                                            {status && (
+                                                <View style={[styles.badge, { backgroundColor: status.color }]}>
+                                                    {(() => {
+                                                        const StatusIcon = status.icon;
+                                                        return <StatusIcon size={12} color="white" strokeWidth={3} />;
+                                                    })()}
+                                                    <Text style={styles.badgeText}>{status.label}</Text>
+                                                </View>
+                                            )}
                                         </View>
-                                        {status && (
-                                            <Text style={styles.lastReviewText}>Reviewed {status.date}</Text>
-                                        )}
-                                    </View>
+                                        <View style={styles.cardFooter}>
+                                            <Text style={styles.memoryTitle} numberOfLines={1}>{memory.title}</Text>
+                                            <View style={styles.footerRow}>
+                                                <View style={styles.dateGroup}>
+                                                    <Calendar size={12} color={Theme.colors.textSecondary} />
+                                                    <Text style={styles.memoryDate}>
+                                                        {memory.date ? new Date(memory.date).toLocaleDateString() : 'No date'}
+                                                    </Text>
+                                                </View>
+                                            </View>
+                                            {status && (
+                                                <Text style={styles.lastReviewText}>Reviewed {status.date}</Text>
+                                            )}
+                                        </View>
+                                    </LinearGradient>
                                 </TouchableOpacity>
                             </Animated.View>
                         );
@@ -319,13 +333,6 @@ const styles = StyleSheet.create({
         width: (width - 48 - 16) / 2, // Robust 2-column calculation
         marginBottom: 4,
     },
-    memoryCard: {
-        backgroundColor: Theme.colors.surface,
-        borderRadius: 28,
-        overflow: 'hidden',
-        borderWidth: 1,
-        borderColor: Theme.colors.border,
-    },
     cardShadow: {
         ...Platform.select({
             ios: {
@@ -410,6 +417,16 @@ const styles = StyleSheet.create({
         fontSize: 10,
         fontWeight: '900',
         textTransform: 'uppercase',
+    },
+    memoryCardWrapper: {
+        borderRadius: 24,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: Theme.colors.border,
+        ...Theme.shadows.md,
+    },
+    memoryCard: {
+        flex: 1,
     },
     infoCard: {
         backgroundColor: Theme.colors.secondaryUltraLight,

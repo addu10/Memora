@@ -18,48 +18,90 @@ import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../../lib/supabase';
 import { api } from '../../lib/api';
+import { StatusModal } from '../../components/StatusModal';
 import { Theme } from '../../constants/Theme';
-import { ChevronLeft, ArrowRight } from 'lucide-react-native';
+import { ChevronLeft, ArrowRight, CheckCircle2, AlertCircle, Info } from 'lucide-react-native';
 import Animated, { FadeInDown, FadeInUp, FadeIn } from 'react-native-reanimated';
 
 const { width, height } = Dimensions.get('window');
+
 
 export default function LoginScreen() {
     const [name, setName] = useState('');
     const [pin, setPin] = useState('');
     const [loading, setLoading] = useState(false);
+    const [statusModal, setStatusModal] = useState<{
+        visible: boolean;
+        type: 'success' | 'error' | 'info';
+        title: string;
+        message: string;
+    }>({
+        visible: false,
+        type: 'info',
+        title: '',
+        message: '',
+    });
 
     const handleLogin = async () => {
         if (!name || !pin) {
-            Alert.alert('Required', 'Please enter both Your Name and PIN');
+            setStatusModal({
+                visible: true,
+                type: 'info',
+                title: 'Required',
+                message: 'Please enter both Your Name and PIN'
+            });
+            return;
+        }
+
+        if (pin.length < 4) {
+            setStatusModal({
+                visible: true,
+                type: 'info',
+                title: 'Invalid PIN',
+                message: 'PIN must be 4 digits long.'
+            });
             return;
         }
 
         setLoading(true);
+        console.log(`[AUTH] Attempting login for patient: ${name}...`);
 
         try {
-            const { data, error } = await supabase.rpc('login_patient', {
-                p_name: name.trim(),
-                p_pin: pin
-            });
+            const { data, error } = await api.login(name, pin);
 
-            if (error) throw error;
-            if (data.error) throw new Error(data.error);
+            if (error || !data) {
+                console.warn('[AUTH] Login failed:', error);
 
-            api.setPatientId(data.patientId);
+                // If it's specifically a 401, it means incorrect credentials
+                const isAuthError = error === 'Invalid name or PIN' || error === 'Invalid credentials';
 
-            await AsyncStorage.setItem('patient', JSON.stringify({
-                id: data.patientId,
-                name: data.name,
-                pin: pin,
-                photoUrl: data.photoUrl,
-                loggedIn: true,
-                loginTime: new Date().toISOString()
-            }));
+                setStatusModal({
+                    visible: true,
+                    type: 'error',
+                    title: isAuthError ? 'Access Denied' : 'System Error',
+                    message: isAuthError
+                        ? 'The name or PIN you entered is incorrect. Please try again.'
+                        : 'We couldn\'t connect right now. Please try again later.',
+                });
+                setLoading(false);
+                return;
+            }
 
+            console.log('[AUTH] Login successful. Persisting session...');
+            // Save to shared state/storage
+            api.setPatientId(data.id);
+            await AsyncStorage.setItem('patient', JSON.stringify(data));
+
+            console.log('[AUTH] Session persisted. Navigating to home.');
             router.replace('/(app)/home');
-        } catch (error: any) {
-            Alert.alert('Login Failed', error.message || 'Check your name and PIN');
+        } catch (e: any) {
+            console.error('[AUTH] Login error:', e);
+            setStatusModal({
+                visible: true,
+                type: 'error',
+                title: 'System Error',
+                message: e.message || 'Something went wrong while logging in. Please try again later.',
+            });
         } finally {
             setLoading(false);
         }
@@ -70,6 +112,13 @@ export default function LoginScreen() {
             style={styles.container}
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
+            <StatusModal
+                visible={statusModal.visible}
+                type={statusModal.type}
+                title={statusModal.title}
+                message={statusModal.message}
+                onClose={() => setStatusModal(prev => ({ ...prev, visible: false }))}
+            />
             {/* Mesh Background */}
             <Animated.View
                 entering={FadeIn.duration(1200)}
@@ -77,7 +126,7 @@ export default function LoginScreen() {
             />
             <Animated.View
                 entering={FadeIn.delay(300).duration(1200)}
-                style={[styles.meshGradient, { backgroundColor: 'rgba(221, 214, 254, 0.12)', bottom: -100, right: -50, opacity: undefined }]}
+                style={[styles.meshGradient, { backgroundColor: 'rgba(221, 214, 254, 0.12)', bottom: -100, right: -50 }]}
             />
 
             <ScrollView
@@ -176,7 +225,6 @@ const styles = StyleSheet.create({
         width: width * 1.2,
         height: width * 1.2,
         borderRadius: width * 0.6,
-        opacity: 0.8,
     },
     scrollContent: {
         flexGrow: 1,
@@ -308,3 +356,5 @@ const styles = StyleSheet.create({
         gap: 4,
     },
 });
+
+

@@ -1,6 +1,7 @@
 // Profile Screen - Patient Details and Settings
 import { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, Image, TouchableOpacity, ScrollView, Modal, Dimensions, Platform } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api } from '../../lib/api';
@@ -21,17 +22,21 @@ export default function ProfileScreen() {
 
     const loadProfile = async () => {
         try {
+            console.log('[PROFILE] Loading patient profile...');
             await api.init();
             const { data, error } = await api.getPatient();
 
             if (data) {
+                console.log(`[PROFILE] Profile loaded from API for: ${data.name}`);
                 setPatient(data);
                 await AsyncStorage.setItem('patient', JSON.stringify(data));
             } else {
+                console.warn('[PROFILE] API profile load failed, trying cache...');
                 const cached = await AsyncStorage.getItem('patient');
                 if (cached) setPatient(JSON.parse(cached));
             }
         } catch (e) {
+            console.error('[PROFILE] Error during profile load:', e);
             const cached = await AsyncStorage.getItem('patient');
             if (cached) setPatient(JSON.parse(cached));
         }
@@ -42,8 +47,10 @@ export default function ProfileScreen() {
     };
 
     const confirmLogout = async () => {
+        console.log('[PROFILE] 🚪 Process logging out...');
         api.setPatientId('');
         await AsyncStorage.removeItem('patient');
+        console.log('[PROFILE] 🚪 Session cleared. Redirecting to auth.');
         setShowLogoutModal(false);
         router.replace('/');
     };
@@ -55,7 +62,7 @@ export default function ProfileScreen() {
             {/* Mesh Background */}
             <Animated.View
                 entering={FadeIn.duration(1200)}
-                style={[styles.meshGradient, { backgroundColor: 'rgba(167, 139, 250, 0.08)', top: -100, left: -100, opacity: undefined }]}
+                style={[styles.meshGradient, { backgroundColor: 'rgba(167, 139, 250, 0.08)', top: -100, left: -100 }]}
             />
 
             <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -85,35 +92,40 @@ export default function ProfileScreen() {
 
                 <Animated.View
                     entering={FadeInUp.delay(200).duration(800).springify()}
-                    style={[styles.infoCard, styles.cardShadow]}
+                    style={styles.infoCardContainer}
                 >
-                    <View style={styles.infoRow}>
-                        <View style={styles.infoLabelGroup}>
-                            <Info size={18} color={Theme.colors.primary} />
-                            <Text style={styles.label}>Age</Text>
-                        </View>
-                        <Text style={styles.value}>{patient.age || 'N/A'} years old</Text>
-                    </View>
-
-                    {patient.caregiverName && (
+                    <LinearGradient
+                        colors={['#FFFFFF', '#F5F3FF']}
+                        style={styles.infoCard}
+                    >
                         <View style={styles.infoRow}>
                             <View style={styles.infoLabelGroup}>
-                                <User size={18} color={Theme.colors.primary} />
-                                <Text style={styles.label}>Caregiver</Text>
+                                <Info size={18} color={Theme.colors.primary} />
+                                <Text style={styles.label}>Age</Text>
                             </View>
-                            <Text style={styles.value}>{patient.caregiverName}</Text>
+                            <Text style={styles.value}>{patient.age || 'N/A'} years old</Text>
                         </View>
-                    )}
 
-                    <View style={[styles.infoRow, { borderBottomWidth: 0 }]}>
-                        <View style={styles.infoLabelGroup}>
-                            <Calendar size={18} color={Theme.colors.primary} />
-                            <Text style={styles.label}>Member Since</Text>
+                        {patient.caregiverName && (
+                            <View style={styles.infoRow}>
+                                <View style={styles.infoLabelGroup}>
+                                    <User size={18} color={Theme.colors.primary} />
+                                    <Text style={styles.label}>Caregiver</Text>
+                                </View>
+                                <Text style={styles.value}>{patient.caregiverName}</Text>
+                            </View>
+                        )}
+
+                        <View style={[styles.infoRow, { borderBottomWidth: 0 }]}>
+                            <View style={styles.infoLabelGroup}>
+                                <Calendar size={18} color={Theme.colors.primary} />
+                                <Text style={styles.label}>Member Since</Text>
+                            </View>
+                            <Text style={styles.value}>
+                                {patient.createdAt ? new Date(patient.createdAt).getFullYear() : new Date().getFullYear()}
+                            </Text>
                         </View>
-                        <Text style={styles.value}>
-                            {patient.createdAt ? new Date(patient.createdAt).getFullYear() : new Date().getFullYear()}
-                        </Text>
-                    </View>
+                    </LinearGradient>
                 </Animated.View>
 
                 <Animated.View
@@ -257,14 +269,16 @@ const styles = StyleSheet.create({
         paddingVertical: 6,
         borderRadius: 20,
     },
-    infoCard: {
+    infoCardContainer: {
         width: '100%',
-        backgroundColor: Theme.colors.surface,
         borderRadius: 32,
-        padding: 24,
-        marginBottom: 40,
+        overflow: 'hidden',
         borderWidth: 1,
         borderColor: Theme.colors.border,
+        ...Theme.shadows.md,
+    },
+    infoCard: {
+        padding: 24,
     },
     infoRow: {
         flexDirection: 'row',
@@ -309,6 +323,7 @@ const styles = StyleSheet.create({
         borderColor: '#FEE2E2',
         width: '100%',
         justifyContent: 'center',
+        marginTop: 12,
     },
     logoutText: {
         fontFamily: Theme.typography.fontFamily,

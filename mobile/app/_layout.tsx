@@ -5,6 +5,10 @@ import { View, StyleSheet } from 'react-native';
 import { useFonts, Outfit_800ExtraBold } from '@expo-google-fonts/outfit';
 import * as SplashScreen from 'expo-splash-screen';
 
+import { ErrorBoundary } from '../components/ErrorBoundary';
+
+import { NetworkStatus } from '../components/NetworkStatus';
+
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
 
@@ -24,43 +28,46 @@ export default function RootLayout() {
     }
 
     return (
-        <View style={styles.container}>
-            <StatusBar style="auto" />
-            <Stack
-                screenOptions={{
-                    headerStyle: {
-                        backgroundColor: '#8B5CF6',
-                    },
-                    headerTintColor: '#fff',
-                    headerTitleStyle: {
-                        fontFamily: 'Outfit_800ExtraBold',
-                    },
-                    contentStyle: {
-                        backgroundColor: '#FDFBFF',
-                    },
-                }}
-            >
-                <Stack.Screen
-                    name="index"
-                    options={{
-                        headerShown: false
+        <ErrorBoundary>
+            <View style={styles.container}>
+                <NetworkStatus />
+                <StatusBar style="auto" />
+                <Stack
+                    screenOptions={{
+                        headerStyle: {
+                            backgroundColor: '#8B5CF6',
+                        },
+                        headerTintColor: '#fff',
+                        headerTitleStyle: {
+                            fontFamily: 'Outfit_800ExtraBold',
+                        },
+                        contentStyle: {
+                            backgroundColor: '#FDFBFF',
+                        },
                     }}
-                />
-                <Stack.Screen
-                    name="(auth)/login"
-                    options={{
-                        title: 'Login',
-                        headerShown: false
-                    }}
-                />
-                <Stack.Screen
-                    name="(app)"
-                    options={{
-                        headerShown: false
-                    }}
-                />
-            </Stack>
-        </View>
+                >
+                    <Stack.Screen
+                        name="index"
+                        options={{
+                            headerShown: false
+                        }}
+                    />
+                    <Stack.Screen
+                        name="(auth)/login"
+                        options={{
+                            title: 'Login',
+                            headerShown: false
+                        }}
+                    />
+                    <Stack.Screen
+                        name="(app)"
+                        options={{
+                            headerShown: false
+                        }}
+                    />
+                </Stack>
+            </View>
+        </ErrorBoundary>
     );
 }
 

@@ -14,15 +14,15 @@ export default function WelcomeScreen() {
             {/* Luxurious Mesh Gradient Background Elements */}
             <Animated.View
                 entering={FadeIn.duration(1200)}
-                style={[styles.meshGradient, { backgroundColor: 'rgba(167, 139, 250, 0.12)', top: -100, left: -100, opacity: undefined }]}
+                style={[styles.meshGradient, { backgroundColor: 'rgba(167, 139, 250, 0.12)', top: -100, left: -100 }]}
             />
             <Animated.View
                 entering={FadeIn.delay(200).duration(1200)}
-                style={[styles.meshGradient, { backgroundColor: 'rgba(196, 181, 253, 0.12)', top: -50, right: -100, opacity: undefined }]}
+                style={[styles.meshGradient, { backgroundColor: 'rgba(196, 181, 253, 0.12)', top: -50, right: -100 }]}
             />
             <Animated.View
                 entering={FadeIn.delay(400).duration(1200)}
-                style={[styles.meshGradient, { backgroundColor: 'rgba(221, 214, 254, 0.12)', bottom: -100, right: -50, opacity: undefined }]}
+                style={[styles.meshGradient, { backgroundColor: 'rgba(221, 214, 254, 0.12)', bottom: -100, right: -50 }]}
             />
 
             {/* Hero Section */}
@@ -127,7 +127,6 @@ const styles = StyleSheet.create({
         width: width * 1.2,
         height: width * 1.2,
         borderRadius: width * 0.6,
-        opacity: 0.8,
     },
     hero: {
         alignItems: 'center',

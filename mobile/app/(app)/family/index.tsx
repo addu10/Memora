@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Image, ActivityIndicator, Dimensions, Platform } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Theme } from '../../../constants/Theme';
 import { api } from '../../../lib/api';
 import type { FamilyMember } from '../../../lib/types';
@@ -17,11 +18,13 @@ export default function FamilyScreen() {
 
     const loadFamily = async () => {
         setLoading(true);
+        console.log('[FAMILY] Loading family directory...');
         const { data, error } = await api.getFamilyMembers();
         if (data) {
+            console.log(`[FAMILY] Successfully loaded ${data.length} family members.`);
             setFamilyMembers(data);
         } else {
-            console.error("Error loading family:", error);
+            console.error("[FAMILY] Error loading family directory:", error);
         }
         setLoading(false);
     };
@@ -43,7 +46,11 @@ export default function FamilyScreen() {
 
     return (
         <View style={styles.container}>
-            {/* Mesh Background */}
+            {/* Premium Mesh Background */}
+            <LinearGradient
+                colors={['#FFFFFF', '#F5F3FF']}
+                style={StyleSheet.absoluteFill}
+            />
             <Animated.View
                 entering={FadeIn.duration(1200)}
                 style={[styles.meshGradient, { backgroundColor: 'rgba(167, 139, 250, 0.08)', top: -100, left: -100 }]}
@@ -62,35 +69,42 @@ export default function FamilyScreen() {
                     {familyMembers.map((member, index) => (
                         <Animated.View
                             key={member.id}
-                            entering={FadeInUp.delay(200 + index * 100).duration(600).springify()}
+                            entering={FadeInUp.delay(Math.min(200 + index * 100, 800)).duration(600).springify()}
                         >
                             <TouchableOpacity
-                                style={[styles.card, styles.cardShadow]}
                                 onPress={() => router.push(`/family/${member.id}`)}
                                 activeOpacity={0.8}
+                                style={styles.cardContainer}
                             >
-                                <View style={styles.imageContainer}>
-                                    {member.photoUrls && member.photoUrls.length > 0 ? (
-                                        <Image
-                                            source={{ uri: member.photoUrls[0] }}
-                                            style={styles.image}
-                                            resizeMode="contain"
-                                        />
-                                    ) : (
-                                        <View style={[styles.image, styles.imagePlaceholder]}>
-                                            <User size={32} color={Theme.colors.textSecondary} strokeWidth={1.5} />
-                                        </View>
-                                    )}
-                                </View>
-                                <View style={styles.cardInfo}>
-                                    <Text style={styles.name}>{member.name}</Text>
-                                    <View style={styles.relationTag}>
-                                        <Text style={styles.relationText}>{member.relationship}</Text>
+                                <LinearGradient
+                                    colors={['#FFFFFF', '#F5F3FF']}
+                                    style={[styles.card, styles.cardShadow]}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 1 }}
+                                >
+                                    <View style={styles.imageContainer}>
+                                        {member.photoUrls && member.photoUrls.length > 0 ? (
+                                            <Image
+                                                source={{ uri: member.photoUrls[0] }}
+                                                style={styles.image}
+                                                resizeMode="cover"
+                                            />
+                                        ) : (
+                                            <View style={[styles.image, styles.imagePlaceholder]}>
+                                                <User size={32} color={Theme.colors.textSecondary} strokeWidth={1.5} />
+                                            </View>
+                                        )}
                                     </View>
-                                </View>
-                                <View style={styles.arrowContainer}>
-                                    <ChevronRight size={20} color={Theme.colors.primary} strokeWidth={3} />
-                                </View>
+                                    <View style={styles.cardInfo}>
+                                        <Text style={styles.name}>{member.name}</Text>
+                                        <View style={styles.relationTag}>
+                                            <Text style={styles.relationText}>{member.relationship}</Text>
+                                        </View>
+                                    </View>
+                                    <View style={styles.arrowContainer}>
+                                        <ChevronRight size={20} color={Theme.colors.primary} strokeWidth={3} />
+                                    </View>
+                                </LinearGradient>
                             </TouchableOpacity>
                         </Animated.View>
                     ))}
@@ -168,14 +182,17 @@ const styles = StyleSheet.create({
     list: {
         gap: 16,
     },
-    card: {
-        backgroundColor: Theme.colors.surface,
+    cardContainer: {
         borderRadius: 28,
+        overflow: 'hidden',
+    },
+    card: {
         padding: 16,
         flexDirection: 'row',
         alignItems: 'center',
         borderWidth: 1,
         borderColor: Theme.colors.border,
+        borderRadius: 28,
     },
     cardShadow: {
         ...Platform.select({
@@ -201,7 +218,6 @@ const styles = StyleSheet.create({
     image: {
         width: '100%',
         height: '100%',
-        backgroundColor: Theme.colors.background,
     },
     imagePlaceholder: {
         backgroundColor: Theme.colors.background,

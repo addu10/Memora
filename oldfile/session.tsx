@@ -4,12 +4,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Theme } from '../../constants/Theme';
 import { supabase } from '../../lib/supabase';
-import { api } from '../../lib/api';
 import { generateTherapyQuestions, GeneratedQuestion } from '../../lib/gemini';
 import {
     Brain,
     ArrowRight,
     ChevronLeft,
+    Camera,
+    Users,
+    MapPin,
     Sparkles,
     Lightbulb,
     Smile,
@@ -17,14 +19,11 @@ import {
     Frown,
     HelpCircle,
     CheckCircle2,
-    AlertCircle,
-    ArrowLeft,
-    Star,
-    MessageSquare,
-    Send
+    Calendar,
+    Target,
+    Heart
 } from 'lucide-react-native';
 import Animated, { FadeInDown, FadeInUp, FadeIn, FadeInLeft } from 'react-native-reanimated';
-import { StatusModal } from '../../components/StatusModal';
 
 const { width } = Dimensions.get('window');
 
@@ -44,19 +43,7 @@ export default function SessionScreen() {
 
     // Results State
     const [photoResults, setPhotoResults] = useState<any[]>([]);
-    const [sessionMood, setSessionMood] = useState<string>('happy');
-    const [startTime, setStartTime] = useState<number | null>(null);
-    const [statusModal, setStatusModal] = useState<{
-        visible: boolean;
-        type: 'success' | 'error' | 'info';
-        title: string;
-        message: string;
-    }>({
-        visible: false,
-        type: 'info',
-        title: '',
-        message: '',
-    });
+    const [sessionMood, setSessionMood] = useState('happy');
 
     // Dynamic Loading Phrases
     const loadingPhrases = [
@@ -111,13 +98,12 @@ export default function SessionScreen() {
                 .order('date', { ascending: false });
 
             if (error) {
-                console.error('[SESSION] Error fetching available memories:', error);
+                console.error('Error fetching memories:', error);
             } else {
-                console.log(`[SESSION] Loaded ${memoriesData?.length || 0} воспоминаний for patient.`);
                 setMemories(memoriesData || []);
             }
         } catch (err) {
-            console.error('[SESSION] Global failure during memory load:', err);
+            console.error('Failed to load memories:', err);
         } finally {
             setLoading(false);
         }
@@ -126,12 +112,7 @@ export default function SessionScreen() {
 
     const handleSelectMemory = async (memory: any) => {
         if (!memory.MemoryPhoto || memory.MemoryPhoto.length === 0) {
-            setStatusModal({
-                visible: true,
-                type: 'error',
-                title: 'No Photos',
-                message: 'This memory has no photos for therapy.'
-            });
+            Alert.alert("No Photos", "This memory has no photos for therapy.");
             return;
         }
         setSelectedMemory(memory);
@@ -140,15 +121,9 @@ export default function SessionScreen() {
 
     const startTherapyForPhoto = async (memory: any, photoIdx: number) => {
         setLoading(true);
-        console.log(`[SESSION] 🚀 Starting therapy flow for memory "${memory.title}", photo ${photoIdx + 1}/${memory.MemoryPhoto.length}`);
         setStep('THERAPY');
         setCurrentPhotoIndex(photoIdx);
         setCurrentQuestionIndex(0);
-
-        // Record start time if this is the first photo
-        if (photoIdx === 0) {
-            setStartTime(Date.now());
-        }
 
         const photo = memory.MemoryPhoto[photoIdx];
 
@@ -170,13 +145,10 @@ export default function SessionScreen() {
             memoryImportance: memory.importance || 3
         };
 
-        console.log(`[SESSION] Sending context to Gemini AI...`);
         const result = await generateTherapyQuestions(photoData);
         if (result) {
-            console.log(`[SESSION] ✅ AI Questions generated. Count: ${result.questions.length}`);
             setQuestions(result);
         } else {
-            console.warn(`[SESSION] ⚠️ AI Generation failed. Using fallback questions.`);
             setQuestions({
                 questions: ["What can you tell me about this photo?", "Who is in this picture with you?"],
                 hints: ["Look at the background", "They seem to be smiling"],
@@ -203,11 +175,9 @@ export default function SessionScreen() {
         const newResults = [...photoResults, result];
         setPhotoResults(newResults);
 
-        console.log(`[SESSION] Photo recall score recorded: ${score}/5 for photo index ${currentPhotoIndex}`);
         if (currentPhotoIndex < selectedMemory.MemoryPhoto.length - 1) {
             startTherapyForPhoto(selectedMemory, currentPhotoIndex + 1);
         } else {
-            console.log(`[SESSION] All photos in memory reviewed. Moving to mood feedback.`);
             setStep('SUMMARY');
         }
     };
@@ -218,18 +188,13 @@ export default function SessionScreen() {
             const patientData = await AsyncStorage.getItem('patient');
             const patient = patientData ? JSON.parse(patientData) : null;
 
-            // Calculate actual duration in minutes (minimum 1 minute if spent any time)
-            const durationMs = startTime ? Date.now() - startTime : 0;
-            const durationMins = Math.max(1, Math.floor(durationMs / 60000));
-
-            console.log(`[SESSION] 💾 Saving session to DB... Duration: ${durationMins}m, Mood: ${sessionMood}`);
             const { data: sessionData, error: sessionErr } = await supabase
                 .from('TherapySession')
                 .insert({
                     patientId: selectedMemory.patientId || patient?.id,
                     caregiverId: null,
                     date: new Date().toISOString(),
-                    duration: durationMins,
+                    duration: 5,
                     mood: sessionMood,
                     notes: `Completed therapy for memory: ${selectedMemory.title}`
                 })
@@ -237,7 +202,6 @@ export default function SessionScreen() {
                 .single();
 
             if (sessionErr) throw sessionErr;
-            console.log(`[SESSION] Session record created ID: ${sessionData.id}`);
 
             const avgScore = photoResults.reduce((acc, r) => acc + r.score, 0) / photoResults.length;
 
@@ -252,21 +216,11 @@ export default function SessionScreen() {
 
             if (memErr) throw memErr;
 
-            setStatusModal({
-                visible: true,
-                type: 'success',
-                title: 'Success',
-                message: 'Your therapy session has been saved!'
-            });
+            Alert.alert("Success", "Your therapy session has been saved!");
             resetSession();
         } catch (err) {
             console.error('Save failed:', err);
-            setStatusModal({
-                visible: true,
-                type: 'error',
-                title: 'Error',
-                message: 'Failed to save session results.'
-            });
+            Alert.alert("Error", "Failed to save session results.");
         } finally {
             setLoading(false);
         }
@@ -278,58 +232,51 @@ export default function SessionScreen() {
         setPhotoResults([]);
         setCurrentPhotoIndex(0);
         setQuestions(null);
-        setStartTime(null);
     };
 
     // UI Renders
     if (step === 'START') {
         return (
             <View style={styles.container}>
-                <StatusModal
-                    visible={statusModal.visible}
-                    type={statusModal.type}
-                    title={statusModal.title}
-                    message={statusModal.message}
-                    onClose={() => setStatusModal(prev => ({ ...prev, visible: false }))}
-                />
                 <Animated.View
                     entering={FadeIn.duration(1200)}
                     style={[styles.meshGradient, { backgroundColor: 'rgba(167, 139, 250, 0.08)', top: -100, left: -100 }]}
                 />
                 <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-                    <View style={styles.header}>
+                    <Animated.View
+                        entering={FadeInDown.duration(800).springify()}
+                        style={styles.header}
+                    >
                         <Text style={styles.title}>Session Therapy</Text>
                         <Text style={styles.subtitle}>Digital Reminiscence Aid</Text>
-                    </View>
+                    </Animated.View>
 
-                    <View style={styles.startCard}>
-                        <LinearGradient
-                            colors={['#FFFFFF', '#F5F3FF']}
-                            style={styles.startCardContent}
+                    <Animated.View
+                        entering={FadeInUp.delay(200).duration(800).springify()}
+                        style={[styles.startCard, styles.cardShadow]}
+                    >
+                        <View style={styles.iconCircle}>
+                            <Brain size={40} color={Theme.colors.primary} strokeWidth={2.5} />
+                        </View>
+                        <Text style={styles.startTitle}>Ready for a session?</Text>
+                        <Text style={styles.startSubtitle}>Pick a memory and let AI guide the conversation to strengthen your neural pathways.</Text>
+
+                        <TouchableOpacity
+                            style={styles.startButtonContainer}
+                            onPress={() => setStep('SELECT_MEMORY')}
+                            activeOpacity={0.9}
                         >
-                            <View style={styles.iconCircle}>
-                                <Brain size={40} color={Theme.colors.primary} strokeWidth={2.5} />
-                            </View>
-                            <Text style={styles.startTitle}>Ready for a session?</Text>
-                            <Text style={styles.startSubtitle}>Pick a memory and let AI guide the conversation to strengthen your neural pathways.</Text>
-
-                            <TouchableOpacity
-                                style={[styles.startButtonContainer, styles.buttonShadow]}
-                                onPress={() => setStep('SELECT_MEMORY')}
-                                activeOpacity={0.9}
+                            <LinearGradient
+                                colors={Theme.colors.brandGradient as any}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 0 }}
+                                style={styles.startButtonGradient}
                             >
-                                <LinearGradient
-                                    colors={Theme.colors.brandGradient as any}
-                                    start={{ x: 0, y: 0 }}
-                                    end={{ x: 1, y: 0 }}
-                                    style={styles.startButtonGradient}
-                                >
-                                    <Text style={styles.startButtonText}>Select Memory</Text>
-                                    <ArrowRight size={20} color="#FFFFFF" strokeWidth={3} />
-                                </LinearGradient>
-                            </TouchableOpacity>
-                        </LinearGradient>
-                    </View>
+                                <Text style={styles.startButtonText}>Select Memory</Text>
+                                <ArrowRight size={20} color="#FFFFFF" strokeWidth={3} />
+                            </LinearGradient>
+                        </TouchableOpacity>
+                    </Animated.View>
                 </ScrollView>
             </View>
         );
@@ -338,24 +285,18 @@ export default function SessionScreen() {
     if (step === 'SELECT_MEMORY') {
         return (
             <View style={styles.container}>
-                <StatusModal
-                    visible={statusModal.visible}
-                    type={statusModal.type}
-                    title={statusModal.title}
-                    message={statusModal.message}
-                    onClose={() => setStatusModal(prev => ({ ...prev, visible: false }))}
-                />
-                <View
+                <Animated.View
+                    entering={FadeIn.duration(1200)}
                     style={[styles.meshGradient, { backgroundColor: 'rgba(167, 139, 250, 0.08)', top: -100, left: -100 }]}
                 />
                 <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-                    <View>
+                    <Animated.View entering={FadeInDown.duration(800).springify()}>
                         <TouchableOpacity style={styles.backLink} onPress={() => setStep('START')} activeOpacity={0.7}>
                             <ChevronLeft size={20} color={Theme.colors.primary} strokeWidth={2.5} />
                             <Text style={styles.backLinkText}>Back</Text>
                         </TouchableOpacity>
                         <Text style={styles.sectionTitle}>Choose a Memory</Text>
-                    </View>
+                    </Animated.View>
 
                     {loading ? (
                         <View style={styles.loadingCenter}>
@@ -364,8 +305,9 @@ export default function SessionScreen() {
                     ) : (
                         <View style={styles.memoryGrid}>
                             {memories.map((m, index) => (
-                                <View
+                                <Animated.View
                                     key={m.id}
+                                    entering={FadeInUp.delay(200 + index * 100).duration(600).springify()}
                                     style={styles.memoryCardSmallContainer}
                                 >
                                     <TouchableOpacity style={[styles.memoryCardSmall, styles.cardShadow]} onPress={() => handleSelectMemory(m)} activeOpacity={0.9}>
@@ -373,12 +315,12 @@ export default function SessionScreen() {
                                         <View style={styles.memoryInfo}>
                                             <Text style={styles.memoryCardTitle} numberOfLines={1}>{m.title}</Text>
                                             <View style={styles.memoryCardMeta}>
-                                                {/* <Camera size={12} color={Theme.colors.textSecondary} /> */}
+                                                <Camera size={12} color={Theme.colors.textSecondary} />
                                                 <Text style={styles.memoryCardSub}>{m.MemoryPhoto?.length || 0} Photos</Text>
                                             </View>
                                         </View>
                                     </TouchableOpacity>
-                                </View>
+                                </Animated.View>
                             ))}
                         </View>
                     )}
@@ -391,15 +333,9 @@ export default function SessionScreen() {
         const currentPhoto = selectedMemory.MemoryPhoto[currentPhotoIndex];
         return (
             <View style={styles.container}>
-                <StatusModal
-                    visible={statusModal.visible}
-                    type={statusModal.type}
-                    title={statusModal.title}
-                    message={statusModal.message}
-                    onClose={() => setStatusModal(prev => ({ ...prev, visible: false }))}
-                />
                 <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-                    <View
+                    <Animated.View
+                        entering={FadeInDown.duration(600)}
                         style={styles.progressContainer}
                     >
                         <View style={styles.progressBar}>
@@ -408,9 +344,10 @@ export default function SessionScreen() {
                             />
                         </View>
                         <Text style={styles.progressText}>Photo {currentPhotoIndex + 1} of {selectedMemory.MemoryPhoto.length}</Text>
-                    </View>
+                    </Animated.View>
 
-                    <View
+                    <Animated.View
+                        entering={FadeInUp.delay(200).duration(800).springify()}
                         style={[styles.mainPhotoCard, styles.cardShadow]}
                     >
                         <View style={styles.photoContainer}>
@@ -418,66 +355,58 @@ export default function SessionScreen() {
                                 <Image source={{ uri: currentPhoto.photoUrl }} style={styles.mainPhoto} resizeMode="contain" />
                             ) : (
                                 <View style={styles.mainPhotoPlaceholder}>
-                                    {/* <Camera size={64} color={Theme.colors.textSecondary} opacity={0.3} /> */}
+                                    <Camera size={64} color={Theme.colors.textSecondary} opacity={0.3} />
                                 </View>
                             )}
                         </View>
                         <View style={styles.photoLabelsRow}>
                             {currentPhoto.people && currentPhoto.people.length > 0 && (
                                 <View style={styles.tag}>
-                                    {/* <Users size={12} color={Theme.colors.primary} /> */}
+                                    <Users size={12} color={Theme.colors.primary} />
                                     <Text style={styles.tagText}>{currentPhoto.people.join(', ')}</Text>
                                 </View>
                             )}
                             {currentPhoto.setting && (
                                 <View style={styles.tag}>
-                                    {/* <MapPin size={12} color={Theme.colors.primary} /> */}
+                                    <MapPin size={12} color={Theme.colors.primary} />
                                     <Text style={styles.tagText}>{currentPhoto.setting}</Text>
                                 </View>
                             )}
                         </View>
-                    </View>
+                    </Animated.View>
 
                     {loading ? (
                         <Animated.View
                             entering={FadeIn.duration(400)}
-                            style={styles.loadingContainer}
+                            style={styles.loadingBubble}
                         >
-                            <LinearGradient
-                                colors={['#FFFFFF', '#F5F3FF']}
-                                style={styles.loadingBubble}
-                            >
-                                <ActivityIndicator color={Theme.colors.primary} />
-                                <Text style={styles.loadingText}>{loadingPhrases[loadingPhraseIndex]}</Text>
-                            </LinearGradient>
+                            <ActivityIndicator color="white" />
+                            <Text style={styles.loadingText}>{loadingPhrases[loadingPhraseIndex]}</Text>
                         </Animated.View>
                     ) : (
-                        <View
-                            style={styles.promptContainer}
+                        <Animated.View
+                            entering={FadeInUp.delay(400).duration(600).springify()}
+                            style={styles.promptBubble}
                         >
-                            <LinearGradient
-                                colors={['#FFFFFF', '#F5F3FF']} // White to Light Lavender (Violet-50)
-                                style={styles.promptBubble}
-                            >
-                                <View style={styles.promptHeader}>
-                                    <Sparkles size={16} color={Theme.colors.primary} fill={Theme.colors.primary} />
-                                    <Text style={styles.promptLabel}>AI QUESTION</Text>
-                                </View>
-                                <Text style={styles.promptText}>{questions?.questions[currentQuestionIndex]}</Text>
-                                {questions?.hints[currentQuestionIndex] && (
-                                    <View style={styles.hintBox}>
-                                        <View style={styles.hintHeader}>
-                                            <Lightbulb size={14} color={Theme.colors.primary} />
-                                            <Text style={styles.hintTitle}>HINT</Text>
-                                        </View>
-                                        <Text style={styles.hintText}>{questions?.hints[currentQuestionIndex]}</Text>
+                            <View style={styles.promptHeader}>
+                                <Sparkles size={16} color="#93C5FD" fill="#93C5FD" />
+                                <Text style={styles.promptLabel}>AI QUESTION</Text>
+                            </View>
+                            <Text style={styles.promptText}>{questions?.questions[currentQuestionIndex]}</Text>
+                            {questions?.hints[currentQuestionIndex] && (
+                                <View style={styles.hintBox}>
+                                    <View style={styles.hintHeader}>
+                                        <Lightbulb size={14} color="#93C5FD" />
+                                        <Text style={styles.hintTitle}>HINT</Text>
                                     </View>
-                                )}
-                            </LinearGradient>
-                        </View>
+                                    <Text style={styles.hintText}>{questions.hints[currentQuestionIndex]}</Text>
+                                </View>
+                            )}
+                        </Animated.View>
                     )}
                 </ScrollView>
-                <View
+                <Animated.View
+                    entering={FadeInUp.delay(600).duration(800)}
                     style={styles.stickyActions}
                 >
                     <TouchableOpacity
@@ -497,48 +426,39 @@ export default function SessionScreen() {
                             <ArrowRight size={20} color="#FFFFFF" strokeWidth={3} />
                         </LinearGradient>
                     </TouchableOpacity>
-                </View>
+                </Animated.View>
             </View>
         );
     }
 
     if (step === 'FEEDBACK') {
         return (
-            <View style={styles.container}>
-                <StatusModal
-                    visible={statusModal.visible}
-                    type={statusModal.type}
-                    title={statusModal.title}
-                    message={statusModal.message}
-                    onClose={() => setStatusModal(prev => ({ ...prev, visible: false }))}
-                />
-                <View
+            <View style={[styles.container, styles.center]}>
+                <Animated.View
+                    entering={FadeIn.duration(1200)}
                     style={[styles.meshGradient, { backgroundColor: 'rgba(16, 185, 129, 0.08)', bottom: -100, right: -100 }]}
                 />
-                <ScrollView contentContainerStyle={[styles.center, { flexGrow: 1 }]} showsVerticalScrollIndicator={false} style={{ width: '100%' }}>
-                    <LinearGradient
-                        colors={['#FFFFFF', '#F5F3FF']}
-                        style={[styles.feedbackCard, styles.cardShadow]}
-                    >
-                        <View style={styles.feedbackIconBg}>
-                            {/* <Target size={48} color={Theme.colors.primary} strokeWidth={2.5} /> */}
-                            <Star size={48} color={Theme.colors.primary} strokeWidth={2.5} />
-                        </View>
-                        <Text style={styles.feedbackTitle}>Photo Recall</Text>
-                        <Text style={styles.feedbackSubtitle}>How well did they remember this specific photo?</Text>
-                        <View style={styles.scoreRow}>
-                            {[1, 2, 3, 4, 5].map(s => (
-                                <TouchableOpacity key={s} style={styles.scoreCircle} onPress={() => handlePhotoScore(s)} activeOpacity={0.7}>
-                                    <Text style={styles.scoreVal}>{s}</Text>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
-                        <View style={styles.scoreLabels}>
-                            <Text style={styles.scoreLabelText}>Struggled</Text>
-                            <Text style={styles.scoreLabelText}>Perfect Recall</Text>
-                        </View>
-                    </LinearGradient>
-                </ScrollView>
+                <Animated.View
+                    entering={FadeInUp.duration(600).springify()}
+                    style={[styles.feedbackCard, styles.cardShadow]}
+                >
+                    <View style={styles.feedbackIconBg}>
+                        <Target size={48} color={Theme.colors.primary} strokeWidth={2.5} />
+                    </View>
+                    <Text style={styles.feedbackTitle}>Photo Recall</Text>
+                    <Text style={styles.feedbackSubtitle}>How well did they remember this specific photo?</Text>
+                    <View style={styles.scoreRow}>
+                        {[1, 2, 3, 4, 5].map(s => (
+                            <TouchableOpacity key={s} style={styles.scoreCircle} onPress={() => handlePhotoScore(s)} activeOpacity={0.7}>
+                                <Text style={styles.scoreVal}>{s}</Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                    <View style={styles.scoreLabels}>
+                        <Text style={styles.scoreLabelText}>Struggled</Text>
+                        <Text style={styles.scoreLabelText}>Perfect Recall</Text>
+                    </View>
+                </Animated.View>
             </View>
         );
     }
@@ -546,20 +466,14 @@ export default function SessionScreen() {
     if (step === 'SUMMARY') {
         return (
             <View style={styles.container}>
-                <StatusModal
-                    visible={statusModal.visible}
-                    type={statusModal.type}
-                    title={statusModal.title}
-                    message={statusModal.message}
-                    onClose={() => setStatusModal(prev => ({ ...prev, visible: false }))}
-                />
-                <View
+                <Animated.View
+                    entering={FadeIn.duration(1200)}
                     style={[styles.meshGradient, { backgroundColor: 'rgba(16, 185, 129, 0.08)', top: -100, left: -100 }]}
                 />
-                <ScrollView contentContainerStyle={[styles.center, { flexGrow: 1 }]} showsVerticalScrollIndicator={false}>
-                    <LinearGradient
-                        colors={['#FFFFFF', '#F5F3FF']}
-                        style={[styles.feedbackCard, styles.cardShadow, { width: '90%' }]}
+                <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+                    <Animated.View
+                        entering={FadeInUp.duration(600).springify()}
+                        style={[styles.feedbackCard, { width: '100%' }, styles.cardShadow]}
                     >
                         <View style={[styles.feedbackIconBg, { backgroundColor: '#F0FDF4' }]}>
                             <CheckCircle2 size={48} color="#10B981" strokeWidth={2.5} />
@@ -597,8 +511,7 @@ export default function SessionScreen() {
                                 {loading ? <ActivityIndicator color="white" /> : (
                                     <>
                                         <Text style={styles.submitButtonText}>Save Results</Text>
-                                        {/* <Heart size={20} color="#FFFFFF" fill="#FFFFFF" /> */}
-                                        <Send size={20} color="#FFFFFF" fill="#FFFFFF" />
+                                        <Heart size={20} color="#FFFFFF" fill="#FFFFFF" />
                                     </>
                                 )}
                             </LinearGradient>
@@ -607,16 +520,12 @@ export default function SessionScreen() {
                         <TouchableOpacity style={styles.cancelLink} onPress={resetSession} activeOpacity={0.7}>
                             <Text style={styles.cancelLinkText}>Discard Session</Text>
                         </TouchableOpacity>
-                    </LinearGradient>
+                    </Animated.View>
                 </ScrollView>
             </View>
         );
     }
-
-    return null;
 }
-
-
 
 const styles = StyleSheet.create({
     container: {
@@ -683,15 +592,13 @@ const styles = StyleSheet.create({
         letterSpacing: -0.5,
     },
     startCard: {
-        backgroundColor: '#FFFFFF', // Fallback background
+        backgroundColor: Theme.colors.surface,
         borderRadius: 36,
-        overflow: 'hidden',
-        marginTop: 10,
-        ...Theme.shadows.md,
-    },
-    startCardContent: {
-        padding: 40,
+        padding: 32,
         alignItems: 'center',
+        borderWidth: 1,
+        borderColor: Theme.colors.border,
+        marginTop: 10,
     },
     cardShadow: {
         ...Platform.select({
@@ -862,47 +769,27 @@ const styles = StyleSheet.create({
         color: Theme.colors.primary,
         fontWeight: '700',
     },
-    loadingContainer: {
-        borderRadius: 24,
-        overflow: 'hidden',
-        borderWidth: 1,
-        borderColor: 'rgba(139, 92, 246, 0.1)',
-        ...Theme.shadows.md,
-    },
     loadingBubble: {
-        padding: 32,
+        backgroundColor: Theme.colors.primary,
+        borderRadius: 24,
+        padding: 24,
         alignItems: 'center',
         flexDirection: 'row',
         gap: 16,
-        backgroundColor: '#FFFFFF', // Fallback
+        borderBottomLeftRadius: 4,
     },
     loadingText: {
         fontFamily: Theme.typography.fontFamily,
-        color: Theme.colors.text,
+        color: 'white',
         fontWeight: '700',
         fontSize: 16,
     },
-    promptContainer: {
-        marginBottom: 24,
-        borderRadius: 32,
-        backgroundColor: '#FFFFFF',
-        ...Platform.select({
-            ios: {
-                shadowColor: Theme.colors.secondary,
-                shadowOffset: { width: 0, height: 10 },
-                shadowOpacity: 0.1,
-                shadowRadius: 20,
-            },
-            android: {
-                elevation: 4,
-            }
-        })
-    },
     promptBubble: {
+        backgroundColor: Theme.colors.primary,
         borderRadius: 32,
-        overflow: 'hidden',
-        padding: 40,
-        backgroundColor: '#FFFFFF', // Fallback
+        padding: 32,
+        borderBottomLeftRadius: 8,
+        marginBottom: 20,
     },
     promptHeader: {
         flexDirection: 'row',
@@ -913,14 +800,14 @@ const styles = StyleSheet.create({
     promptLabel: {
         fontFamily: Theme.typography.fontFamily,
         fontSize: 11,
-        color: Theme.colors.primary,
+        color: '#93C5FD',
         fontWeight: '900',
         letterSpacing: 1,
     },
     promptText: {
         fontFamily: Theme.typography.fontFamily,
         fontSize: 24,
-        color: Theme.colors.text,
+        color: 'white',
         fontWeight: '700',
         lineHeight: 34,
     },
@@ -928,7 +815,7 @@ const styles = StyleSheet.create({
         marginTop: 20,
         paddingTop: 20,
         borderTopWidth: 1,
-        borderTopColor: 'rgba(139, 92, 246, 0.15)',
+        borderTopColor: 'rgba(255,255,255,0.15)',
     },
     hintHeader: {
         flexDirection: 'row',
@@ -939,13 +826,13 @@ const styles = StyleSheet.create({
     hintTitle: {
         fontFamily: Theme.typography.fontFamily,
         fontSize: 11,
-        color: Theme.colors.primary,
+        color: '#93C5FD',
         fontWeight: '900',
         letterSpacing: 1,
     },
     hintText: {
         fontFamily: Theme.typography.fontFamily,
-        color: Theme.colors.textSecondary,
+        color: '#BFDBFE',
         fontSize: 17,
         fontStyle: 'italic',
         fontWeight: '600',
@@ -989,15 +876,13 @@ const styles = StyleSheet.create({
         fontWeight: '800',
     },
     feedbackCard: {
-        width: '90%',
+        backgroundColor: Theme.colors.surface,
         borderRadius: 40,
         padding: 40,
+        width: '90%',
         alignItems: 'center',
-        backgroundColor: '#FFFFFF', // Fallback background
         borderWidth: 1,
         borderColor: Theme.colors.border,
-        overflow: 'hidden', // Required for LinearGradient inside borderRadius
-        ...Theme.shadows.lg,
     },
     feedbackIconBg: {
         width: 100,

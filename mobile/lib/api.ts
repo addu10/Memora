@@ -11,17 +11,22 @@ class MemoraApiClient {
     // Initialize with patient ID from storage
     async init(): Promise<void> {
         try {
+            console.log('[API] Initializing client...');
             const patient = await AsyncStorage.getItem('patient');
             if (patient) {
                 const parsed = JSON.parse(patient);
                 this.patientId = parsed.id || null;
+                console.log(`[API] Client initialized with patientId: ${this.patientId}`);
+            } else {
+                console.log('[API] Client initialized. No patient found in storage.');
             }
         } catch (e) {
-            console.error('Failed to init API client:', e);
+            console.error('[API] Failed to init API client:', e);
         }
     }
 
     setPatientId(id: string): void {
+        console.log(`[API] Updating patientId to: ${id}`);
         this.patientId = id;
     }
 
@@ -39,6 +44,7 @@ class MemoraApiClient {
         if (auth.error) return { error: auth.error, status: auth.status };
 
         try {
+            console.log(`[API] Fetching memories for patient: ${this.patientId}`);
             const { data, error } = await supabase
                 .from('Memory')
                 .select('*')
@@ -47,9 +53,10 @@ class MemoraApiClient {
 
             if (error) throw error;
 
+            console.log(`[API] Successfully fetched ${data?.length || 0} memories.`);
             return { data: data as Memory[], status: 200 };
         } catch (e: any) {
-            console.error('Fetch memories error:', e);
+            console.error('[API] Fetch memories error:', e);
             return { error: e.message, status: 500 };
         }
     }
@@ -83,6 +90,7 @@ class MemoraApiClient {
                 .from('Memory')
                 .select('*')
                 .eq('id', id)
+                .eq('patientId', this.patientId)
                 .single();
 
             if (error) throw error;
@@ -119,9 +127,10 @@ class MemoraApiClient {
             if (memoryIds.length === 0) return { data: [], status: 200 };
 
             // Fetch from MemoryPhoto table where name is in the people array
+            // Scope via memory connection if possible, but for direct query we use memoryId in
             const { data, error } = await supabase
                 .from('MemoryPhoto')
-                .select('photoUrl, people')
+                .select('photoUrl, people, memoryId')
                 .in('memoryId', memoryIds);
 
             if (error) throw error;
@@ -146,14 +155,17 @@ class MemoraApiClient {
         if (auth.error) return { error: auth.error, status: auth.status };
 
         try {
+            console.log(`[API] Fetching family members for patient: ${this.patientId}`);
             const { data, error } = await supabase
                 .from('FamilyMember')
                 .select('*')
                 .eq('patientId', this.patientId);
 
             if (error) throw error;
+            console.log(`[API] Successfully fetched ${data?.length || 0} family members.`);
             return { data: data as FamilyMember[], status: 200 };
         } catch (e: any) {
+            console.error('[API] Fetch family members error:', e.message);
             return { error: e.message, status: 500 };
         }
     }
@@ -192,6 +204,7 @@ class MemoraApiClient {
         if (auth.error) return { error: auth.error, status: auth.status };
 
         try {
+            console.log(`[API] Creating session for patient: ${this.patientId}. Mood: ${session.mood}, Duration: ${session.duration}m`);
             // 1. Create Session
             const { data: sessionData, error: sessionError } = await supabase
                 .from('TherapySession')
@@ -206,6 +219,7 @@ class MemoraApiClient {
                 .single();
 
             if (sessionError) throw sessionError;
+            console.log(`[API] Session saved successfully. ID: ${sessionData.id}`);
 
             // 2. Log Memory Responses (if any)
             if (session.memories && session.memories.length > 0) {
@@ -238,6 +252,37 @@ class MemoraApiClient {
         }
     }
 
+    async login(name: string, pin: string): Promise<ApiResponse<Patient>> {
+        try {
+            console.log(`[API] Attempting RPC login for: ${name}`);
+            const { data, error } = await supabase.rpc('login_patient', {
+                p_name: name,
+                p_pin: pin
+            });
+
+            if (error) {
+                console.error(`[API] Login RPC error for '${name}':`, error.message);
+                throw error;
+            }
+
+            if (!data || data.error) {
+                console.warn(`[API] Login failed: ${data?.error || 'No matching patient'} for '${name}'`);
+                return { error: data?.error || 'Invalid name or PIN', status: 401 };
+            }
+
+            // Map RPC response 'patientId' to expected 'id' for the app
+            const patientData = {
+                ...data,
+                id: data.patientId
+            };
+
+            console.log(`[API] Login successful for patient: ${patientData.id}`);
+            return { data: patientData as Patient, status: 200 };
+        } catch (e: any) {
+            return { error: e.message, status: 500 };
+        }
+    }
+
     // ============ PATIENT ============
 
     async getPatient(): Promise<ApiResponse<Patient & { caregiverName?: string }>> {
@@ -245,6 +290,7 @@ class MemoraApiClient {
         if (auth.error) return { error: auth.error, status: auth.status };
 
         try {
+            console.log(`[API] Fetching full patient profile for ID: ${this.patientId}`);
             // 1. Fetch Patient
             const { data: patient, error } = await supabase
                 .from('Patient')
@@ -280,6 +326,7 @@ class MemoraApiClient {
         if (auth.error) return { error: auth.error, status: auth.status };
 
         try {
+            console.log(`[API] Fetching aggregated stats for patient: ${this.patientId}`);
             const { count: memoryCount } = await supabase
                 .from('Memory')
                 .select('*', { count: 'exact', head: true })
@@ -319,6 +366,7 @@ class MemoraApiClient {
         if (auth.error) return { error: auth.error, status: auth.status };
 
         try {
+            console.log(`[API] Fetching latest session memories queue...`);
             const { data, error } = await supabase
                 .from('SessionMemory')
                 .select('*, memoryId')

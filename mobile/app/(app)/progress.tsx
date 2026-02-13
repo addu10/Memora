@@ -105,13 +105,18 @@ export default function ProgressScreen() {
                     style={styles.section}
                 >
                     <Text style={styles.sectionTitle}>Recent Activity</Text>
-                    <View style={styles.emptyState}>
-                        <View style={styles.emptyIconBg}>
-                            <Calendar size={40} color={Theme.colors.textSecondary} opacity={0.5} />
-                        </View>
-                        <Text style={styles.emptyText}>
-                            Your daily activity log will appear here.
-                        </Text>
+                    <View style={styles.emptyStateContainer}>
+                        <LinearGradient
+                            colors={['#FFFFFF', '#F5F3FF']}
+                            style={styles.emptyState}
+                        >
+                            <View style={styles.emptyIconBg}>
+                                <Calendar size={40} color={Theme.colors.textSecondary} opacity={0.5} />
+                            </View>
+                            <Text style={styles.emptyText}>
+                                Your daily activity log will appear here.
+                            </Text>
+                        </LinearGradient>
                     </View>
                 </Animated.View>
 
@@ -122,41 +127,29 @@ export default function ProgressScreen() {
                 >
                     <Text style={styles.sectionTitle}>How You Felt</Text>
                     <View style={styles.moodRow}>
-                        <Animated.View
-                            entering={FadeInLeft.delay(1000).duration(600).springify()}
-                            style={styles.moodItem}
-                        >
-                            <Smile size={32} color="#22C55E" strokeWidth={2.5} />
-                            <Text style={styles.moodLabel}>Happy</Text>
-                            <View style={styles.moodBar}>
-                                <View style={[styles.moodFill, { height: '60%', backgroundColor: '#22C55E' }]} />
-                            </View>
-                            <Text style={styles.moodCount}>12</Text>
-                        </Animated.View>
-
-                        <Animated.View
-                            entering={FadeInLeft.delay(1100).duration(600).springify()}
-                            style={styles.moodItem}
-                        >
-                            <Meh size={32} color="#F59E0B" strokeWidth={2.5} />
-                            <Text style={styles.moodLabel}>Okay</Text>
-                            <View style={styles.moodBar}>
-                                <View style={[styles.moodFill, { height: '30%', backgroundColor: '#F59E0B' }]} />
-                            </View>
-                            <Text style={styles.moodCount}>5</Text>
-                        </Animated.View>
-
-                        <Animated.View
-                            entering={FadeInLeft.delay(1200).duration(600).springify()}
-                            style={styles.moodItem}
-                        >
-                            <Frown size={32} color="#EF4444" strokeWidth={2.5} />
-                            <Text style={styles.moodLabel}>Sad</Text>
-                            <View style={styles.moodBar}>
-                                <View style={[styles.moodFill, { height: '10%', backgroundColor: '#EF4444' }]} />
-                            </View>
-                            <Text style={styles.moodCount}>2</Text>
-                        </Animated.View>
+                        {[
+                            { id: 'happy', icon: Smile, color: '#22C55E', label: 'Happy', count: 12, height: '60%', delay: 1000 },
+                            { id: 'okay', icon: Meh, color: '#F59E0B', label: 'Okay', count: 5, height: '30%', delay: 1100 },
+                            { id: 'sad', icon: Frown, color: '#EF4444', label: 'Sad', count: 2, height: '10%', delay: 1200 }
+                        ].map((mood) => (
+                            <Animated.View
+                                key={mood.id}
+                                entering={FadeInLeft.delay(mood.delay).duration(600).springify()}
+                                style={styles.moodItemContainer}
+                            >
+                                <LinearGradient
+                                    colors={['#FFFFFF', '#F5F3FF']}
+                                    style={styles.moodItem}
+                                >
+                                    <mood.icon size={32} color={mood.color} strokeWidth={2.5} />
+                                    <Text style={mood.label === 'Happy' ? styles.moodLabel : styles.moodLabel}>{mood.label}</Text>
+                                    <View style={styles.moodBar}>
+                                        <View style={[styles.moodFill, { height: mood.height as any, backgroundColor: mood.color }]} />
+                                    </View>
+                                    <Text style={styles.moodCount}>{mood.count}</Text>
+                                </LinearGradient>
+                            </Animated.View>
+                        ))}
                     </View>
                 </Animated.View>
 
@@ -288,14 +281,16 @@ const styles = StyleSheet.create({
         marginBottom: 20,
         letterSpacing: -0.5,
     },
-    emptyState: {
-        backgroundColor: Theme.colors.surface,
+    emptyStateContainer: {
         borderRadius: 24,
-        padding: 32,
-        alignItems: 'center',
+        overflow: 'hidden',
         borderWidth: 1,
         borderColor: Theme.colors.border,
         borderStyle: 'dashed',
+    },
+    emptyState: {
+        padding: 32,
+        alignItems: 'center',
     },
     emptyIconBg: {
         width: 80,
@@ -320,14 +315,17 @@ const styles = StyleSheet.create({
         gap: 12,
         justifyContent: 'space-between',
     },
-    moodItem: {
+    moodItemContainer: {
         flex: 1,
-        backgroundColor: Theme.colors.surface,
         borderRadius: 24,
-        padding: 16,
-        alignItems: 'center',
+        overflow: 'hidden',
         borderWidth: 1,
         borderColor: Theme.colors.border,
+    },
+    moodItem: {
+        flex: 1,
+        padding: 16,
+        alignItems: 'center',
     },
     moodLabel: {
         fontFamily: Theme.typography.fontFamily,

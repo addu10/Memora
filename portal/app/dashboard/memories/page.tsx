@@ -5,7 +5,7 @@ import { getSession } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
 import { redirect } from 'next/navigation'
 import { Image as ImageIcon, Plus, Calendar, Users, Star, ArrowRight } from 'lucide-react'
-import MemoryGallery from './MemoryGallery'
+import MemoryGallery from '@/app/dashboard/memories/MemoryGallery'
 
 export default async function MemoriesPage() {
     const session = await getSession()

@@ -4,13 +4,14 @@ import { useState, useRef, useEffect } from 'react';
 import {
     StyleSheet, Text, View, TouchableOpacity, Alert,
     ActivityIndicator, ScrollView, Image, FlatList,
-    Dimensions, Animated, Easing, Modal,
+    Dimensions, Animated, Easing, Modal, Platform,
     NativeSyntheticEvent, NativeScrollEvent
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Theme } from '../../constants/Theme';
 import { api } from '../../lib/api';
+import { StatusModal } from '../../components/StatusModal';
 import { recognizeFace, RecognitionResult, getErrorMessage } from '../../lib/recognition';
 import { Memory } from '../../lib/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -31,7 +32,9 @@ import {
     AlertTriangle,
     Lightbulb,
     ChevronRight,
+    ChevronLeft,
     Heart,
+    CheckCircle2,
     MessageCircle,
     MapPin,
     Calendar,
@@ -43,7 +46,8 @@ import ReAnimated, {
     FadeInDown, FadeInUp, FadeIn,
     useSharedValue, useAnimatedStyle, withTiming,
     Easing as ReEasing, interpolate, runOnJS,
-    cancelAnimation
+    cancelAnimation, withRepeat, withSequence,
+    interpolateColor
 } from 'react-native-reanimated';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -61,130 +65,142 @@ const LOADING_PHRASES = [
 
 // Animated Oval Face Guide Component
 function FaceGuideOval({ faceDetected, isScanning }: { faceDetected: boolean; isScanning: boolean }) {
-    const pulseAnim = useRef(new Animated.Value(1)).current;
-    const rotateAnim = useRef(new Animated.Value(0)).current;
-    const colorAnim = useRef(new Animated.Value(faceDetected ? 1 : 0)).current;
+    const pulse = useSharedValue(1);
+    const rotation = useSharedValue(0);
+    const colorProgress = useSharedValue(faceDetected ? 1 : 0);
+    const scale = useSharedValue(1);
 
     useEffect(() => {
-        Animated.timing(colorAnim, {
-            toValue: faceDetected ? 1 : 0,
-            duration: 300,
-            useNativeDriver: false,
-        }).start();
+        colorProgress.value = withTiming(faceDetected ? 1 : 0, { duration: 300 });
     }, [faceDetected]);
 
     useEffect(() => {
-        Animated.loop(
-            Animated.sequence([
-                Animated.timing(pulseAnim, {
-                    toValue: 1.03,
-                    duration: 1500,
-                    easing: Easing.inOut(Easing.ease),
-                    useNativeDriver: false,
-                }),
-                Animated.timing(pulseAnim, {
-                    toValue: 1,
-                    duration: 1500,
-                    easing: Easing.inOut(Easing.ease),
-                    useNativeDriver: false,
-                }),
-            ])
-        ).start();
+        // Subtle pulse for the oval guide
+        pulse.value = withRepeat(
+            withSequence(
+                withTiming(1.03, { duration: 1500, easing: ReEasing.inOut(ReEasing.ease) }),
+                withTiming(1, { duration: 1500, easing: ReEasing.inOut(ReEasing.ease) })
+            ),
+            -1,
+            false
+        );
     }, []);
 
     useEffect(() => {
         if (isScanning) {
-            Animated.loop(
-                Animated.timing(rotateAnim, {
-                    toValue: 1,
-                    duration: 2000,
-                    easing: Easing.linear,
-                    useNativeDriver: false,
-                })
-            ).start();
+            rotation.value = withRepeat(
+                withTiming(1, { duration: 3000, easing: ReEasing.linear }),
+                -1,
+                false
+            );
+
+            scale.value = withRepeat(
+                withSequence(
+                    withTiming(1.05, { duration: 1200, easing: ReEasing.inOut(ReEasing.ease) }),
+                    withTiming(0.98, { duration: 1200, easing: ReEasing.inOut(ReEasing.ease) })
+                ),
+                -1,
+                true
+            );
         } else {
-            rotateAnim.setValue(0);
+            rotation.value = 0;
+            scale.value = 1;
         }
     }, [isScanning]);
 
-    const borderColor = colorAnim.interpolate({
-        inputRange: [0, 1],
-        outputRange: isScanning ? ['#FCD34D', '#FCD34D'] : ['#EF4444', '#22C55E'],
+    const hudRingStyle = useAnimatedStyle(() => {
+        return {
+            transform: [
+                { rotate: `${rotation.value * 360}deg` } as any,
+                { scale: scale.value } as any
+            ],
+            display: isScanning ? 'flex' : 'none'
+        } as any;
+    }, [isScanning]);
+
+    const ovalStyle = useAnimatedStyle(() => {
+        const borderColor = interpolateColor(
+            colorProgress.value,
+            [0, 1],
+            isScanning ? ['#FCD34D', '#FCD34D'] : ['#EF4444', '#22C55E']
+        );
+
+        return {
+            transform: [{ scale: pulse.value }],
+            borderColor: borderColor as any, // Cast for reanimated color interpolation
+            shadowColor: isScanning ? '#22C55E' : 'transparent',
+            shadowOpacity: isScanning ? 0.8 : 0,
+        };
     });
 
-    const rotate = rotateAnim.interpolate({
-        inputRange: [0, 1],
-        outputRange: ['0deg', '360deg'],
-    });
+    const innerStyle = useAnimatedStyle(() => {
+        const borderColor = interpolateColor(
+            colorProgress.value,
+            [0, 1],
+            isScanning ? ['#FCD34D', '#FCD34D'] : ['#EF4444', '#22C55E']
+        );
+        return { borderColor: borderColor as any };
+    }, [isScanning]);
 
     return (
         <View style={styles.ovalContainer}>
-            <Animated.View
-                style={[
-                    styles.ovalGuide,
-                    {
-                        transform: [{ scale: pulseAnim }],
-                        borderColor: borderColor,
-                    },
-                ]}
-            >
-                <Animated.View style={[styles.ovalInner, { borderColor: borderColor }]} />
-            </Animated.View>
+            {/* Outer Rotating HUD Ring */}
+            <ReAnimated.View style={[styles.hudRing, hudRingStyle]}>
+                <LinearGradient
+                    colors={['transparent', 'rgba(34, 197, 94, 0.8)', 'transparent']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.hudRingGradient}
+                />
+            </ReAnimated.View>
+
+            <ReAnimated.View style={[styles.ovalGuide, ovalStyle]}>
+                <ReAnimated.View style={[styles.ovalInner, innerStyle]} />
+            </ReAnimated.View>
 
             {isScanning && (
-                <Animated.View
-                    style={[
-                        styles.scanningIndicator,
-                        { transform: [{ rotate }] }
-                    ]}
-                >
-                    <View style={styles.scanningDot} />
-                </Animated.View>
+                <View style={styles.scanningLineClipper}>
+                    <ScanningLine />
+                </View>
             )}
 
-            <View style={[styles.cornerDeco, styles.cornerTopLeft]} />
-            <View style={[styles.cornerDeco, styles.cornerTopRight]} />
-            <View style={[styles.cornerDeco, styles.cornerBottomLeft]} />
-            <View style={[styles.cornerDeco, styles.cornerBottomRight]} />
+            {/* Corner Decorative Elements */}
+            <View style={[styles.cornerDeco, styles.cornerTopLeft, { borderColor: isScanning ? '#22C55E' : 'rgba(255,255,255,0.5)' }]} />
+            <View style={[styles.cornerDeco, styles.cornerTopRight, { borderColor: isScanning ? '#22C55E' : 'rgba(255,255,255,0.5)' }]} />
+            <View style={[styles.cornerDeco, styles.cornerBottomLeft, { borderColor: isScanning ? '#22C55E' : 'rgba(255,255,255,0.5)' }]} />
+            <View style={[styles.cornerDeco, styles.cornerBottomRight, { borderColor: isScanning ? '#22C55E' : 'rgba(255,255,255,0.5)' }]} />
         </View>
     );
 }
 
 // Scanning Line Animation Component
 function ScanningLine() {
-    const lineAnim = useRef(new Animated.Value(0)).current;
+    const lineAnim = useSharedValue(0);
 
     useEffect(() => {
-        Animated.loop(
-            Animated.sequence([
-                Animated.timing(lineAnim, {
-                    toValue: 1,
-                    duration: 1500,
-                    easing: Easing.inOut(Easing.ease),
-                    useNativeDriver: true,
-                }),
-                Animated.timing(lineAnim, {
-                    toValue: 0,
-                    duration: 1500,
-                    easing: Easing.inOut(Easing.ease),
-                    useNativeDriver: true,
-                }),
-            ])
-        ).start();
+        lineAnim.value = withRepeat(
+            withTiming(1, { duration: 1500, easing: ReEasing.inOut(ReEasing.ease) }),
+            -1,
+            true
+        );
     }, []);
 
-    const translateY = lineAnim.interpolate({
-        inputRange: [0, 1],
-        outputRange: [0, 280],
-    });
+    const animatedStyle = useAnimatedStyle(() => ({
+        // Range: -60 to 300 allows the line to fully enter and exit the 300px clipper
+        transform: [{ translateY: -60 + (lineAnim.value * 360) }]
+    }));
 
     return (
-        <Animated.View
-            style={[
-                styles.scanLine,
-                { transform: [{ translateY }] }
-            ]}
-        />
+        <View style={styles.scanLineContainer}>
+            <ReAnimated.View style={[styles.scanLine, animatedStyle]}>
+                <LinearGradient
+                    colors={['transparent', '#22C55E', 'transparent']}
+                    start={{ x: 0, y: 0.5 }}
+                    end={{ x: 1, y: 0.5 }}
+                    style={styles.scanLineGradient}
+                />
+            </ReAnimated.View>
+        </View>
     );
 }
 
@@ -257,6 +273,24 @@ function SlideshowModal({ photos, visible, onClose }: { photos: string[], visibl
 
     const SLIDE_DURATION = 5000;
 
+    const handleNext = () => {
+        fade.value = withTiming(0, { duration: 400 }, (finished) => {
+            if (finished) {
+                runOnJS(setCurrentIndex)((currentIndex + 1) % photos.length);
+                fade.value = withTiming(1, { duration: 400 });
+            }
+        });
+    };
+
+    const handlePrevious = () => {
+        fade.value = withTiming(0, { duration: 400 }, (finished) => {
+            if (finished) {
+                runOnJS(setCurrentIndex)((currentIndex - 1 + photos.length) % photos.length);
+                fade.value = withTiming(1, { duration: 400 });
+            }
+        });
+    };
+
     // 1. Handle actual index transitions (State source of truth)
     useEffect(() => {
         if (!visible) return;
@@ -321,7 +355,7 @@ function SlideshowModal({ photos, visible, onClose }: { photos: string[], visibl
         <Modal visible={visible} animationType="fade" transparent={false}>
             <View style={slideshowStyles.container}>
                 <LinearGradient
-                    colors={[Theme.colors.background, '#FFFFFF']}
+                    colors={['#FFFFFF', '#F5F3FF']}
                     style={StyleSheet.absoluteFill}
                 />
 
@@ -354,22 +388,40 @@ function SlideshowModal({ photos, visible, onClose }: { photos: string[], visibl
                             onPress={onClose}
                             activeOpacity={0.7}
                         >
-                            <XCircle size={28} color="#FFFFFF" strokeWidth={2.5} />
+                            <XCircle size={28} color={Theme.colors.textSecondary} strokeWidth={2.5} />
                         </TouchableOpacity>
                     </View>
 
                     <View style={slideshowStyles.bottomActions}>
-                        <TouchableOpacity
-                            style={slideshowStyles.glassPlayButton}
-                            onPress={() => setIsPlaying(!isPlaying)}
-                            activeOpacity={0.7}
-                        >
-                            {isPlaying ? (
-                                <Pause size={28} color="#FFFFFF" fill="#FFFFFF" />
-                            ) : (
-                                <Play size={28} color="#FFFFFF" fill="#FFFFFF" />
-                            )}
-                        </TouchableOpacity>
+                        <View style={slideshowStyles.mainControls}>
+                            <TouchableOpacity
+                                style={slideshowStyles.glassNavButton}
+                                onPress={handlePrevious}
+                                activeOpacity={0.7}
+                            >
+                                <ChevronLeft size={28} color={Theme.colors.textSecondary} strokeWidth={2.5} />
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={slideshowStyles.glassPlayButton}
+                                onPress={() => setIsPlaying(!isPlaying)}
+                                activeOpacity={0.7}
+                            >
+                                {isPlaying ? (
+                                    <Pause size={28} color={Theme.colors.text} fill={Theme.colors.text} />
+                                ) : (
+                                    <Play size={28} color={Theme.colors.text} fill={Theme.colors.text} />
+                                )}
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={slideshowStyles.glassNavButton}
+                                onPress={handleNext}
+                                activeOpacity={0.7}
+                            >
+                                <ChevronRight size={28} color={Theme.colors.textSecondary} strokeWidth={2.5} />
+                            </TouchableOpacity>
+                        </View>
 
                         <View style={slideshowStyles.counterBadge}>
                             <Text style={slideshowStyles.counter}>
@@ -390,7 +442,7 @@ function SlideshowModal({ photos, visible, onClose }: { photos: string[], visibl
 const slideshowStyles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#FFFFFF',
+        backgroundColor: Theme.colors.background,
     },
     imageContainer: {
         flex: 1,
@@ -411,7 +463,7 @@ const slideshowStyles = StyleSheet.create({
     },
     progressBarBg: {
         height: 6,
-        backgroundColor: 'rgba(255,255,255,0.2)',
+        backgroundColor: Theme.colors.primaryUltraLight,
         borderRadius: 3,
         overflow: 'hidden',
     },
@@ -439,7 +491,7 @@ const slideshowStyles = StyleSheet.create({
     headerInfo: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: 'rgba(255,255,255,0.15)',
+        backgroundColor: Theme.colors.primaryUltraLight,
         paddingHorizontal: 16,
         paddingVertical: 10,
         borderRadius: 20,
@@ -447,7 +499,7 @@ const slideshowStyles = StyleSheet.create({
     },
     headerTitle: {
         fontFamily: Theme.typography.fontFamily,
-        color: '#FFFFFF',
+        color: Theme.colors.text,
         fontSize: 16,
         fontWeight: '700',
     },
@@ -455,37 +507,53 @@ const slideshowStyles = StyleSheet.create({
         width: 44,
         height: 44,
         borderRadius: 22,
-        backgroundColor: 'rgba(255,255,255,0.15)',
+        backgroundColor: Theme.colors.primaryUltraLight,
         justifyContent: 'center',
         alignItems: 'center',
+    },
+    glassNavButton: {
+        width: 50,
+        height: 50,
+        borderRadius: 25,
+        backgroundColor: Theme.colors.primaryUltraLight,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: Theme.colors.primaryLight,
     },
     bottomActions: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: 60,
+        paddingHorizontal: 12,
+    },
+    mainControls: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 16,
     },
     glassPlayButton: {
         width: 64,
         height: 64,
         borderRadius: 32,
-        backgroundColor: 'rgba(255,255,255,0.15)',
+        backgroundColor: Theme.colors.primaryUltraLight,
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.2)',
+        borderColor: Theme.colors.primaryLight,
     },
     counterBadge: {
-        backgroundColor: 'rgba(0,0,0,0.3)',
+        backgroundColor: Theme.colors.primaryUltraLight,
         paddingHorizontal: 16,
         paddingVertical: 8,
         borderRadius: 16,
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.1)',
+        borderColor: Theme.colors.primaryLight,
     },
     counter: {
         fontFamily: Theme.typography.fontFamily,
-        color: '#FFFFFF',
+        color: Theme.colors.text,
         fontSize: 18,
         fontWeight: '800',
     },
@@ -499,7 +567,7 @@ const slideshowStyles = StyleSheet.create({
     },
     soothingText: {
         fontFamily: Theme.typography.fontFamily,
-        color: 'rgba(255,255,255,0.8)',
+        color: Theme.colors.textSecondary,
         fontSize: 18,
         fontWeight: '600',
         textAlign: 'center',
@@ -701,6 +769,17 @@ export default function RecognizeScreen() {
     const [activeRecognitionSlide, setActiveRecognitionSlide] = useState(0); // For success carousel
     const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
     const [faceDetected, setFaceDetected] = useState(false);
+    const [statusModal, setStatusModal] = useState<{
+        visible: boolean;
+        type: 'success' | 'error' | 'info';
+        title: string;
+        message: string;
+    }>({
+        visible: false,
+        type: 'info',
+        title: '',
+        message: '',
+    });
     const [phraseIndex, setPhraseIndex] = useState(0);
 
     const [memories, setMemories] = useState<Memory[]>([]);
@@ -831,11 +910,7 @@ export default function RecognizeScreen() {
                 shutterSound: false,
             });
 
-            if (!photo?.base64) {
-                console.error("[RECOGNIZE_ERROR] Failed to capture image base64");
-                throw new Error("Failed to capture image");
-            }
-            console.log("[RECOGNIZE] Photo captured successfully, size:", photo.base64.length);
+            console.log(`[RECOGNIZE] Photo captured successfully. URI: ${photo.uri}, Size: ${photo.base64?.length || 0} chars`);
             setCapturedPhoto(`data:image/jpeg;base64,${photo.base64}`);
 
             let patientId = null;
@@ -848,20 +923,33 @@ export default function RecognizeScreen() {
 
             if (!patientId) {
                 console.error("[RECOGNIZE_ERROR] No patient ID found in storage");
-                Alert.alert("Error", "Please log in again.");
+                setStatusModal({
+                    visible: true,
+                    type: 'error',
+                    title: 'Error',
+                    message: 'Please log in again.'
+                });
                 setCapturedPhoto(null);
                 return;
             }
 
-            console.log("[RECOGNIZE] Sending request to recognize face...");
+            console.log("[RECOGNIZE] Sending request to recognition engine...");
             const apiResult = await recognizeFace(photo.base64, patientId);
-            console.log("[RECOGNIZE] API Result received:",
-                apiResult.match ? `✅ MATCH: ${apiResult.name} (${Math.round((apiResult.confidence || 0) * 100)}%)` : "❌ NO MATCH"
-            );
+
+            if (apiResult.match) {
+                console.log(`[RECOGNIZE] ✅ MATCH FOUND: ${apiResult.name} (Confidence: ${Math.round((apiResult.confidence || 0) * 100)}%)`);
+            } else {
+                console.log(`[RECOGNIZE] ❌ NO MATCH. Error Type: ${apiResult.error_type || 'None'}`);
+            }
             setResult(apiResult);
         } catch (error: any) {
             console.error("[RECOGNIZE_ERROR] Exception in capture flow:", error);
-            Alert.alert('Oops!', error.message || 'Something went wrong. Please try again.');
+            setStatusModal({
+                visible: true,
+                type: 'error',
+                title: 'Oops!',
+                message: error.message || 'Something went wrong. Please try again.'
+            });
             setCapturedPhoto(null);
         } finally {
             setRecognizing(false);
@@ -883,6 +971,13 @@ export default function RecognizeScreen() {
 
     return (
         <View style={styles.container}>
+            <StatusModal
+                visible={statusModal.visible}
+                type={statusModal.type}
+                title={statusModal.title}
+                message={statusModal.message}
+                onClose={() => setStatusModal(prev => ({ ...prev, visible: false }))}
+            />
             {showCamera && (
                 <>
                     <CameraView
@@ -922,7 +1017,6 @@ export default function RecognizeScreen() {
                     <Image source={{ uri: capturedPhoto }} style={styles.capturedImage} resizeMode="contain" />
                     <View style={styles.scanningOverlay}>
                         <FaceGuideOval faceDetected={true} isScanning={true} />
-                        <ScanningLine />
                     </View>
 
                     <ReAnimated.View
@@ -957,7 +1051,7 @@ export default function RecognizeScreen() {
                                         colors={['#10B981', '#047857']}
                                         style={successStyles.headerGradient}
                                     >
-                                        <ReAnimated.View entering={FadeInDown.delay(200).duration(800).springify()}>
+                                        <View>
                                             <View style={successStyles.checkBadge}>
                                                 <UserCheck size={32} color="#FFFFFF" strokeWidth={3} />
                                             </View>
@@ -988,14 +1082,17 @@ export default function RecognizeScreen() {
                                                 </View>
                                                 <Text style={successStyles.confidenceLabel}>Match Confidence</Text>
                                             </View>
-                                        </ReAnimated.View>
+                                        </View>
                                     </LinearGradient>
 
                                     <ReAnimated.View entering={FadeInUp.delay(400).duration(800)}>
                                         {!loadingRelated && relatedPhotos.length > 0 && (
                                             <View style={successStyles.section}>
                                                 <View style={successStyles.sectionHeader}>
-                                                    <Text style={successStyles.sectionTitle}>📸 Photos of {result.name}</Text>
+                                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                                                        <ImageIcon size={22} color={Theme.colors.primary} />
+                                                        <Text style={successStyles.sectionTitle}>Photos of {result.name}</Text>
+                                                    </View>
                                                     <Text style={successStyles.photoCount}>{relatedPhotos.length} photos</Text>
                                                 </View>
 
@@ -1053,7 +1150,10 @@ export default function RecognizeScreen() {
 
                                         {!loadingRelated && memories.length > 0 && (
                                             <View style={successStyles.section}>
-                                                <Text style={successStyles.sectionTitle}>💝 Shared Moments</Text>
+                                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+                                                    <Heart size={22} color="#EF4444" fill="#FEE2E2" />
+                                                    <Text style={[successStyles.sectionTitle, { marginBottom: 0 }]}>Shared Moments</Text>
+                                                </View>
                                                 {memories.map((mem) => (
                                                     <View key={mem.id} style={successStyles.memoryCard}>
                                                         {mem.photoUrls?.[0] && (
@@ -1084,7 +1184,10 @@ export default function RecognizeScreen() {
                                         )}
 
                                         <View style={successStyles.section}>
-                                            <Text style={successStyles.sectionTitle}>💬 Start a Conversation</Text>
+                                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+                                                <MessageCircle size={22} color={Theme.colors.primary} />
+                                                <Text style={[successStyles.sectionTitle, { marginBottom: 0 }]}>Start a Conversation</Text>
+                                            </View>
                                             <View style={successStyles.conversationCard}>
                                                 <MessageCircle size={28} color={Theme.colors.primary} style={{ marginRight: 16 }} />
                                                 <Text style={successStyles.conversationText}>
@@ -1175,6 +1278,28 @@ const styles = StyleSheet.create({
         borderWidth: 4,
         justifyContent: 'center',
         alignItems: 'center',
+        elevation: 10,
+    },
+    hudRing: {
+        position: 'absolute',
+        width: 260,
+        height: 340,
+        borderRadius: 130,
+        borderWidth: 2,
+        borderColor: 'rgba(34, 197, 94, 0.2)',
+        borderStyle: 'dashed',
+    },
+    hudRingGradient: {
+        flex: 1,
+        borderRadius: 130,
+        opacity: 0.6,
+    },
+    scanningLineClipper: {
+        position: 'absolute',
+        width: 220,
+        height: 300,
+        borderRadius: 110,
+        overflow: 'hidden',
     },
     ovalInner: {
         width: 200,
@@ -1183,6 +1308,25 @@ const styles = StyleSheet.create({
         borderWidth: 2,
         borderStyle: 'dashed',
         opacity: 0.5,
+    },
+    scanLineContainer: {
+        ...StyleSheet.absoluteFillObject,
+        alignItems: 'center',
+    },
+    scanLine: {
+        position: 'absolute',
+        width: '100%',
+        height: 60,
+        opacity: 0.6,
+    },
+    scanLineGradient: {
+        flex: 1,
+        height: 3,
+        marginTop: 28,
+        shadowColor: '#22C55E',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.8,
+        shadowRadius: 15,
     },
     scanningIndicator: {
         position: 'absolute',
@@ -1280,17 +1424,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: 'rgba(0,0,0,0.3)',
-    },
-    scanLine: {
-        position: 'absolute',
-        width: 200,
-        height: 3,
-        backgroundColor: '#22C55E',
-        borderRadius: 2,
-        shadowColor: '#22C55E',
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.8,
-        shadowRadius: 8,
     },
     loadingCard: {
         position: 'absolute',
@@ -1495,7 +1628,6 @@ const successStyles = StyleSheet.create({
         fontSize: 20,
         fontWeight: '700',
         color: Theme.colors.text,
-        marginBottom: 16,
     },
     photoCount: {
         fontFamily: Theme.typography.fontFamily,
@@ -1679,3 +1811,5 @@ const successStyles = StyleSheet.create({
         fontWeight: '700',
     },
 });
+
+

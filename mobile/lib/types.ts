@@ -9,6 +9,7 @@ export interface Patient {
     diagnosis?: string;
     notes?: string;
     photoUrl?: string;
+    pin: string;
     createdAt: string;
     updatedAt: string;
     caregiverId: string;

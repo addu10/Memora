@@ -54,8 +54,10 @@ export default function HomeScreen() {
             if (patient) {
                 const parsed = JSON.parse(patient);
                 setPatientName(parsed.name || 'Friend');
+                console.log(`[HOME] Dashboard loaded for patient: ${parsed.name} (${parsed.id})`);
             }
         } catch (e) {
+            console.error('[HOME] Failed to load patient info:', e);
             setPatientName('Friend');
         }
     };
@@ -74,6 +76,7 @@ export default function HomeScreen() {
 
     const loadStats = async () => {
         try {
+            console.log('[HOME] Refreshing dashboard statistics...');
             const statsData = await api.getPatientStats();
             if (statsData.data) {
                 setStats({
@@ -81,20 +84,23 @@ export default function HomeScreen() {
                     sessions: statsData.data.totalSessions || 0,
                     familyMembers: statsData.data.totalFamily || 0,
                 });
+                console.log(`[HOME] Stats loaded: ${statsData.data.totalMemories} memories, ${statsData.data.totalSessions} sessions`);
             }
         } catch (e) {
-            console.log('Stats load error:', e);
+            console.error('[HOME] Stats load error:', e);
         }
     };
 
     const loadRecentMemory = async () => {
         try {
+            console.log('[HOME] Loading recent memory preview...');
             const memoriesRes = await api.getMemories();
             if (memoriesRes.data && memoriesRes.data.length > 0) {
                 setRecentMemory(memoriesRes.data[0]);
+                console.log(`[HOME] Featured recent memory: ${memoriesRes.data[0].title}`);
             }
         } catch (e) {
-            console.log('Recent memory load error:', e);
+            console.error('[HOME] Recent memory load error:', e);
         }
     };
 
@@ -103,11 +109,11 @@ export default function HomeScreen() {
             {/* Mesh Background */}
             <Animated.View
                 entering={FadeIn.duration(1200)}
-                style={[styles.meshGradient, { backgroundColor: 'rgba(167, 139, 250, 0.08)', top: -100, left: -100, opacity: undefined }]}
+                style={[styles.meshGradient, { backgroundColor: 'rgba(167, 139, 250, 0.08)', top: -100, left: -100 }]}
             />
             <Animated.View
                 entering={FadeIn.delay(400).duration(1200)}
-                style={[styles.meshGradient, { backgroundColor: 'rgba(221, 214, 254, 0.08)', bottom: -100, right: -50, opacity: undefined }]}
+                style={[styles.meshGradient, { backgroundColor: 'rgba(221, 214, 254, 0.08)', bottom: -100, right: -50 }]}
             />
 
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -143,38 +149,28 @@ export default function HomeScreen() {
 
                 {/* Stats Row */}
                 <View style={styles.statsRow}>
-                    <Animated.View
-                        entering={FadeInRight.delay(400).duration(600).springify()}
-                        style={[styles.statCard, styles.cardShadow]}
-                    >
-                        <View style={[styles.statIconBg, { backgroundColor: Theme.colors.primaryLight }]}>
-                            <ImageIcon size={20} color={Theme.colors.primary} strokeWidth={2.5} />
-                        </View>
-                        <Text style={styles.statNumber}>{stats.memories}</Text>
-                        <Text style={styles.statLabel}>Memories</Text>
-                    </Animated.View>
-
-                    <Animated.View
-                        entering={FadeInRight.delay(500).duration(600).springify()}
-                        style={[styles.statCard, styles.cardShadow]}
-                    >
-                        <View style={[styles.statIconBg, { backgroundColor: Theme.colors.secondaryLight }]}>
-                            <Brain size={20} color={Theme.colors.secondary} strokeWidth={2.5} />
-                        </View>
-                        <Text style={styles.statNumber}>{stats.sessions}</Text>
-                        <Text style={styles.statLabel}>Sessions</Text>
-                    </Animated.View>
-
-                    <Animated.View
-                        entering={FadeInRight.delay(600).duration(600).springify()}
-                        style={[styles.statCard, styles.cardShadow]}
-                    >
-                        <View style={[styles.statIconBg, { backgroundColor: '#F0FDF4' }]}>
-                            <Users size={20} color="#10B981" strokeWidth={2.5} />
-                        </View>
-                        <Text style={styles.statNumber}>{stats.familyMembers}</Text>
-                        <Text style={styles.statLabel}>Family</Text>
-                    </Animated.View>
+                    {[
+                        { id: 'memories', icon: ImageIcon, color: Theme.colors.primary, label: 'Memories', value: stats.memories, delay: 400 },
+                        { id: 'sessions', icon: Brain, color: Theme.colors.secondary, label: 'Sessions', value: stats.sessions, delay: 500 },
+                        { id: 'family', icon: Users, color: '#10B981', label: 'Family', value: stats.familyMembers, delay: 600 }
+                    ].map((stat) => (
+                        <Animated.View
+                            key={stat.id}
+                            entering={FadeInRight.delay(stat.delay).duration(600).springify()}
+                            style={styles.statCardContainer}
+                        >
+                            <LinearGradient
+                                colors={['#FFFFFF', '#F5F3FF']}
+                                style={styles.statCard}
+                            >
+                                <View style={[styles.statIconBg, { backgroundColor: stat.color + '15' }]}>
+                                    <stat.icon size={20} color={stat.color} strokeWidth={2.5} />
+                                </View>
+                                <Text style={styles.statNumber}>{stat.value}</Text>
+                                <Text style={styles.statLabel}>{stat.label}</Text>
+                            </LinearGradient>
+                        </Animated.View>
+                    ))}
                 </View>
 
                 <Animated.View entering={FadeInUp.delay(700).duration(800).springify()}>
@@ -215,40 +211,48 @@ export default function HomeScreen() {
                     >
                         <View style={styles.sectionHeader}>
                             <Text style={styles.sectionTitle}>Recent Memory</Text>
-                            <TouchableOpacity onPress={() => router.push('/(app)/memories')} style={styles.viewAllButton}>
+                            <TouchableOpacity
+                                style={styles.viewAllButton}
+                                onPress={() => router.push('/(app)/memories/')}
+                            >
                                 <Text style={styles.viewAllText}>View All</Text>
-                                <ChevronRight size={16} color={Theme.colors.primary} strokeWidth={3} />
+                                <ArrowRight size={16} color={Theme.colors.primary} strokeWidth={3} />
                             </TouchableOpacity>
                         </View>
                         <TouchableOpacity
-                            style={[styles.recentCard, styles.cardShadow]}
+                            style={styles.recentCardContainer}
                             onPress={() => router.push(`/(app)/memories/${recentMemory.id}`)}
                             activeOpacity={0.8}
                         >
-                            {recentMemory.photoUrls?.[0] && (
-                                <Image
-                                    source={{ uri: recentMemory.photoUrls[0] }}
-                                    style={styles.recentImage}
-                                    resizeMode="contain"
-                                />
-                            )}
-                            <View style={styles.recentContent}>
-                                <View style={styles.recentInfo}>
-                                    <Text style={styles.recentTitle} numberOfLines={1}>{recentMemory.title}</Text>
-                                    <Text style={styles.recentDate}>
-                                        {new Date(recentMemory.date).toLocaleDateString('en-US', {
-                                            month: 'long',
-                                            day: 'numeric',
-                                            year: 'numeric'
-                                        })}
-                                    </Text>
-                                </View>
-                                {recentMemory.event && (
-                                    <View style={styles.eventTag}>
-                                        <Text style={styles.eventText}>{recentMemory.event}</Text>
-                                    </View>
+                            <LinearGradient
+                                colors={['#FFFFFF', '#F5F3FF']}
+                                style={styles.recentCard}
+                            >
+                                {recentMemory.photoUrls?.[0] && (
+                                    <Image
+                                        source={{ uri: recentMemory.photoUrls[0] }}
+                                        style={styles.recentImage}
+                                        resizeMode="contain"
+                                    />
                                 )}
-                            </View>
+                                <View style={styles.recentContent}>
+                                    <View style={styles.recentInfo}>
+                                        <Text style={styles.recentTitle} numberOfLines={1}>{recentMemory.title}</Text>
+                                        <Text style={styles.recentDate}>
+                                            {new Date(recentMemory.date).toLocaleDateString('en-US', {
+                                                month: 'long',
+                                                day: 'numeric',
+                                                year: 'numeric'
+                                            })}
+                                        </Text>
+                                    </View>
+                                    {recentMemory.event && (
+                                        <View style={styles.eventTag}>
+                                            <Text style={styles.eventText}>{recentMemory.event}</Text>
+                                        </View>
+                                    )}
+                                </View>
+                            </LinearGradient>
                         </TouchableOpacity>
                     </Animated.View>
                 )}
@@ -471,6 +475,25 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
+    statCardContainer: {
+        flex: 1,
+        borderRadius: 22,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: Theme.colors.border,
+        elevation: 4,
+        shadowColor: Theme.colors.secondary,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.05,
+        shadowRadius: 10,
+    },
+    recentCardContainer: {
+        borderRadius: 28,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: Theme.colors.border,
+        ...Theme.shadows.md,
+    },
     recentSection: {
         marginBottom: 32,
     },
@@ -499,11 +522,10 @@ const styles = StyleSheet.create({
         fontWeight: '700',
     },
     recentCard: {
-        backgroundColor: Theme.colors.surface,
-        borderRadius: Theme.borderRadius['2xl'],
-        overflow: 'hidden',
-        borderWidth: 1,
-        borderColor: Theme.colors.border,
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 12,
+        gap: 16,
     },
     recentImage: {
         width: '100%',
