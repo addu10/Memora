@@ -64,7 +64,7 @@ export default function HomePage() {
             <Link href="/register" className="relative w-full sm:w-auto group">
               <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-rose-500 rounded-2xl blur opacity-30 group-hover:opacity-75 transition duration-1000 group-hover:duration-200"></div>
               <div className="relative w-full sm:w-auto px-10 py-5 rounded-2xl font-bold text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:to-indigo-600 transition-all shadow-xl flex items-center justify-center gap-3 text-lg leading-none">
-                <span>Start Free Trial</span>
+                <span>Experience Memora</span>
                 <Play size={16} fill="currentColor" className="opacity-90" />
               </div>
             </Link>
@@ -239,9 +239,11 @@ export default function HomePage() {
 
           {/* Essential Links */}
           <div className="flex flex-wrap justify-center gap-6 text-sm text-slate-400 font-medium mb-8">
-            <Link href="#" className="hover:text-white transition-colors">Privacy Policy</Link>
-            <Link href="#" className="hover:text-white transition-colors">Terms of Service</Link>
-            <Link href="#" className="hover:text-white transition-colors">Support</Link>
+            <div className="flex gap-8 order-1 md:order-2">
+              <Link href="/privacy" className="text-slate-400 hover:text-violet-600 transition-colors font-medium">Privacy</Link>
+              <Link href="/terms" className="text-slate-400 hover:text-violet-600 transition-colors font-medium">Terms</Link>
+              <Link href="/support" className="text-slate-400 hover:text-violet-600 transition-colors font-medium">Support</Link>
+            </div>
           </div>
 
           {/* Copyright */}

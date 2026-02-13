@@ -58,9 +58,29 @@ export default async function SessionDetailPage({
                 .select('*')
                 .eq('id', sm.memoryId)
                 .single()
-            return { ...sm, memory: memory || {} }
+
+            // Get Photos for this memory
+            const { data: photos } = await supabaseAdmin
+                .from('MemoryPhoto')
+                .select('*')
+                .eq('memoryId', sm.memoryId)
+                .order('photoIndex', { ascending: true })
+
+            return {
+                ...sm,
+                memory: memory || {},
+                photos: photos || []
+            }
         })
     )
+
+    const totalPictures = sessionMemories.reduce((sum, sm) => sum + sm.photos.length, 0)
+    const sessionTime = new Date(therapySession.date).toLocaleTimeString('en-IN', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+        timeZone: 'Asia/Kolkata'
+    })
 
     const moodColors: Record<string, string> = {
         happy: 'text-emerald-500 bg-emerald-50 border-emerald-100',
@@ -102,10 +122,13 @@ export default async function SessionDetailPage({
                     {/* Date Block */}
                     <div className="flex-shrink-0 bg-white/80 backdrop-blur-sm rounded-3xl p-6 text-center min-w-[120px] shadow-sm border border-white/50">
                         <div className="text-4xl font-extrabold text-neutral-900">
-                            {new Date(therapySession.date).getDate()}
+                            {new Date(therapySession.date).toLocaleDateString('en-IN', { day: 'numeric', timeZone: 'Asia/Kolkata' })}
                         </div>
                         <div className="text-xs font-bold text-neutral-400 uppercase tracking-wider mt-1">
-                            {new Date(therapySession.date).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}
+                            {new Date(therapySession.date).toLocaleDateString('en-IN', { month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' })}
+                        </div>
+                        <div className="text-sm font-black text-indigo-600 mt-2 bg-indigo-50 py-1 rounded-lg">
+                            {sessionTime}
                         </div>
                     </div>
 
@@ -136,11 +159,11 @@ export default async function SessionDetailPage({
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="bg-white rounded-3xl p-6 shadow-sm-soft border border-neutral-100 flex items-center gap-5">
                     <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
-                        <Brain size={28} />
+                        <MessageCircle size={28} />
                     </div>
                     <div>
-                        <div className="text-3xl font-extrabold text-neutral-900">{sessionMemories.length}</div>
-                        <div className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Memories Reviewed</div>
+                        <div className="text-3xl font-extrabold text-neutral-900">{totalPictures}</div>
+                        <div className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Pictures Reviewed</div>
                     </div>
                 </div>
                 <div className="bg-white rounded-3xl p-6 shadow-sm-soft border border-neutral-100 flex items-center gap-5">
@@ -177,9 +200,9 @@ export default async function SessionDetailPage({
                         {sessionMemories.length > 0 ? (
                             sessionMemories.map((sm: any) => (
                                 <div key={sm.id} className="group flex flex-col md:flex-row gap-6 p-4 rounded-3xl hover:bg-neutral-50 transition-colors border border-transparent hover:border-neutral-100">
-                                    <div className="w-full md:w-32 h-32 rounded-2xl bg-neutral-100 overflow-hidden flex-shrink-0 shadow-inner">
-                                        {sm.memory.photoUrl ? (
-                                            <img src={sm.memory.photoUrl} alt={sm.memory.title} className="w-full h-full object-cover" />
+                                    <div className="w-full md:w-32 h-32 rounded-2xl bg-neutral-100 overflow-hidden flex-shrink-0 shadow-inner border border-neutral-100">
+                                        {sm.photos && sm.photos.length > 0 ? (
+                                            <img src={sm.photos[0].photoUrl} alt={sm.memory.title} className="w-full h-full object-cover" />
                                         ) : (
                                             <div className="w-full h-full flex items-center justify-center text-neutral-300">
                                                 <Brain size={32} />
@@ -211,6 +234,10 @@ export default async function SessionDetailPage({
                                                     {sm.memory.location}
                                                 </span>
                                             )}
+                                            <span className="flex items-center gap-1 text-indigo-600 font-bold">
+                                                <Clock size={12} />
+                                                {sm.photos.length} {sm.photos.length === 1 ? 'Picture' : 'Pictures'}
+                                            </span>
                                         </div>
 
                                         {sm.response && (

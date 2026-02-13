@@ -11,6 +11,7 @@ export default function ReportsPage() {
         setLoading(`${type}-${format}`)
         try {
             const response = await fetch(`/api/reports/export?type=${type}&format=${format}`)
+            // ... (rest of the logic remains the same)
 
             if (format === 'csv') {
                 const blob = await response.blob()

@@ -61,9 +61,16 @@ export async function POST(request: Request) {
         const body = await request.json()
         const { name, age, mmseScore, diagnosis, notes, photoUrl, pin } = body
 
-        if (!name || !age) {
+        if (!name || isNaN(parseInt(age)) || parseInt(age) < 0 || parseInt(age) > 120) {
             return NextResponse.json(
-                { error: 'Name and age are required' },
+                { error: 'Valid Name and Age are required' },
+                { status: 400 }
+            )
+        }
+
+        if (pin && (pin.length !== 4 || !/^\d+$/.test(pin))) {
+            return NextResponse.json(
+                { error: 'PIN must be exactly 4 digits' },
                 { status: 400 }
             )
         }

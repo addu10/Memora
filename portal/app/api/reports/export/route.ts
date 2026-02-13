@@ -88,11 +88,48 @@ export async function GET(request: Request) {
                     (progressSessions || []).map(async (s) => {
                         const { data: sessionMemories } = await supabaseAdmin
                             .from('SessionMemory')
-                            .select('recallScore')
+                            .select('recallScore, memoryId')
                             .eq('sessionId', s.id)
                         return { ...s, memories: sessionMemories || [] }
                     })
                 )
+
+                // Advanced Clinical Metrics
+                const memoryPerformance: Record<string, number[]> = {}
+                const moodPerformance: Record<string, { totalRecall: number, count: number }> = {
+                    happy: { totalRecall: 0, count: 0 },
+                    neutral: { totalRecall: 0, count: 0 },
+                    sad: { totalRecall: 0, count: 0 },
+                    confused: { totalRecall: 0, count: 0 }
+                }
+
+                sessionsWithSessionMemories.forEach(s => {
+                    const sessionAvgRecall = s.memories.length > 0
+                        ? s.memories.reduce((sum: number, m: any) => sum + m.recallScore, 0) / s.memories.length
+                        : null
+
+                    if (sessionAvgRecall !== null && moodPerformance[s.mood]) {
+                        moodPerformance[s.mood].totalRecall += sessionAvgRecall
+                        moodPerformance[s.mood].count += 1
+                    }
+
+                    s.memories.forEach((m: any) => {
+                        if (!memoryPerformance[m.memoryId]) memoryPerformance[m.memoryId] = []
+                        memoryPerformance[m.memoryId].push(m.recallScore)
+                    })
+                })
+
+                // Calculate Memory Decay Rate (simple slope approximation)
+                const memoryDecay = Object.entries(memoryPerformance).map(([id, scores]) => {
+                    const first = scores[0]
+                    const last = scores[scores.length - 1]
+                    const trend = scores.length > 1 ? last - first : 0
+                    return { memoryId: id, trend, scoresCount: scores.length }
+                })
+
+                // Engagement Score Implementation
+                const totalMinutes = sessionsWithSessionMemories.reduce((sum, s) => sum + s.duration, 0)
+                const engagementScore = Math.min(100, (sessionsWithSessionMemories.length * 5) + (totalMinutes / 10))
 
                 data = {
                     patient: {
@@ -101,9 +138,17 @@ export async function GET(request: Request) {
                         mmseScore: patient.mmseScore,
                         diagnosis: patient.diagnosis
                     },
+                    clinicalInsights: {
+                        engagementScore: Math.round(engagementScore),
+                        memoryDecay: memoryDecay.sort((a, b) => a.trend - b.trend).slice(0, 5), // Most decaying memories
+                        moodCorrelation: Object.entries(moodPerformance).map(([mood, stats]) => ({
+                            mood,
+                            avgRecall: stats.count > 0 ? (stats.totalRecall / stats.count).toFixed(1) : 'N/A'
+                        }))
+                    },
                     summary: {
                         totalSessions: sessionsWithSessionMemories.length,
-                        totalDuration: sessionsWithSessionMemories.reduce((sum, s) => sum + s.duration, 0),
+                        totalDuration: totalMinutes,
                         moodDistribution: {
                             happy: sessionsWithSessionMemories.filter(s => s.mood === 'happy').length,
                             neutral: sessionsWithSessionMemories.filter(s => s.mood === 'neutral').length,
@@ -113,6 +158,7 @@ export async function GET(request: Request) {
                     },
                     sessionHistory: sessionsWithSessionMemories.map(s => ({
                         date: s.date,
+                        time: new Date(s.date).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Kolkata' }),
                         duration: s.duration,
                         mood: s.mood,
                         memoriesReviewed: s.memories.length,
@@ -161,9 +207,10 @@ function sanitizeCSVValue(value: any): string {
 
 function convertToCSV(data: any, type: string): string {
     if (type === 'sessions') {
-        const headers = ['Date', 'Duration (min)', 'Mood', 'Memories Reviewed', 'Notes']
+        const headers = ['Date', 'Time', 'Duration (min)', 'Mood', 'Memories Reviewed', 'Notes']
         const rows = data.map((s: any) => [
-            sanitizeCSVValue(new Date(s.date).toLocaleDateString()),
+            sanitizeCSVValue(new Date(s.date).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })),
+            sanitizeCSVValue(new Date(s.date).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Kolkata' })),
             s.duration,
             sanitizeCSVValue(s.mood),
             s.memories.length,
@@ -176,7 +223,7 @@ function convertToCSV(data: any, type: string): string {
         const headers = ['Title', 'Date', 'Event', 'Location', 'People', 'Importance']
         const rows = data.map((m: any) => [
             sanitizeCSVValue(m.title),
-            sanitizeCSVValue(new Date(m.date).toLocaleDateString()),
+            sanitizeCSVValue(new Date(m.date).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })),
             sanitizeCSVValue(m.event),
             sanitizeCSVValue(m.location),
             sanitizeCSVValue(m.people),
@@ -186,9 +233,10 @@ function convertToCSV(data: any, type: string): string {
     }
 
     if (type === 'progress') {
-        const headers = ['Date', 'Duration (min)', 'Mood', 'Memories Reviewed', 'Avg Recall']
+        const headers = ['Date', 'Time', 'Duration (min)', 'Mood', 'Memories Reviewed', 'Avg Recall']
         const rows = data.sessionHistory.map((s: any) => [
-            sanitizeCSVValue(new Date(s.date).toLocaleDateString()),
+            sanitizeCSVValue(new Date(s.date).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })),
+            sanitizeCSVValue(s.time),
             s.duration,
             sanitizeCSVValue(s.mood),
             s.memoriesReviewed,

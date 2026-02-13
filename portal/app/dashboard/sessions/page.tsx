@@ -125,10 +125,10 @@ export default async function SessionsPage() {
                             {/* Date Badge */}
                             <div className="flex-shrink-0 bg-neutral-50 rounded-2xl p-4 text-center min-w-[90px] group-hover:bg-primary-50 group-hover:text-primary-600 transition-colors border border-neutral-100 group-hover:border-primary-100">
                                 <div className="text-2xl font-extrabold text-neutral-900 group-hover:text-primary-700">
-                                    {new Date(s.date).toLocaleDateString('en-IN', { day: 'numeric' })}
+                                    {new Date(s.date).toLocaleDateString('en-IN', { day: 'numeric', timeZone: 'Asia/Kolkata' })}
                                 </div>
                                 <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider group-hover:text-primary-400">
-                                    {new Date(s.date).toLocaleDateString('en-IN', { month: 'short' })}
+                                    {new Date(s.date).toLocaleDateString('en-IN', { month: 'short', timeZone: 'Asia/Kolkata' })}
                                 </div>
                             </div>
 
@@ -142,8 +142,12 @@ export default async function SessionsPage() {
                                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-violet-50 text-violet-700 text-xs font-bold border border-violet-100">
                                             {getMoodEmoji(s.mood)} {s.mood.charAt(0).toUpperCase() + s.mood.slice(1)} Mood
                                         </span>
+                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 text-xs font-bold border border-indigo-100">
+                                            <Clock size={12} className="text-indigo-400" />
+                                            {new Date(s.date).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Kolkata' })}
+                                        </span>
                                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 text-slate-600 text-xs font-bold border border-slate-100">
-                                            <Clock size={12} className="text-slate-400" /> {s.duration} mins
+                                            <Activity size={12} className="text-slate-400" /> {s.duration} mins
                                         </span>
                                     </div>
                                 </div>

@@ -36,7 +36,15 @@ export async function POST(request: Request) {
 
         if (!title || !date || !event || !location || !people || !photoUrls || photoUrls.length === 0 || !patientId) {
             return NextResponse.json(
-                { error: 'Missing required fields (including patient selection)' },
+                { error: 'Missing required fields (including patient selection and photos)' },
+                { status: 400 }
+            )
+        }
+
+        const importanceInt = parseInt(importance)
+        if (isNaN(importanceInt) || importanceInt < 1 || importanceInt > 5) {
+            return NextResponse.json(
+                { error: 'Importance must be between 1 and 5' },
                 { status: 400 }
             )
         }

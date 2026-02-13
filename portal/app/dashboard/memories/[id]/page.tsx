@@ -123,7 +123,9 @@ export default async function MemoryDetailPage({ params }: { params: { id: strin
 
                         <div className="flex items-center gap-2 text-neutral-500 font-medium">
                             <Calendar size={18} />
-                            <span>{new Date(memory.date).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                            <p className="text-4xl font-black text-slate-900 leading-tight">
+                                {new Date(memory.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Kolkata' })}
+                            </p>
                         </div>
                     </div>
 

@@ -775,8 +775,8 @@ export default function NewMemoryPage() {
                                     disabled={!isStepValid()}
                                     className="flex-1 py-4 rounded-xl bg-neutral-900 text-white font-bold shadow-lg shadow-neutral-900/20 hover:bg-neutral-800 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:shadow-none"
                                 >
-                                    Next Step
-                                    <ChevronRight size={20} />
+                                    {loading ? 'Moving Next...' : 'Next Step'}
+                                    {!loading && <ChevronRight size={20} />}
                                 </button>
                             ) : (
                                 <button

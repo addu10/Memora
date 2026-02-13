@@ -108,6 +108,18 @@ export async function POST(request: Request) {
 
         // Create session memories if provided
         if (memories && memories.length > 0) {
+            // SECURITY: Verify all memoryIds belong to this patient
+            const memoryIds = memories.map((m: any) => m.memoryId)
+            const { data: validMemories, error: verifyError } = await supabaseAdmin
+                .from('Memory')
+                .select('id')
+                .in('id', memoryIds)
+                .eq('patientId', patientId)
+
+            if (verifyError || !validMemories || validMemories.length !== memoryIds.length) {
+                return NextResponse.json({ error: 'One or more memory IDs are invalid for this patient' }, { status: 400 })
+            }
+
             const sessionMemoriesData = memories.map((m: any) => ({
                 id: generateId(),
                 sessionId,

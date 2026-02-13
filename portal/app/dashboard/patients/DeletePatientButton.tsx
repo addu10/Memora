@@ -89,7 +89,10 @@ export default function DeletePatientButton({ patientId, patientName }: DeletePa
                             value={confirmName}
                             onChange={(e) => setConfirmName(e.target.value)}
                             placeholder="Patient name"
-                            className="w-full p-4 rounded-2xl border-2 border-neutral-200 bg-neutral-50 text-xl font-bold text-center text-neutral-900 focus:outline-none focus:border-red-400 focus:bg-white transition-all placeholder:text-neutral-300"
+                            className={`w-full p-4 rounded-2xl border-2 transition-all text-xl font-bold text-center text-neutral-900 focus:outline-none placeholder:text-neutral-300 ${confirmName === patientName
+                                    ? 'border-red-500 bg-red-50 shadow-inner'
+                                    : 'border-neutral-200 bg-neutral-50 focus:border-red-400 focus:bg-white'
+                                }`}
                             autoFocus
                         />
                     </div>

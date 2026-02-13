@@ -186,7 +186,7 @@ export default async function PatientDetailPage({
                                             {new Date(s.date).getDate()}
                                         </div>
                                         <div>
-                                            <p className="font-bold text-neutral-900">{new Date(s.date).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</p>
+                                            <p className="font-bold text-neutral-900">{new Date(s.date).toLocaleDateString('en-IN', { month: 'long', year: 'numeric', timeZone: 'Asia/Kolkata' })}</p>
                                             <p className="text-xs font-bold text-neutral-400 uppercase tracking-wider">{s.duration} minutes</p>
                                         </div>
                                     </div>

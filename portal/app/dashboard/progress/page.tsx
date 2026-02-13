@@ -17,7 +17,8 @@ import {
     BarChart2,
     PieChart,
     UserPlus,
-    Zap
+    Zap,
+    Download
 } from 'lucide-react'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -64,6 +65,7 @@ async function getProgressData(patientId: string) {
             : 0
         return {
             date: s.date,
+            time: new Date(s.date).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Kolkata' }),
             avgRecall: avgRecall.toFixed(1),
             mood: s.mood
         }
@@ -98,13 +100,57 @@ async function getProgressData(patientId: string) {
         ? (allRecalls.reduce((a, b) => a + b, 0) / allRecalls.length).toFixed(1)
         : '0'
 
+    // Advanced Clinical Metrics
+    const memoryPerformance: Record<string, number[]> = {}
+    const moodPerformance: Record<string, { totalRecall: number, count: number }> = {
+        happy: { totalRecall: 0, count: 0 },
+        neutral: { totalRecall: 0, count: 0 },
+        sad: { totalRecall: 0, count: 0 },
+        confused: { totalRecall: 0, count: 0 }
+    }
+
+    sessions.forEach(s => {
+        const sessionAvgRecall = s.memories.length > 0
+            ? s.memories.reduce((sum: number, m: any) => sum + m.recallScore, 0) / s.memories.length
+            : null
+
+        if (sessionAvgRecall !== null && moodPerformance[s.mood]) {
+            moodPerformance[s.mood].totalRecall += sessionAvgRecall
+            moodPerformance[s.mood].count += 1
+        }
+
+        s.memories.forEach((m: any) => {
+            if (!memoryPerformance[m.memoryId]) memoryPerformance[m.memoryId] = []
+            memoryPerformance[m.memoryId].push(m.recallScore)
+        })
+    })
+
+    // Calculate Memory Decay Rate (simple slope approximation)
+    const memoryDecay = Object.entries(memoryPerformance).map(([id, scores]) => {
+        const first = scores[0]
+        const last = scores[scores.length - 1]
+        const trend = scores.length > 1 ? last - first : 0
+        return { memoryId: id, trend, scoresCount: scores.length }
+    })
+
+    // Engagement Score Implementation
+    const engagementScore = Math.min(100, (totalSessions * 5) + (totalDuration / 10))
+
     return {
         totalSessions,
         totalDuration,
         moodCounts,
         recallOverTime,
         memoryStats,
-        avgRecall
+        avgRecall,
+        clinicalInsights: {
+            engagementScore: Math.round(engagementScore),
+            memoryDecay: memoryDecay.sort((a, b) => a.trend - b.trend),
+            moodCorrelation: Object.entries(moodPerformance).map(([mood, stats]) => ({
+                mood,
+                avgRecall: stats.count > 0 ? (stats.totalRecall / stats.count).toFixed(1) : 'N/A'
+            }))
+        }
     }
 }
 
@@ -164,6 +210,10 @@ export default async function ProgressPage() {
                         Clinical insights and trends for <span className="font-bold text-slate-800 border-b-2 border-violet-100">{patient.name}</span>
                     </p>
                 </div>
+                <Link href="/dashboard/reports" className="group flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-6 py-3.5 rounded-2xl font-bold transition-all shadow-xl hover:shadow-2xl hover:-translate-y-1 shrink-0">
+                    <Download size={20} className="group-hover:translate-y-0.5 transition-transform" />
+                    <span>Export Reports</span>
+                </Link>
             </div>
 
             {/* Summary Stats Grid (Unified Violet Theme) */}
@@ -195,13 +245,13 @@ export default async function ProgressPage() {
                     <div className="text-xs font-bold text-slate-400 uppercase tracking-wider group-hover:text-fuchsia-600 transition-colors">Avg. Recall</div>
                 </div>
 
-                {/* Positive Days - Emerald (Kept for semantic meaning but style unified) */}
-                <div className="bg-white rounded-[2rem] p-6 shadow-sm border border-violet-200 flex flex-col items-center text-center hover:shadow-lg hover:border-emerald-300 transition-all duration-300 group">
-                    <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4 group-hover:bg-emerald-100 transition-colors">
-                        <Smile size={28} strokeWidth={2.5} />
+                {/* Engagement - Violet Gradient */}
+                <div className="bg-gradient-to-br from-violet-600 to-indigo-600 rounded-[2rem] p-6 shadow-lg shadow-violet-200 flex flex-col items-center text-center hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group text-white">
+                    <div className="w-14 h-14 rounded-2xl bg-white/20 text-white flex items-center justify-center mb-4 group-hover:bg-white/30 transition-colors">
+                        <Zap size={28} strokeWidth={2.5} />
                     </div>
-                    <div className="text-4xl font-black text-slate-900 mb-1">{progress.moodCounts.happy}</div>
-                    <div className="text-xs font-bold text-slate-400 uppercase tracking-wider group-hover:text-emerald-600 transition-colors">Positive Days</div>
+                    <div className="text-4xl font-black mb-1">{progress.clinicalInsights.engagementScore}%</div>
+                    <div className="text-xs font-bold opacity-80 uppercase tracking-wider">Engagement Score</div>
                 </div>
             </div>
 
@@ -229,8 +279,8 @@ export default async function ProgressPage() {
                                                 className="w-full max-w-[40px] bg-violet-600 rounded-t-xl group-hover:bg-violet-700 transition-all duration-300 relative shadow-sm"
                                                 style={{ height: `${(parseFloat(item.avgRecall) / 5) * 100}%` }}
                                             >
-                                                <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs font-bold px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
-                                                    {item.avgRecall}
+                                                <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity shadow-lg whitespace-nowrap z-20">
+                                                    {item.time} • {item.avgRecall}
                                                 </div>
                                             </div>
                                         </div>

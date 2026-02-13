@@ -99,11 +99,12 @@ export default function ModernDatePicker({ value, onDateSelectAction, placeholde
 
     const formatDisplayDate = () => {
         if (!selectedDate) return placeholder
-        return selectedDate.toLocaleDateString('en-US', {
+        return selectedDate.toLocaleDateString('en-IN', {
             weekday: 'short',
             month: 'short',
             day: 'numeric',
-            year: 'numeric'
+            year: 'numeric',
+            timeZone: 'Asia/Kolkata'
         })
     }
 
