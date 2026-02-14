@@ -97,9 +97,17 @@ export default function NewMemoryPage() {
     const [customPerson, setCustomPerson] = useState('')
 
     useEffect(() => {
+        // Check for patient first
+        const patientId = Cookies.get('selectedPatientId')
+        if (!patientId) {
+            setError('No patient selected. Redirecting to dashboard...')
+            setTimeout(() => router.push('/dashboard'), 2000)
+            return
+        }
+
         const fetchFamily = async () => {
             try {
-                const res = await fetch('/api/family')
+                const res = await fetch(`/api/family?patientId=${patientId}`)
                 if (res.ok) {
                     const data = await res.json()
                     setFamilyMembers(data)
@@ -107,14 +115,6 @@ export default function NewMemoryPage() {
             } catch (e) {
                 console.error("Could not load family members", e)
             }
-        }
-
-        // Check for patient
-        const patientId = Cookies.get('selectedPatientId')
-        if (!patientId) {
-            setError('No patient selected. Redirecting to dashboard...')
-            setTimeout(() => router.push('/dashboard'), 2000)
-            return
         }
 
         fetchFamily()

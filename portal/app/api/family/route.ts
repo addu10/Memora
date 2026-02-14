@@ -7,22 +7,45 @@ export async function GET(request: Request) {
     const session = await getSession()
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    // Find the first patient for this caregiver
-    const { data: patient } = await supabaseAdmin
-        .from('Patient')
-        .select('id')
-        .eq('caregiverId', session.userId)
-        .limit(1)
-        .single()
+    // Support explicit patientId query param (preferred) or fall back to first patient
+    const { searchParams } = new URL(request.url)
+    const requestedPatientId = searchParams.get('patientId')
 
-    if (!patient) {
+    let patientId: string | null = null
+
+    if (requestedPatientId) {
+        // Verify the requested patient belongs to this caregiver
+        const { data: patient } = await supabaseAdmin
+            .from('Patient')
+            .select('id')
+            .eq('id', requestedPatientId)
+            .eq('caregiverId', session.userId)
+            .single()
+
+        if (!patient) {
+            return NextResponse.json({ error: 'Patient not found or unauthorized' }, { status: 404 })
+        }
+        patientId = patient.id
+    } else {
+        // Fallback: first patient (backward compat)
+        const { data: patient } = await supabaseAdmin
+            .from('Patient')
+            .select('id')
+            .eq('caregiverId', session.userId)
+            .limit(1)
+            .single()
+
+        patientId = patient?.id || null
+    }
+
+    if (!patientId) {
         return NextResponse.json([])
     }
 
     const { data: familyMembers, error } = await supabaseAdmin
         .from('FamilyMember')
         .select('id, name, relationship')
-        .eq('patientId', patient.id)
+        .eq('patientId', patientId)
         .order('name', { ascending: true })
 
     if (error) {

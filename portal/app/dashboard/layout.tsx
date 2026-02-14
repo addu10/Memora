@@ -39,6 +39,13 @@ export default async function DashboardLayout({
   const selectedPatientId = await getSelectedPatientId()
   const firstName = session.name.split(' ')[0]
 
+  // Get count of pending incoming transfers for notification badge
+  const { count: pendingTransferCount } = await supabaseAdmin
+    .from('PatientTransfer')
+    .select('id', { count: 'exact', head: true })
+    .eq('toCaregiverId', session.userId)
+    .eq('status', 'pending')
+
   // Find selected patient name for the "Caring For" pill
   const selectedPatient = patients.find(p => p.id === selectedPatientId) || patients[0]
 
@@ -53,6 +60,7 @@ export default async function DashboardLayout({
           user={session}
           patients={patients}
           selectedPatientId={selectedPatientId}
+          pendingTransferCount={pendingTransferCount || 0}
         />
 
         {/* Main Content Area */}

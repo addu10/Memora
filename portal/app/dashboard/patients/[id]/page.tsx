@@ -12,7 +12,8 @@ import {
     Clock,
     Activity,
     MoreHorizontal,
-    Plus
+    Plus,
+    ArrowLeftRight
 } from 'lucide-react'
 
 
@@ -163,6 +164,13 @@ export default async function PatientDetailPage({
                     </div>
                     <h3 className="font-bold text-neutral-900">View Progress</h3>
                     <p className="text-xs text-neutral-500 font-medium mt-1">Analytics & reports</p>
+                </Link>
+                <Link href="/dashboard/transfers" className="group bg-white p-4 rounded-3xl border border-neutral-100 shadow-sm hover:shadow-lg hover:border-indigo-100 transition-all duration-300">
+                    <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                        <ArrowLeftRight size={24} />
+                    </div>
+                    <h3 className="font-bold text-neutral-900">Transfer</h3>
+                    <p className="text-xs text-neutral-500 font-medium mt-1">Send to caregiver</p>
                 </Link>
             </div>
 

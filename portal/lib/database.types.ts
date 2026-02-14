@@ -344,6 +344,67 @@ export type Database = {
                     },
                 ]
             }
+            PatientTransfer: {
+                Row: {
+                    id: string
+                    patientId: string
+                    fromCaregiverId: string
+                    toCaregiverId: string
+                    status: string
+                    transferToken: string
+                    message: string | null
+                    expiresAt: string
+                    respondedAt: string | null
+                    createdAt: string
+                }
+                Insert: {
+                    id?: string
+                    patientId: string
+                    fromCaregiverId: string
+                    toCaregiverId: string
+                    status?: string
+                    transferToken?: string
+                    message?: string | null
+                    expiresAt: string
+                    respondedAt?: string | null
+                    createdAt?: string
+                }
+                Update: {
+                    id?: string
+                    patientId?: string
+                    fromCaregiverId?: string
+                    toCaregiverId?: string
+                    status?: string
+                    transferToken?: string
+                    message?: string | null
+                    expiresAt?: string
+                    respondedAt?: string | null
+                    createdAt?: string
+                }
+                Relationships: [
+                    {
+                        foreignKeyName: "PatientTransfer_patientId_fkey"
+                        columns: ["patientId"]
+                        isOneToOne: false
+                        referencedRelation: "Patient"
+                        referencedColumns: ["id"]
+                    },
+                    {
+                        foreignKeyName: "PatientTransfer_fromCaregiverId_fkey"
+                        columns: ["fromCaregiverId"]
+                        isOneToOne: false
+                        referencedRelation: "Caregiver"
+                        referencedColumns: ["id"]
+                    },
+                    {
+                        foreignKeyName: "PatientTransfer_toCaregiverId_fkey"
+                        columns: ["toCaregiverId"]
+                        isOneToOne: false
+                        referencedRelation: "Caregiver"
+                        referencedColumns: ["id"]
+                    },
+                ]
+            }
         }
         Views: {
             [_ in never]: never
@@ -373,6 +434,7 @@ export type MemoryPhoto = Tables<'MemoryPhoto'>
 export type FamilyMember = Tables<'FamilyMember'>
 export type TherapySession = Tables<'TherapySession'>
 export type SessionMemory = Tables<'SessionMemory'>
+export type PatientTransfer = Tables<'PatientTransfer'>
 
 // Insert types
 export type CaregiverInsert = TablesInsert<'Caregiver'>
@@ -382,6 +444,7 @@ export type MemoryPhotoInsert = TablesInsert<'MemoryPhoto'>
 export type FamilyMemberInsert = TablesInsert<'FamilyMember'>
 export type TherapySessionInsert = TablesInsert<'TherapySession'>
 export type SessionMemoryInsert = TablesInsert<'SessionMemory'>
+export type PatientTransferInsert = TablesInsert<'PatientTransfer'>
 
 // Update types
 export type CaregiverUpdate = TablesUpdate<'Caregiver'>
@@ -391,6 +454,7 @@ export type MemoryPhotoUpdate = TablesUpdate<'MemoryPhoto'>
 export type FamilyMemberUpdate = TablesUpdate<'FamilyMember'>
 export type TherapySessionUpdate = TablesUpdate<'TherapySession'>
 export type SessionMemoryUpdate = TablesUpdate<'SessionMemory'>
+export type PatientTransferUpdate = TablesUpdate<'PatientTransfer'>
 
 // Photo score type for session therapy
 export interface PhotoScore {

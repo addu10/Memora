@@ -1,10 +1,11 @@
 // Home Screen - Luxurious Light Patient Dashboard
-import { useState, useEffect } from 'react';
-import { Link, router } from 'expo-router';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Image, Dimensions, Platform } from 'react-native';
+import { useState, useEffect, useCallback } from 'react';
+import { Link, router, useFocusEffect } from 'expo-router';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Image, Dimensions, Platform, RefreshControl } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api } from '../../lib/api';
+import { supabase } from '../../lib/supabase';
 import { Theme } from '../../constants/Theme';
 import {
     User,
@@ -39,14 +40,70 @@ export default function HomeScreen() {
     const [quote, setQuote] = useState('');
     const [stats, setStats] = useState({ memories: 0, sessions: 0, familyMembers: 0 });
     const [recentMemory, setRecentMemory] = useState<any>(null);
+    const [refreshing, setRefreshing] = useState(false);
+    const [patientId, setPatientId] = useState<string | null>(null);
 
     useEffect(() => {
         loadPatientInfo();
         updateGreeting();
         setRandomQuote();
-        loadStats();
-        loadRecentMemory();
     }, []);
+
+    // Refresh data when screen comes into focus
+    useFocusEffect(
+        useCallback(() => {
+            console.log('[HOME] Focused, refreshing data...');
+            loadStats();
+            loadRecentMemory();
+        }, [])
+    );
+
+    // Setup real-time subscriptions
+    useEffect(() => {
+        if (!patientId) return;
+
+        console.log(`[HOME] Setting up real-time stats for patient: ${patientId}`);
+
+        const memoriesChannel = supabase
+            .channel('home-memories-changes')
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'Memory',
+                    filter: `patientId=eq.${patientId}`
+                },
+                () => {
+                    console.log('[HOME] Memory change detected, refreshing stats...');
+                    loadStats();
+                    loadRecentMemory();
+                }
+            )
+            .subscribe();
+
+        const sessionsChannel = supabase
+            .channel('home-sessions-changes')
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'TherapySession',
+                    filter: `patientId=eq.${patientId}`
+                },
+                () => {
+                    console.log('[HOME] Session change detected, refreshing stats...');
+                    loadStats();
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(memoriesChannel);
+            supabase.removeChannel(sessionsChannel);
+        };
+    }, [patientId]);
 
     const loadPatientInfo = async () => {
         try {
@@ -54,6 +111,7 @@ export default function HomeScreen() {
             if (patient) {
                 const parsed = JSON.parse(patient);
                 setPatientName(parsed.name || 'Friend');
+                setPatientId(parsed.id || null);
                 console.log(`[HOME] Dashboard loaded for patient: ${parsed.name} (${parsed.id})`);
             }
         } catch (e) {
@@ -91,6 +149,12 @@ export default function HomeScreen() {
         }
     };
 
+    const onRefresh = async () => {
+        setRefreshing(true);
+        await Promise.all([loadStats(), loadRecentMemory()]);
+        setRefreshing(false);
+    };
+
     const loadRecentMemory = async () => {
         try {
             console.log('[HOME] Loading recent memory preview...');
@@ -116,7 +180,18 @@ export default function HomeScreen() {
                 style={[styles.meshGradient, { backgroundColor: 'rgba(221, 214, 254, 0.08)', bottom: -100, right: -50 }]}
             />
 
-            <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+            <ScrollView
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        tintColor={Theme.colors.primary}
+                        colors={[Theme.colors.primary]}
+                    />
+                }
+            >
                 {/* Header Section */}
                 <Animated.View
                     entering={FadeInDown.duration(800).springify()}

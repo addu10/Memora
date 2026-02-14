@@ -56,7 +56,8 @@ Final Year/
 │
 ├── portal/                 # Next.js caregiver portal
 │   ├── app/                # App Router pages & API
-│   ├── prisma/             # Database schema & migrations
+│   │   ├── api/            # REST API routes
+│   │   └── dashboard/      # Protected dashboard pages
 │   ├── lib/                # Supabase client, auth
 │   └── README.md           # Portal documentation
 │
@@ -152,16 +153,24 @@ npx expo start -c
 
 ### Caregiver Portal
 - ✅ Caregiver authentication (secure session management)
-- ✅ Patient management (MMSE score & diagnosis tracking)
-- ✅ Per-photo granular labeling & description
+- ✅ Multi-patient management with in-header patient selector
+- ✅ Patient profiles with MMSE score & diagnosis tracking
+- ✅ Multi-photo memory creation with per-photo labeling
 - ✅ Family member management with reference photos
-- ✅ Enhanced progress analytics gallery (mood & recall trends)
+- ✅ Therapy session history with detailed drill-down views
+- ✅ Advanced analytics (mood trends, recall scores, engagement metrics)
+- ✅ PDF report generation & export
+- ✅ **Patient Transfer** — securely hand off a patient between caregivers
+- ✅ **Patient Briefing Slideshow** — immersive 7-slide onboarding for the receiving caregiver
+- ✅ Transfer Center with real-time notification badge
+- ✅ Dark/Light theme support
 
 ### Backend (Supabase)
 - ✅ PostgreSQL 17 database
 - ✅ Production-grade Row Level Security (RLS)
 - ✅ Gemini Edge Functions for therapy sessions
 - ✅ Secure file storage with bucket policies
+- ✅ PatientTransfer table with full state machine (pending → accepted/rejected/cancelled/expired)
 
 ---
 
@@ -170,7 +179,7 @@ npx expo start -c
 | Document | Description |
 |----------|-------------|
 | [Mobile README](./mobile/README.md) | Mobile app setup & interactive therapy flow |
-| [Portal README](./portal/README.md) | Web portal setup & analytics guide |
+| [Portal README](./portal/README.md) | Web portal setup, features & API reference |
 | [Supabase Setup](./SUPABASE_SETUP.md) | SQL/Schema & RLS production policies |
 | [Clinic Walkthrough](./docs/audit/walkthrough.md) | Technical guide to AI therapy refactor |
 | [Closing Report](./docs/audit/project_closing_report.md) | Final project maturity analysis |
@@ -180,12 +189,12 @@ npx expo start -c
 ## 🧪 Testing
 
 ```bash
-# Portal tests
+# Portal type checking
 cd portal
-npm run test
+npx tsc --noEmit
 
-# Type checking
-npm run type-check
+# Run dev server
+npm run dev
 ```
 
 ---
@@ -194,13 +203,13 @@ npm run type-check
 
 | Component | Status |
 |-----------|--------|
-| AI Therapy | ✅ COMPLETE |
-| Mobile App | ✅ COMPLETE |
-| Portal Web | ✅ COMPLETE |
-| Backend/DB | ✅ COMPLETE |
-| Face Rec V2| ✅ COMPLETE |
-| Security   | ✅ COMPLETE (RLS Enforced) |
-| Voice Int. | ⏳ Planned Phase 7 |
+| AI Therapy | ✅ Complete |
+| Mobile App | ✅ Complete |
+| Portal Web | ✅ Complete |
+| Backend/DB | ✅ Complete |
+| Face Rec V2 | ✅ Complete |
+| Patient Transfer | ✅ Complete |
+| Security Audit | ✅ Complete (RLS + API hardened) |
 
 ---
 
@@ -213,5 +222,6 @@ This project is for academic purposes only.
 ## 🙏 Acknowledgments
 
 - Supabase for backend infrastructure
+- Google Gemini for AI therapy engine
 - Expo for mobile development framework
 - Next.js for web framework

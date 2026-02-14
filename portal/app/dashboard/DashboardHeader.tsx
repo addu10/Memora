@@ -10,7 +10,8 @@ import {
     Folder,
     BarChart2,
     Heart,
-    ChevronDown
+    ChevronDown,
+    ArrowLeftRight
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import UserDropdown from './UserDropdown'
@@ -26,9 +27,10 @@ interface DashboardHeaderProps {
     user: { name: string, email?: string }
     patients: Patient[]
     selectedPatientId: string | undefined
+    pendingTransferCount?: number
 }
 
-export default function DashboardHeader({ user, patients, selectedPatientId }: DashboardHeaderProps) {
+export default function DashboardHeader({ user, patients, selectedPatientId, pendingTransferCount = 0 }: DashboardHeaderProps) {
     const router = useRouter()
     const pathname = usePathname()
     const [isCaringForOpen, setIsCaringForOpen] = useState(false)
@@ -97,6 +99,7 @@ export default function DashboardHeader({ user, patients, selectedPatientId }: D
                         <NavItem href="/dashboard/sessions" label="Sessions" active={pathname.startsWith('/dashboard/sessions')} />
                         <NavItem href="/dashboard/progress" label="Analytics" active={pathname.startsWith('/dashboard/progress')} />
                         <NavItem href="/dashboard/patients" label="Patients" active={pathname.startsWith('/dashboard/patients') && !pathname.startsWith('/dashboard/patients/new')} />
+                        <NavItem href="/dashboard/transfers" label="Transfers" active={pathname.startsWith('/dashboard/transfers')} badge={pendingTransferCount} />
                     </nav>
 
                     {/* 3. Right Side: Dropdowns (Actions) */}
@@ -190,6 +193,10 @@ export default function DashboardHeader({ user, patients, selectedPatientId }: D
                         <Link href="/dashboard/patients" className={`p-4 rounded-xl font-bold flex items-center gap-3 ${pathname.startsWith('/dashboard/patients') ? 'bg-indigo-50 text-indigo-700' : 'hover:bg-slate-50 text-slate-600'}`}>
                             <Users size={20} /> Patients
                         </Link>
+                        <Link href="/dashboard/transfers" className={`p-4 rounded-xl font-bold flex items-center gap-3 ${pathname.startsWith('/dashboard/transfers') ? 'bg-indigo-50 text-indigo-700' : 'hover:bg-slate-50 text-slate-600'}`}>
+                            <ArrowLeftRight size={20} /> Transfers
+                            {pendingTransferCount > 0 && <span className="px-2 py-0.5 text-xs font-bold bg-red-500 text-white rounded-full">{pendingTransferCount}</span>}
+                        </Link>
                     </div>
                 )}
             </div>
@@ -198,10 +205,15 @@ export default function DashboardHeader({ user, patients, selectedPatientId }: D
 }
 
 
-function NavItem({ href, label, active = false }: { href: string, label: string, active?: boolean }) {
+function NavItem({ href, label, active = false, badge = 0 }: { href: string, label: string, active?: boolean, badge?: number }) {
     return (
         <Link href={href} className={`px-5 py-2 rounded-2xl text-sm font-bold transition-all duration-300 relative group ${active ? 'text-indigo-600 bg-indigo-50' : 'text-slate-500 hover:text-indigo-600 hover:bg-slate-50'}`}>
             {label}
+            {badge > 0 && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-sm animate-pulse">
+                    {badge}
+                </span>
+            )}
         </Link>
     )
 }
